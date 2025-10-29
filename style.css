@@ -3,7 +3,6 @@ html, body {
     overflow-x: hidden;
     /* padding: 5px; */
 }
-
 body {
     font-family: 'Chewy', 'DynaPuff', sans-serif;
     background-color: #422845;
@@ -15,6 +14,8 @@ body {
     /* padding: 10px; */
     min-height: 100vh;
 }
+
+
 
 .site-header {
     display: flex; /* Makes it a flex container */ 
@@ -56,7 +57,7 @@ body {
             -1px -1px 2px #fff,
             2px 2px 4px #075a62;
         line-height: 1.2;
-    }
+}
 .site-description-blurb {
         font-family: 'Permanent Marker', sans-serif;
         font-size: clamp(0.9em, 2vw, 1.5em); 
@@ -71,7 +72,10 @@ body {
         letter-spacing: 0.1em;
         -webkit-text-stroke: 1px black; 
         margin-top: 5px; /* Pushes it down slightly from the main title */
-    }
+}
+
+
+
 .site-thumb {
         display: block; /* Ensures the image takes up its own space */
         max-width: 100%; /* Important for responsiveness */
@@ -82,7 +86,18 @@ body {
         border-radius: 50%; 
         box-shadow: 0 2px 6px rgba(0,0,0,0.9);
         aspect-ratio: 1 / 1; 
-    }
+}
+.site-thumb-caption {
+    display: block;
+    font-size: clamp(0.6em, 1.5vw, 1em); /* Scales font size: min 0.6em, preferred 1.5vw, max 1em */
+    color: #eaf588; /* Adjust color to match your header theme */
+    text-align: center;
+    margin-top: 5px; /* Space between thumbnail and text */
+    line-height: 1.2; /* Adjust line height if text wraps */
+    -webkit-text-stroke: 0.5px black; /* Subtle stroke for readability */
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.5); /* Subtle shadow */
+    white-space: nowrap; /* Prevents text from wrapping too early */
+}
 .thumb-and-caption-container {
     position: relative;
     display: inline-block; /* Keeps elements in flow */
@@ -135,17 +150,6 @@ body {
     align-items: center; /* Centers the thumbnail and caption horizontally within this container */
     margin-right: 15px; /* Replaces the margin that was on site-thumb */
 }
-.site-thumb-caption {
-    display: block;
-    font-size: clamp(0.6em, 1.5vw, 1em); /* Scales font size: min 0.6em, preferred 1.5vw, max 1em */
-    color: #eaf588; /* Adjust color to match your header theme */
-    text-align: center;
-    margin-top: 5px; /* Space between thumbnail and text */
-    line-height: 1.2; /* Adjust line height if text wraps */
-    -webkit-text-stroke: 0.5px black; /* Subtle stroke for readability */
-    text-shadow: 1px 1px 1px rgba(0,0,0,0.5); /* Subtle shadow */
-    white-space: nowrap; /* Prevents text from wrapping too early */
-}
 
 
 
@@ -156,13 +160,18 @@ body {
     padding: 20px;
     justify-content: center;
     align-items: center;
+    max-width: 1200px;
+    left: 50%;
+    transform: translateX(-50%);
+
+    margin-left: auto;
+    margin-right: auto;
     width: 100%;
-    position: fixed;
+    position: relative;
     top: 150px;
     z-index: 999;
 
 }
-
 .social-links-container {
     display: flex;
     flex-wrap: wrap;
@@ -174,7 +183,6 @@ body {
     border-radius: 10px;
     background-color: rgba(5, 43, 71, 0.5);
 }
-
 .social-button {
     background-color: #f4f956;
     opacity: 1;
@@ -188,7 +196,6 @@ body {
     box-sizing: border-box;
     text-align: center;
 }
-
 .social-button:hover {
     background-color: #05a1a1;
     transform: scale(1.05);
@@ -197,16 +204,8 @@ body {
 
 
 
-.site-thumb:hover,
-.site-thumb:active {
-    color: #fdfcfe;
-    text-decoration: none;
-    text-shadow:#090909 1px 1px 2px;
-    transform: scale(1.1);
-    transition: transform 0.2s;
-    cursor: pointer;
-    transition: .3s, transform 0.2s;
-}
+
+
 
 .main-content-wrapper {
     max-width: 1200px;
@@ -215,12 +214,12 @@ body {
     padding: px; 
     box-sizing: border-box;   
 }
-
 .main-navigation {
     display: flex;
     justify-content: flex-end; 
     align-items: center;
 }
+
 
 .nav-list {
     display: flex;
@@ -237,12 +236,10 @@ body {
     margin: 0;            
     transition: color 0.3s ease;
 }
-
 .nav-item {
     margin: 0;
     padding: 0;
 }
-
 .nav-link {
     font-size: clamp(1.5em, 1.5vw, 1.5em); /* ADDED: Scales font-size */
     color: #eaf588;
@@ -259,7 +256,6 @@ body {
     text-align: center;
     box-sizing: border-box; /* ADDED: Includes padding/border in width */
 }
-
 .nav-link:hover,
 .nav-link:active {
     background-color: #eaf588;
@@ -271,13 +267,13 @@ body {
     text-shadow: 0 2px 2px white;
 }
 
+
 .form-group,
 .form-title {
     color: white;
     font-size: 2em;
     -webkit-text-stroke: 2px black;
 }
-
 
 a,
 a:link,
@@ -309,9 +305,8 @@ a:active {
     font-size: 2.8em;
     line-height: 1.2;
 }
-
 .project-section {
-    margin-top: 300px;
+    margin-top: 180px;
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
@@ -327,12 +322,10 @@ a:active {
     box-shadow: 2px 2px 4px rgba(3, 3, 3, 0.9);
     box-sizing: border-box;
 }
-
 .project-section.alt-background {
     background-color: rgba(255, 255, 255, 0.2);
     background-image: url('backie5.png');
 }
-
 .project-title {
     font-family: 'Permanent Marker', sans-serif;
     font-size: clamp(.8em, 2vw, 1.8em); /* Default font size for title */
@@ -345,7 +338,6 @@ a:active {
     margin-bottom: 30px;
     line-height: 1.2;
 }
-
 .project-content {
     flex: 1;
     min-width: 250px;
@@ -353,7 +345,6 @@ a:active {
     box-sizing: border-box;
     margin-bottom: 20px; /* Space below content on small screens */
 }
-
 .project-description {
     font-family: 'Bebas Neue', sans-serif;
     color: #026868;
@@ -365,7 +356,6 @@ a:active {
     line-height: 1.2;
     
 }
-
 .video-embed-container {
     width: 100%; /* Takes full width of parent on small screens */
     max-width: 560px; /* Limits max width to video's intrinsic width */
@@ -375,7 +365,6 @@ a:active {
     /* align-items: center;
     overflow: hidden;  */
 }
-
 .video-embded-container iframe {
     width: 100%;
     height: 315px;
@@ -406,7 +395,7 @@ a:active {
 .career-slider-container {
     position: relative;
     max-width: 90%; 
-
+    margin-top: 120px;
     /* margin: 0px auto; */
     overflow: hidden; 
     border-radius: 12px;
@@ -422,14 +411,14 @@ a:active {
     flex: 0 0 100%; /* Each card takes up 100% of container width */
     box-sizing: border-box;
     padding: 0; /* Important: No padding here */
-    /* min-height: 250px;  */
+    max-height: 600px;/* min-height: 250px;  */
     display: flex; /* Use flex for side-by-side (image and content) */
     background-color: rgba(170, 169, 179, 0.9); 
     background-image: url('backie5.png');
     background-blend-mode: overlay;
 }
 .card-image-wrapper {
-    flex: 0 0 50%; 
+    flex: 0 0 40%; 
     overflow: hidden; 
 }
 .card-image-wrapper img {
@@ -439,13 +428,13 @@ a:active {
     display: block;
 }
 .card-content {
-    flex: 0 0 50%;
+    flex: 0 0 60%;
     font-family: 'bebas neue', sans-serif;
-    padding: 40px; /* Padding for the text block */
+    padding: 20px; /* Padding for the text block */
     margin: 10px;
     box-sizing: border-box;
     text-align: left; 
-    font-size: 1.4em;
+    font-size: 1.0em;
     color: #698795; 
     display: flex;             /* 1. Turn the content container into a flex container */
     flex-direction: column;    /* 2. Arrange the text/children vertically (top-to-bottom) */
@@ -586,7 +575,7 @@ a:active {
     max-width: 1400px; 
     margin-left: auto;
     margin-right: auto;
-    margin-top: 300px; 
+    margin-top: 120px; 
     margin-bottom: 0px;
   
     
