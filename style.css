@@ -618,6 +618,7 @@ a:active {
         order: 1; /* Ensure content comes first visually */
         padding: 0 20px 0 0; /* Padding on the right, no left padding */
         margin-right: 20px; /* Space between content and video */
+        Max-width: 65ch; /* Limit max width for better readability */
     }
 
     .project-description {
