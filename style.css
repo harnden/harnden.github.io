@@ -163,7 +163,6 @@ body {
     max-width: 1200px;
     left: 50%;
     transform: translateX(-50%);
-
     margin-left: auto;
     margin-right: auto;
     width: 100%;
@@ -445,7 +444,7 @@ a:active {
 }
 .card-content h2 {
     font-family: 'bahiana', sans-serif;
-    font-size: 3.9em;
+    font-size: 1.8em;
     margin-top: 0;
     margin-bottom: 5px;
     color: #911a56;
@@ -458,14 +457,14 @@ a:active {
      -webkit-text-stroke: .1px black;
 }
 .card-content p1 {
-    font-family: 'bahiana', sans-serif;
-    font-size: 1.9em;
+    font-family: 'Marker felt', sans-serif;
+    font-size: 1.3em;
     margin: 10px 0;
      -webkit-text-stroke: .1px black;
 }
 .card-content p2 {
     font-family: 'bahiana', sans-serif;
-    font-size: 2.4em;
+    font-size: 1.4em;
     margin: 10px 0;
      -webkit-text-stroke: .1px black;
 }
@@ -630,6 +629,7 @@ a:active {
         margin: 0; /* Remove auto margins to let flex handle spacing */
         order: 2; /* Ensure video comes second visually */
     }
+
 }
 
 
