@@ -67,10 +67,7 @@
     </nav>
 </header>
 
-
-
-<main> 
-     <section class="social-links-section">
+<section class="social-links-section">
             <div class="social-links-container">
                 <a href="https://linkedin.com/in/storyproducer" target="_blank" class="social-button">LINKEDIN</a>
                 <a href="https://profile.indeed.com/p/joshuah-mcdqrgk" target="_blank" class="social-button">INDEED</a>
@@ -78,98 +75,37 @@
             </div>
      </section>
 
+<main> 
+     
 
 
-<div class="main-content-wrapper">
-    <img src="/img/Untitled3.png" usemap="#image-map" id="composite-map-img" alt="Professional Portfolio Composite">
 
 
-<map name="image-map">
-    <area class="hotspot" target="_self" alt="Roman Atwood's Daydreams" title="Roman Atwood's Daydreams" href="https://harnden.github.io/tvwork.html" coords="713,4053,1821,5100" shape="rect">
+</main>
+
+
+
+<div class="flashlight-container">
+    </div>
+
     
-    <area class="hotspot" target="_self" alt="Early interest in soccer" title="Early interest in soccer" href="https://harnden.github.io/short.html" coords="1841,4056,2643,5097" shape="rect">
-    
-    <area class="hotspot" target="_self" alt="Showing early promise" title="Showing early promise" href="https://harnden.github.io/short.html" coords="704,2881,1465,4056" shape="rect">
-    
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+    const container = document.querySelector('.flashlight-container');
 
-    <!-- <area class="hotspot" target="_self" alt="Roman Atwood's Daydreams" title="Roman Atwood's Daydreams" href="https://harnden.github.io/tvwork.html" coords="1821,5100,713,4053" shape="rect">
-    <area class="hotspot" target="_self" alt="Early interest in soccer" title="Early interest in soccer" href="https://harnden.github.io/short.html" coords="1841,4056,2643,5097" shape="rect">
-    <area  class="hotspot" target="_self" alt="Showing early promise" title="Showing early promise" href="https://harnden.github.io/short.html" coords="1465,4056,704,2881" shape="rect"> -->
-    <area  class="hotspot" target="_self" alt="Keala Kennelly Social Media" title="Keala Kennelly Social Media" href="https://harnden.github.io/more.html" coords="707,1933,2150,2875" shape="rect">
-    <area  class="hotspot" target="_parent" alt="the elusive Emmy" title="the elusive Emmy" href="https://harnden.github.io/more.html" coords="2162,2030,3296,2872" shape="rect">
-    <area  class="hotspot" target="_self" alt="Working at MTV" title="Working at MTV" href="https://harnden.github.io/tvwork.html" coords="7,0,719,502" shape="rect">
-    <area  class="hotspot" target="_top" alt="Working for the Kardashians" title="Working for the Kardashians" href="https://harnden.github.io/tvwork.html" coords="4,4418,710,4800" shape="rect">
-</map>   
-
-</div>
-
-<div id="map-overlay-box"></div>
-
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // 1. Get the HTML elements
-    const img = document.getElementById('composite-map-img');
-    const overlay = document.getElementById('map-overlay-box');
-    const mapAreas = document.querySelectorAll('.hotspot'); 
-
-    // Wait for the image itself to load before executing the mapping logic
-    img.onload = function() {
-        if (!img || !overlay || mapAreas.length === 0) {
-            console.error("Image map elements not found. Check IDs and classes.");
-            return; 
-        }
-        
-        // Function to calculate image's position and current scale factor
-        function getImgPosition() {
-            const rect = img.getBoundingClientRect();
-            return {
-                left: rect.left + window.scrollX,
-                top: rect.top + window.scrollY,
-                // Scale is the ratio of the displayed width (rect.width) to the original image width (naturalWidth)
-                scaleX: rect.width / img.naturalWidth, 
-                scaleY: rect.height / img.naturalHeight
-            };
-        }
-
-        mapAreas.forEach(area => {
-            area.addEventListener('mouseover', function() {
-                if (this.getAttribute('shape') !== 'rect') return; 
-
-                const imgPos = getImgPosition();
-                const coords = this.getAttribute('coords').split(',').map(c => parseFloat(c.trim()));
-                
-                // Ensure coordinates are ordered correctly for subtraction
-                const x1 = Math.min(coords[0], coords[2]) * imgPos.scaleX;
-                const y1 = Math.min(coords[1], coords[3]) * imgPos.scaleY;
-                const width = (Math.max(coords[0], coords[2]) - Math.min(coords[0], coords[2])) * imgPos.scaleX;
-                const height = (Math.max(coords[1], coords[3]) - Math.min(coords[1], coords[3])) * imgPos.scaleY;
-
-                // Apply styles to the overlay box
-                overlay.style.position = 'absolute'; // Reinforce positioning
-                overlay.style.left = (imgPos.left + x1) + 'px';
-                overlay.style.top = (imgPos.top + y1) + 'px';
-                overlay.style.width = width + 'px';
-                overlay.style.height = height + 'px';
-                
-                overlay.classList.add('visible');
-            });
-
-            area.addEventListener('mouseout', function() {
-                overlay.classList.remove('visible');
-            });
+    if (container) {
+        container.addEventListener('mousemove', function(e) {
+            const rect = container.getBoundingClientRect();
+            
+            // Calculate mouse position relative to container
+            const x = (e.clientX - rect.left);
+            const y = (e.clientY - rect.top);
+            
+            // Update the CSS variables on the container
+            container.style.setProperty('--mouse-x', `${x}px`);
+            container.style.setProperty('--mouse-y', `${y}px`);
         });
-
-        // Hide the overlay if the mouse moves off the image entirely
-        img.addEventListener('mouseleave', () => {
-             overlay.classList.remove('visible');
-        });
-        
-        // This makes the overlay responsive when the window is resized
-        window.addEventListener('resize', () => {
-             overlay.classList.remove('visible'); 
-        });
-    };
+    }
 });
 </script>
 </body>

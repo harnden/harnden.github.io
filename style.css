@@ -4,13 +4,17 @@ html, body {
     /* padding: 5px; */
 }
 body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0;
     font-family: 'Chewy', 'DynaPuff', sans-serif;
     background-color: #422845;
     background-image: url('backie2.png');
     background-blend-mode: overlay;
-    display: flex;
+    /* display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: center; */
     /* padding: 10px; */
     min-height: 100vh;
 }
@@ -149,25 +153,26 @@ body {
 
 .social-links-section {
     display: flex; 
+    justify-content: center;
     margin-bottom: 10px;
     margin-top: 170px;
-    padding: 20px;
-    justify-content: center;
+    padding: 5px;
     align-items: center;
-    max-width: 1200px;
+    /* max-width: 1200px; */
     margin-left: auto;
     margin-right: auto;
     width: 100%;
-    /* position: relative; */
+    /* position: relative; */ 
     /* z-index: 999; */
 }
 .social-links-container {
     display: flex;
-    flex-wrap: wrap;
+    /* flex-wrap: wrap; */
+    justify-content: center;
     gap: 10px;
     opacity: 0.78;
     border: 2px solid #07c3c3;
-    justify-content: center;
+    /* justify-content: center; */
     padding: 10px;
     border-radius: 10px;
     background-color: rgba(5, 43, 71, 0.5);
@@ -200,8 +205,8 @@ body {
     max-width: 1200px;
     width: 100%;   
     margin: 0 auto;
-    margin-top: 5px;
-    padding: 8px; 
+    margin-top: 0px;
+    padding: 0x; 
     box-sizing: border-box;   
 }
 .main-navigation {
@@ -214,14 +219,14 @@ body {
 .nav-list {
     display: flex;
     flex-wrap: wrap;
-    flex-direction: column;
+    flex-direction: row;
     justify-content: center;
     align-items: center;
     font-family: 'bahiana', sans-serif;
     font-size: 1.0em;
     list-style: none;
     padding-inline-start: 0;
-    gap: 3px;
+    gap: 15px;
     padding: 0;
     margin: 0;            
     transition: color 0.3s ease;
@@ -242,9 +247,10 @@ body {
     border: #f9fbc7 1px solid;
     background-color: rgba(2, 122, 130, 0.4);
     transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease, letter-spacing 0.3s ease;
-    min-width: clamp(80px, 12vw, 100px); /* MODIFIED: Scales min-width */
+    min-width: unset;
     text-align: center;
     box-sizing: border-box; /* ADDED: Includes padding/border in width */
+    flex-grow: 0;
 }
 .nav-link:hover,
 .nav-link:active {
@@ -284,16 +290,57 @@ a:active {
     text-shadow: black 1px 1px 1px;
     transform: scale(1.05);
 }
+.flashlight-container {
+    position: relative;
+    /* --- Layout and Sizing --- */
+    width: 100%;
+    max-width: 1100px; 
+    height: 2300px; /* CRITICAL: Height must be fixed for the effect to work */
+    margin: 50px auto;
+    overflow: hidden;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5); 
 
+    /* --- Flashlight Variables (JS updates these) --- */
+    --mouse-x: 50%;
+    --mouse-y: 50%;
+    --light-radius: 200px; /* Size of the light beam */
+    
+    /* --- Blending and Transition --- */
+    background-blend-mode: screen, multiply, normal;
+    transition: all 0.05s linear;
+    
+    /* 💥 CONSOLIDATED BACKGROUND PROPERTIES (GUARANTEED ORDER) 💥 */
 
+    /* 1. LIST OF IMAGES/GRADIENTS (ORDERED TOP-TO-BOTTOM) */
+    background-image:
+        url('/img/Untitled4.png'), /* Layer 1: Top Mask (Darkness) */
+        radial-gradient(
+            circle var(--light-radius) at var(--mouse-x) var(--mouse-y),
+            transparent 0%,               
+            transparent 45%,              
+            rgba(0, 0, 0, 0.90) 46%,       
+            rgba(0, 0, 0, 0.95) 100%        
+        ),
+        url('/img/overlay.png'); /* Layer 3: Bottom Revealed Image */
+    
+    /* 2. LIST OF POSITIONS (MATCHES ORDER ABOVE) */
+    background-position:
+        center top,   /* Layer 1: Aligns mask to the top center */
+        center center, /* Layer 2: Centers the radial gradient */
+        center center; /* Layer 3: Centers the revealed image */
 
-
-
-
-
-
-
-
+    /* 3. LIST OF SIZES (MATCHES ORDER ABOVE) */
+    background-size: 
+        contain,        /* Layer 1: Masks image fully contained (no cropping) */
+        cover,          /* Layer 2: Radial gradient covers the whole box */
+       1100px 1800px;      /* Layer 3: Auto-width, 100% height (scales proportionally to container height) */
+   
+    /* 4. LIST OF REPEATS (MATCHES ORDER ABOVE) */
+    background-repeat: 
+        no-repeat,
+        no-repeat,
+        no-repeat;
+}
 
 .project-section .project-title {
     text-align: center;
@@ -532,12 +579,14 @@ a:active {
     left: 10px;
     opacity: 0.6;
     color: yellow;
+    font-style: bold;
     text-shadow: 1px black;
 }
 .next-btn {
     right: 10px;
     opacity: 0.6;
     color: yellow;
+    font-style: bold;
     text-shadow: 1px black;
 }
 .slider-btn:disabled {
