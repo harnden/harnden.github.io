@@ -210,7 +210,7 @@ body {
     width: 100%;   
     margin: 0 auto;
     margin-top: 0;
-    padding:140px; 
+    padding:10px; 
     box-sizing: border-box;   
 }
 .main-navigation {
@@ -356,16 +356,16 @@ a:active {
 
 .project-section .project-title {
     text-align: center;
-    max-width: 15ch;
+    /* max-width: 15ch; */
     margin-left: auto;
     margin-right: auto;
     margin-top: 20px;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     font-size: 1.8em;
     line-height: 1.2;
 }
 .project-section-primary {
-    /* margin-top: 20px; */
+    margin-top: 140px;
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
@@ -388,8 +388,8 @@ a:active {
     -webkit-text-stroke: 1px black; /* Still using this from your original */
     text-align: center; 
     margin-top: 0;
-    margin-bottom: 30px;
-    line-height: 1.2;
+    margin-bottom: 15px;
+    line-heigfht: 1.2;
 }
 .project-section {
     margin-top: 10px;
@@ -414,51 +414,48 @@ a:active {
 .project-title, .project-title h2 {
     font-family: 'Permanent Marker', sans-serif;
     font-size: clamp(.8em, 2vw, 1.8em); /* Default font size for title */
-    color: #faa317;
+    color: #faa317;                                      
     text-shadow: rgba(176, 133, 236, 0.872) 1px 1px 2px;
     -webkit-text-stroke: 1px black; /* Still using this from your original */
     text-align: center; 
     margin-top: 0;
-    margin-bottom: 30px;
+    margin-bottom: 10px;
     line-height: 1.2;
 }
 .project-content {
-    /* flex: 1 1 100% ; */
-    /* max-width: 50ch; */
-    min-width: 250px;
-    /* padding: 0 20px 20PX 0;  */
+    /* flex: 1 1 45%; */
+    /* min-width: 350px; */
+    /* padding-rioht: 20px; */
     box-sizing: border-box;
-    /* margin-bottom: 20px; /* Space below content on small screens */
-    /* margin-left: auto;
-    margin-right: auto; */
-    */
 }
 .project-description {
+    display: flex;
+    flex-wrap: wrap;
     font-family: 'Coming Soon', sans-serif;
+    align-items: center;
+    justify-content: center;
+    text-align: center; /* Centers description text on smaller screens */
     color: #026868;
-    width: 100%;
-    float: right;
     margin-bottom: 20px;
     font-size: clamp(1.1em, 2vw, 1.6em) ; /* Using relative unit for better scaling */
-    text-align: center; /* Centers description text on smaller screens */
     -webkit-text-stroke: 1px black;
     line-height: 1.2;    
-    max-width: 40ch;
-    margin: 0 0 20px 20px;
 }
 .video-embed-container {
-    width: 100%; /* Takes full width of parent on small screens */
-    max-width: 560px; /* Limits max width to video's intrinsic width */
-    margin: 20px auto; /* CENTERS THE CONTAINER HORIZONTALLY and adds vertical space */
     display: flex; /* Make it a flex container */
     justify-content: center; 
-    /* align-items: center;
-    overflow: hidden;  */
+    flex: 1 1 45%; /* Shares space with .project-content */
+    /* min-width: 300px; Sets a minimum width */
+    max-width: 400px; /* Limits max width to video's intrinsic width */
+        /* KEEP the rest of your rules: */
+    /* margin: 10px 0;  */
+}
 }
 .video-embded-container iframe {
-    width: 100%;
+    width: 80%;
     height: 315px;
-    max-width: 560px;
+    max-width: 60%;
+    aspect-ratio: 16/9;
 }
 
 
@@ -845,11 +842,12 @@ a:active {
 @media (min-width: 768px) { /* Styles for screens 768px and wider (tablets and desktops) */
     .project-section {
         /* justify-content: space-between; Distribute items with space between them */
-        align-items: center; /* Align content to the top of the flex container */
+        align-items: center;
+        justify-content: center; /* Align content to the top of the flex container */
     }
 
     .project-title {
-        text-align: left; /* Align title to the left on larger screens */
+        text-align: center;
         font-size: 3.5em; /* Larger font for desktop titles */
         margin-bottom: 20px; /* Reduce bottom margin a bit */
     }
@@ -858,38 +856,69 @@ a:active {
         margin-left: unset;
         margin-right: unset;
         order: 1; /* Ensure content comes first visually */
-        padding: 0 20px 0 0; /* Padding on the right, no left padding */
-        margin-right: 20px; /* Space between content and video */
-        Max-width: 65ch; /* Limit max width for better readability */
+        padding: 0 10px 0 0; /* Padding on the right, no left padding */
+        /* Max-width: 40ch;  */
     }
-    .project-description {
-        text-align: left; /* Align description text to the left */
-    }
+    /* .project-description {
+        text-align: center; /* Align description text to the left */
+        /* justify-content: center; */
+        /* align-items: center; */
+    /* } */ 
+    
     .video-embed-container {
-        flex: 0 0 560px; /* Fixed width for video, prevent shrinking/growing */
+        flex: 0 0 40%; /* Fixed width for video, prevent shrinking/growing */
         margin: 0; /* Remove auto margins to let flex handle spacing */
         order: 2; /* Ensure video comes second visually */
+    }
+    .video-embed-container iframe{
+        aspect-ration: 16/9;
     }
 
 }
 @media (max-width: 650px) {
     /* Stack content vertically */
+
     .career-card {
         flex-direction: column; 
     }
-
     .card-image-wrapper, 
     .card-content {
         /* flex: none; Reset flexible sizing */
         min-width: 100%; 
         min-height: auto;
     }
-
-    .career-slider-container {
+    .career-slider-container{
         width: 95%; 
     }
+    
+    
+    
+    
+    
+    
+    
+    .project-section-primary{
+        align-items: center;
+    }
+    .video-embed-container iframe{
+        aspect-ration: 16/9;
+    }
+    .project-description{
+        flex: 1 1 20%;
+        font-size: 1.0em;
+        text-align: center;
+    }
+    .project-content{
+        flex: 1 1 40%;
+        flex-direction: column;
+        /* align-items: right;
+        justify-content: right; */
+        min-width: unset;
+        /* padding-right: 0px; */
+        box-sizing: border-box;
+`    }
 }
-
+    
 
 
 
