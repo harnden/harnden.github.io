@@ -450,7 +450,6 @@ a:active {
         /* KEEP the rest of your rules: */
     /* margin: 10px 0;  */
 }
-}
 .video-embded-container iframe {
     width: 80%;
     height: 315px;
@@ -929,7 +928,30 @@ a:active {
 
 
 
+@media (max-width: 600px) {
+    /* * Target: Screens 600px wide or smaller (iPhones, etc.)
+     */
 
+    .flashlight-container {
+        /* 1. Simplify the Background (Disable Flashlight Layers) */
+        /*
+         * RETAIN ONLY Layer 3: The Bottom Revealed Image (overlay.png)
+         * This ensures the content is fully visible on mobile.
+         */
+        background-image: url('/img/overlay.png'); 
+
+        /* 2. Reset Mouse-Dependent Variables/Styles */
+        --mouse-x: 50%;
+        --mouse-y: 50%;
+        background-blend-mode: normal; /* Remove blending */
+        transition: none; /* Disable the transition, as it's not needed */
+
+        /* 3. Reapply/Maintain remaining necessary properties */
+        background-position: center center;
+        background-size: 1100px 1800px;
+        background-repeat: no-repeat;
+    }
+}
 
 .site-footer{
     font-family: Limelight, sans-serif; 
