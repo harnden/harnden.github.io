@@ -536,8 +536,8 @@ a:active {
     background-color: sandybrown;
     /* Ensure the gallery is centered and contained */
     max-width: 1200px; 
-    width: 95%;
-    margin: 50px auto; 
+    width: 100%;
+    margin-top: 140px;
     font-size: 1.2em;
     color: rgb(39, 3, 64);
     text-shadow: 1px 1px 2px rgb(11, 3, 97);
@@ -845,7 +845,6 @@ a:active {
         align-items: center;
         justify-content: center; /* Align content to the top of the flex container */
     }
-
     .project-title {
         text-align: center;
         font-size: 3.5em; /* Larger font for desktop titles */
@@ -858,13 +857,7 @@ a:active {
         order: 1; /* Ensure content comes first visually */
         padding: 0 10px 0 0; /* Padding on the right, no left padding */
         /* Max-width: 40ch;  */
-    }
-    /* .project-description {
-        text-align: center; /* Align description text to the left */
-        /* justify-content: center; */
-        /* align-items: center; */
-    /* } */ 
-    
+    }    
     .video-embed-container {
         flex: 0 0 40%; /* Fixed width for video, prevent shrinking/growing */
         margin: 0; /* Remove auto margins to let flex handle spacing */
@@ -874,9 +867,17 @@ a:active {
         aspect-ration: 16/9;
     }
 
+
+
+
+
+
+
+
+
 }
 @media (max-width: 650px) {
-    /* Stack content vertically */
+  
 
     .career-card {
         flex-direction: column; 
@@ -890,13 +891,6 @@ a:active {
     .career-slider-container{
         width: 95%; 
     }
-    
-    
-    
-    
-    
-    
-    
     .project-section-primary{
         align-items: center;
     }
@@ -908,7 +902,7 @@ a:active {
         font-size: 1.0em;
         text-align: center;
     }
-    .project-content{
+    .project-content{   
         flex: 1 1 40%;
         flex-direction: column;
         /* align-items: right;
@@ -916,10 +910,20 @@ a:active {
         min-width: unset;
         /* padding-right: 0px; */
         box-sizing: border-box;
-`    }
+        padding: 10px;
+    }
+     .grid-card-gallery {
+        align-items: center;
+
+        grid-template-columns: 1fr;
+        padding: 0px;
+        box-shadow: 2px black;
+    }
+
+
+
 }
     
-
 
 
 
