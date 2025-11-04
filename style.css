@@ -428,7 +428,37 @@ a:active {
 }
 
 
-
+#sticker-alert {
+    /* CRITICAL: Use fixed position relative to the viewport */
+    position: fixed; 
+    top: 40%;
+    left: 90%;
+    transform: translate(-50%, -50%);
+    /* CRITICAL: Must be above your fixed header (z-index 1000) */
+    z-index: 1002; 
+    width: 150px;  /* Adjust size as needed */
+    height: 150px;
+    background-color: black; /* The main black background */
+    color: white; /* Text color */
+    /* Aesthetics from previous step */
+    padding: 15px 20px;
+    font-family: 'Permanent Marker', sans-serif;
+    font-size: 1.4em;
+    line-height: 1.2;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    border: 3px solid #ff0000;
+    cursor: pointer;
+    border: 3px solid #f9fbc7;
+    border-radius: 20%;
+    background-color: rgba(255, 255, 0, 0.9);
+    color: #0c6f5b;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    transition: transform 0.2s;
+}
 
 .project-section .project-title {
     text-align: center;
