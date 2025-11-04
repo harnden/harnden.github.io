@@ -296,7 +296,7 @@ a:active {
 }
 
 
-/* PAGE 1 SPECIFIC CONTENT HERE, WITH THE FLASHLIGHT CONTAINER AND ALL THAT */
+
 .flashlight-container {
     position: unset;
     margin-top: 140px;
@@ -348,7 +348,6 @@ a:active {
         no-repeat,
         no-repeat;
 }
-/* ADD THIS NEW CLASS */
 .flashlight-container.flashlight-disabled {
     /* Layer 1: Keep the top content image */
     /* Layer 2: Black radial gradient covering everything */
@@ -367,8 +366,6 @@ a:active {
     --mouse-x: 50%;
     --mouse-y: 50%;
 }
-
-
 #flashlight-toggle-button {
     /* CRITICAL: Use fixed position relative to the viewport */
     position: fixed; 
@@ -431,7 +428,7 @@ a:active {
 }
 
 
-/* PAGE 2 STARTS HERE ... TVWORK.HTML PROJECT DESCRIPTIONS WITH IFRAME VIDEOS */
+
 
 .project-section .project-title {
     text-align: center;
