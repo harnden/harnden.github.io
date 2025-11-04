@@ -348,8 +348,87 @@ a:active {
         no-repeat,
         no-repeat;
 }
+/* ADD THIS NEW CLASS */
+.flashlight-container.flashlight-disabled {
+    /* Layer 1: Keep the top content image */
+    /* Layer 2: Black radial gradient covering everything */
+    background-image:
+        url('/img/Untitled4.png'),
+        radial-gradient(
+            circle 10px at 50% 50%, 
+            rgba(0, 0, 0, 1.0) 0%, /* Small, fully black center */
+            rgba(0, 0, 0, 1.0) 100% /* Fade to fully black edge */
+        ),
+        url('/img/overlay.png');
+    
+    /* CRITICAL: Must reset blend mode to only show dark overlay */
+    background-blend-mode: normal, normal, normal;
+    /* Hide the cursor variable to prevent pre-movement flicker */
+    --mouse-x: 50%;
+    --mouse-y: 50%;
+}
 
 
+#flashlight-toggle-button {
+    /* CRITICAL: Use fixed position relative to the viewport */
+    position: fixed; 
+    top: 40%;
+    left: 90%;
+    transform: translate(-50%, -50%);
+    /* CRITICAL: Must be above your fixed header (z-index 1000) */
+    z-index: 1002; 
+    width: 150px;  /* Adjust size as needed */
+    height: 150px;
+    background-color: black; /* The main black background */
+    color: white; /* Text color */
+    /* Aesthetics from previous step */
+    padding: 15px 20px;
+    font-family: 'Permanent Marker', sans-serif;
+    font-size: 1.4em;
+    line-height: 1.2;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    border: 3px solid #ff0000;
+    cursor: pointer;
+    border: 3px solid #f9fbc7;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 0, 0.9);
+    color: #0c6f5b;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    transition: transform 0.2s;
+}
+#flashlight-toggle-button:hover {
+    transform: translate(-50%, -50%) scale(1.05);
+}
+#flashlight-toggle-button.hidden {
+    display: none;
+}
+#flashlight-turnoff-button {
+    position: fixed;
+    top: 80%; /* Example position: near the bottom */
+    right: 5%; /* Example position: on the right side */
+    transform: none; /* No need to center this one */
+    z-index: 1002;
+    padding: 10px 20px;
+    font-family: 'Permanent Marker', sans-serif;
+    font-size: 1.2em;
+    cursor: pointer;
+    border: 3px solid #ff5733; /* Use a distinct color, like red/orange */
+    border-radius: 50%;
+    background-color: rgba(255, 100, 0, 0.9);
+    color: white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    transition: transform 0.2s;
+}
+#flashlight-turnoff-button:hover {
+    transform: scale(1.05);
+}
+.hidden {
+    display: none !important;
+}
 
 
 /* PAGE 2 STARTS HERE ... TVWORK.HTML PROJECT DESCRIPTIONS WITH IFRAME VIDEOS */
@@ -518,7 +597,7 @@ a:active {
 
 .grid-card {
     padding: 15px;
-    border: 3px dotted #4109a2; /* Example: 3px wide, solid line, in a Teal color */
+    border: 3px solid #4109a2; /* Example: 3px wide, solid line, in a Teal color */
     border-radius: 12px; /* Rounded corners for a softer look */
     box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.3); /* Subtle shadow for depth */
     /* Optional: Add a small margin to create space between the border and the card shadow */
@@ -608,8 +687,8 @@ a:active {
 
 .career-slider-container {
     position: relative;
-    max-width: 90%; 
-    margin-top: 10px;
+    max-width: 90%; height: auto;
+    margin-top: 140px;
     /* margin: 0px auto; */
     overflow: hidden; 
     border-radius: 12px;
@@ -625,7 +704,7 @@ a:active {
     flex: 0 0 100%; /* Each card takes up 100% of container width */
     box-sizing: border-box;
     padding: 0; /* Important: No padding here */
-    max-height: 600px;/* min-height: 250px;  */
+    max-height: height: auto;
     display: flex; /* Use flex for side-by-side (image and content) */
     background-color: rgb(130, 139, 141);
     background-size: cover;
@@ -648,6 +727,9 @@ a:active {
     font-family: 'bebas neue', sans-serif;
     padding: 10px; /* Padding for the text block */
     margin: 10px;
+    
+    max-height: 100%; 
+    overflow-y: auto;
     box-sizing: border-box;
     text-align: left; 
     font-size: 1.2em;
@@ -926,33 +1008,25 @@ a:active {
 
 
 
-
-
 @media (max-width: 600px) {
-    /* * Target: Screens 600px wide or smaller (iPhones, etc.)
-     */
-
     .flashlight-container {
-        /* 1. Simplify the Background (Disable Flashlight Layers) */
-        /*
-         * RETAIN ONLY Layer 3: The Bottom Revealed Image (overlay.png)
-         * This ensures the content is fully visible on mobile.
-         */
-        background-image: url('/img/overlay.png'); 
+        /* 1. Only include Layer 1: The Top Mask/Content image (Untitled4.png) */
+        /* This is the layer that contains the content you want to see by default. */
+        background-image: url('/img/Untitled4.png'); 
 
-        /* 2. Reset Mouse-Dependent Variables/Styles */
+        /* 2. Reset the flashlight variables and blending modes */
         --mouse-x: 50%;
         --mouse-y: 50%;
-        background-blend-mode: normal; /* Remove blending */
-        transition: none; /* Disable the transition, as it's not needed */
+        background-blend-mode: normal; /* CRITICAL: Must be reset from the flashlight setting */
+        transition: none; 
 
-        /* 3. Reapply/Maintain remaining necessary properties */
-        background-position: center center;
-        background-size: 1100px 1800px;
+        /* 3. Reapply size/position for a single image */
+        background-position: center top; /* Center it, align to top (as in desktop) */
+        background-size: contain;        /* Ensures the content image is fully visible */
         background-repeat: no-repeat;
+        /* The fixed height of 1700px in the desktop CSS will still control the container size */
     }
 }
-
 .site-footer{
     font-family: Limelight, sans-serif; 
     color: rgb(255, 249, 78);

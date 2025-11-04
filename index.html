@@ -76,38 +76,72 @@
             </div>
      </section>
 
-<main> 
+
+
+
      
 
-
-
-
+<main> 
+    
 </main>
 
 
+
+
+
+<button id="flashlight-toggle-button" class="sticker-prompt">
+        Reveal background.
+    </button>
+
+<button id="flashlight-turnoff-button" class="sticker-prompt hidden">
+        Turn off.
+</button>
 
 <div class="flashlight-container">
     </div>
 
 
-    <script>
+   <script>
     document.addEventListener('DOMContentLoaded', function() {
-    const container = document.querySelector('.flashlight-container');
+        const container = document.querySelector('.flashlight-container');
+        const turnOnButton = document.getElementById('flashlight-toggle-button');
+        const turnOffButton = document.getElementById('flashlight-turnoff-button'); // NEW
 
-    if (container) {
-        container.addEventListener('mousemove', function(e) {
+        // 1. Set initial state to dark and hide turn-off button
+        container.classList.add('flashlight-disabled'); 
+        // turnOffButton already starts hidden via CSS class="hidden"
+
+        // Define the mouse move handler function
+        function handleMouseMove(e) {
             const rect = container.getBoundingClientRect();
-            
-            // Calculate mouse position relative to container
             const x = (e.clientX - rect.left);
             const y = (e.clientY - rect.top);
-            
-            // Update the CSS variables on the container
             container.style.setProperty('--mouse-x', `${x}px`);
             container.style.setProperty('--mouse-y', `${y}px`);
-        });
-    }
-});
+        }
+        
+        // --- TURN ON LOGIC ---
+        if (turnOnButton && container) {
+            turnOnButton.addEventListener('click', function() {
+                container.classList.remove('flashlight-disabled');
+                turnOnButton.classList.add('hidden');
+                turnOffButton.classList.remove('hidden'); // SHOW turn off button
+                container.addEventListener('mousemove', handleMouseMove);
+                container.style.setProperty('--mouse-x', '50%');
+                container.style.setProperty('--mouse-y', '50%');
+            });
+        }
+        
+        // --- TURN OFF LOGIC (NEW) ---
+        if (turnOffButton && container) {
+            turnOffButton.addEventListener('click', function() {
+                container.classList.add('flashlight-disabled'); // Re-apply the dark state
+                turnOffButton.classList.add('hidden'); // Hide turn off button
+                turnOnButton.classList.remove('hidden'); // Show turn on button again
+                container.removeEventListener('mousemove', handleMouseMove); // Stop tracking mouse
+            });
+        }
+    });
 </script>
 </body>
 </html>
