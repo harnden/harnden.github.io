@@ -47,7 +47,7 @@ body {
     flex-grow: 1;
     flex-direction: column;    /* CRITICAL: Stacks the title and blurb vertically */
     align-items: center;       /* Centers the title/blurb text horizontally */
-    margin-left: 20px;         
+    margin: 20px;         
 }
 .site-title {
         font-size: clamp(2.5em, 5vw, 5em);
