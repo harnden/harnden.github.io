@@ -298,11 +298,16 @@ a:active {
 
 
 .flashlight-container {
-    position: unset;
+    position: relative;
     margin-top: 140px;
     width: 100%;
     max-width: 1100px; 
-    height: 1700px; /* CRITICAL: Height must be fixed for the effect to work */
+    height: 0;
+
+    
+    
+    padding-top: 154.4%
+
 
     overflow: hidden;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.5); 
@@ -1036,22 +1041,19 @@ a:active {
 
 
 @media (max-width: 600px) {
-    .flashlight-container {
-        /* 1. Only include Layer 1: The Top Mask/Content image (Untitled4.png) */
-        /* This is the layer that contains the content you want to see by default. */
+   
+    
+     .flashlight-container {
         background-image: url('/img/Untitled4.png'); 
-
-        /* 2. Reset the flashlight variables and blending modes */
         --mouse-x: 50%;
         --mouse-y: 50%;
         background-blend-mode: normal; /* CRITICAL: Must be reset from the flashlight setting */
         transition: none; 
-
-        /* 3. Reapply size/position for a single image */
         background-position: center top; /* Center it, align to top (as in desktop) */
         background-size: contain;        /* Ensures the content image is fully visible */
         background-repeat: no-repeat;
-        /* The fixed height of 1700px in the desktop CSS will still control the container size */
+        height: auto;
+        margin-top: 10px;
     }
 }
 .site-footer{
@@ -1061,3 +1063,18 @@ a:active {
 
 }
 
+#flashlight-toggle-button {
+        display: none !important; 
+    } 
+#flashlight-turnoff-button {        
+        display: none !important;
+    }
+
+    height: auto; 
+        /* Reset the fixed height so the container shrinks to fit content */
+        
+        /* You may need to also adjust margin-top */
+        margin-top: 10px; 
+    }
+    
+ 
