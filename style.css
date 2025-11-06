@@ -12,6 +12,9 @@ body {
     background-color: #422845;
     background-image: url('backie2.png');
     background-blend-mode: overlay;
+    background-attachment: scroll;
+    background-repeat: repeat;
+    /* background-position: top left; */
     /* display: flex;
     flex-direction: column;
     align-items: center; */
@@ -206,7 +209,7 @@ body {
 
 
 .main-content-wrapper {
-    max-width: 1200px;
+    /* max-width: 1200px; */
     width: 100%;   
     margin: 0 auto;
     margin-top: 0;
@@ -302,30 +305,25 @@ a:active {
     margin-top: 140px;
     width: 100%;
     max-width: 1100px; 
-    height: 0;
-
     
+    /* === THE FIX: PART 1 === */
+    /* REMOVE the fluid "aspect-ratio trick" */
+    /* height: 0; */
+    /* padding-top: 154.4%; */
     
-        padding-top: 154.4%;
-
-
+    /* SET the height to match your content layer's height */
+    height: 1800px; 
+    
     overflow: hidden;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.5); 
-
-    /* --- Flashlight Variables (JS updates these) --- */
     --mouse-x: 50%;
     --mouse-y: 50%;
-    --light-radius: 200px; /* Size of the light beam */
-    
-    /* --- Blending and Transition --- */
+    --light-radius: 200px; 
     background-blend-mode: screen, multiply, normal;
     transition: all 0.05s linear;
     
-    /* 💥 CONSOLIDATED BACKGROUND PROPERTIES (GUARANTEED ORDER) 💥 */
-
-    /* 1. LIST OF IMAGES/GRADIENTS (ORDERED TOP-TO-BOTTOM) */
     background-image:
-        url('/img/Untitled4.png'), /* Layer 1: Top Mask (Darkness) */
+        url('/img/Untitled4.png'), /* Layer 1: Top Mask */
         radial-gradient(
             circle var(--light-radius) at var(--mouse-x) var(--mouse-y),
             transparent 0%,               
@@ -335,19 +333,20 @@ a:active {
         ),
         url('/img/overlay.png'); /* Layer 3: Bottom Revealed Image */
     
-    /* 2. LIST OF POSITIONS (MATCHES ORDER ABOVE) */
+    /* === THE FIX: PART 2 === */
+    /* Layer 1 and Layer 3 MUST have identical positions to align */
     background-position:
-        center top,   /* Layer 1: Aligns mask to the top center */
-        center center, /* Layer 2: Centers the radial gradient */
-        center center; /* Layer 3: Centers the revealed image */
+        center center, /* Layer 1 (MUST match Layer 3) */
+        center center, /* Layer 2 */
+        center center; /* Layer 3 */
 
-    /* 3. LIST OF SIZES (MATCHES ORDER ABOVE) */
+    /* === THE FIX: PART 3 === */
+    /* Layer 1 and Layer 3 MUST have identical sizes to align */
     background-size: 
-        contain,        /* Layer 1: Masks image fully contained (no cropping) */
-        cover,          /* Layer 2: Radial gradient covers the whole box */
-       1100px 1800px;      /* Layer 3: Auto-width, 100% height (scales proportionally to container height) */
+        1100px 1800px,  /* Layer 1 (MUST match Layer 3) */
+        cover,          /* Layer 2 */
+        1100px 1800px;  /* Layer 3 */
    
-    /* 4. LIST OF REPEATS (MATCHES ORDER ABOVE) */
     background-repeat: 
         no-repeat,
         no-repeat,
@@ -432,15 +431,14 @@ a:active {
 
 #sticker-alert {
     position: fixed; 
-    top: 15%;
-    left: 95%;
+    top: 25%;
+    left:85%;
     transform: translate(-50%, -50%);
     z-index: 1002; 
-    width: 150px;  /* Adjust size as needed */
-    height: 150px;
-    color: white; /* Text color */
+    width: 200px;  /* Adjust size as needed */
+    height: 80px;
     padding: 15px 20px;
-    font-family: 'Permanent Marker', sans-serif;
+    font-family: 'Bebas neue', sans-serif;
     font-size: 1.4em;
     line-height: 1.2;
     display: flex;
@@ -448,12 +446,11 @@ a:active {
     justify-content: center;
     align-items: center;
     text-align: center;
-    border: 3px solid #ff0000;
     cursor: pointer;
     border: 3px solid #f9fbc7;
-    border-radius: 20%;
+    border-radius: 10%;
     background-color: rgba(109, 165, 174, 0.9);
-    color: #0c6f5b;
+    color: #e4efed;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
     transition: transform 0.2s;
 }
@@ -562,7 +559,6 @@ a:active {
 }
 
 
-
 .project-icon-inline {
     display: block;
     width: 100px;
@@ -604,9 +600,7 @@ a:active {
     right: 10px;
     margin-top: 0;
     margin-left: 0px;
-    margin-right: 0px;
-
-  
+    margin-right: 0px; 
     transform: rotate(3deg);
     transition: transform 0.3s ease-in-out;
 }
@@ -688,6 +682,7 @@ a:active {
 }
 
 
+
 .project-thumbnail {
     align-items: right; */
     width: 100px;
@@ -700,7 +695,6 @@ a:active {
     position: fixed;
     top: 40px;
     right: 10px;
-   
     transform: rotate(3deg);
     transition: transform 0.3s ease-in-out;
 }
@@ -970,17 +964,8 @@ a:active {
         order: 2; /* Ensure video comes second visually */
     }
     .video-embed-container iframe{
-        aspect-ration: 16/9;
-    }
-
-
-
-
-
-
-
-
-
+        aspect-ratio: 16/9;
+    }   
 }
 @media (max-width: 650px) {
   
@@ -1001,7 +986,7 @@ a:active {
         align-items: center;
     }
     .video-embed-container iframe{
-        aspect-ration: 16/9;
+        aspect-ratio: 16/9;
     }
     .project-description{
         flex: 1 1 20%;
@@ -1011,16 +996,12 @@ a:active {
     .project-content{   
         flex: 1 1 40%;
         flex-direction: column;
-        /* align-items: right;
-        justify-content: right; */
         min-width: unset;
-        /* padding-right: 0px; */
         box-sizing: border-box;
         padding: 10px;
     }
      .grid-card-gallery {
         align-items: center;
-
         grid-template-columns: 1fr;
         padding: 0px;
         box-shadow: 2px black;
@@ -1029,45 +1010,35 @@ a:active {
 
 
 }
-    
-
-
-
 @media (max-width: 600px) {
-   
-    
-     .flashlight-container {
-        background-image: url('/img/Untitled4.png'); 
-        --mouse-x: 50%;
-        --mouse-y: 50%;
-        background-blend-mode: normal; /* CRITICAL: Must be reset from the flashlight setting */
+    .flashlight-container {
+        /* This part you already had is PERFECT */
+        background-image: url('/img/Untitled4.png'); /* 1. Show only the collage */
+        background-blend-mode: normal;
         transition: none; 
-        background-position: center top; /* Center it, align to top (as in desktop) */
-        background-size: contain;        /* Ensures the content image is fully visible */
+        background-position: center top; 
+        background-size: contain;
         background-repeat: no-repeat;
-        height: auto;
         margin-top: 10px;
+
+        /* === THE FIX === */
+        /* Re-add the aspect-ratio trick ONLY for mobile */
+        height: 0;
+        padding-top: 154.4%; /* This forces the container's height to be 154.4% of its width */
     }
+    #flashlight-toggle-button {
+        display: none !important; 
+    } 
+    #flashlight-turnoff-button {        
+        display: none !important;
+    }
+
 }
+
+
+
 .site-footer{
     font-family: Limelight, sans-serif; 
     color: rgb(255, 249, 78);
     box-shadow: 1pt 1pt 1pt black;
-
 }
-
-#flashlight-toggle-button {
-        display: none !important; 
-    } 
-#flashlight-turnoff-button {        
-        display: none !important;
-    }
-
-    height: auto; 
-        /* Reset the fixed height so the container shrinks to fit content */
-        
-        /* You may need to also adjust margin-top */
-        margin-top: 10px; 
-    }
-    
- 
