@@ -496,9 +496,10 @@ a:active {
     margin-top: 10px;
     display: flex;
     flex-wrap: wrap;
+    flex-direction: row;
+    align-items: flex-start;
     justify-content: center;
-    align-items: center;
-    padding: 10px 15px 10px 15px;
+    padding: 10px 15px
     border-bottom: 1px solid #eee;
     background-image: url('wackybacky.png');
     background-blend-mode: exclusion;
@@ -507,6 +508,7 @@ a:active {
     border: 1px solid black;
     box-shadow: 2px 2px 4px rgba(3, 3, 3, 0.9);
     box-sizing: border-box;
+    border-bottom: 1-px solid #eee;
 }
 .project-section.alt-background {
     background-color: rgba(255, 255, 255, 0.2);
@@ -524,9 +526,9 @@ a:active {
     line-height: 1.2;
 }
 .project-content {
-    /* flex: 1 1 45%; */
-    /* min-width: 350px; */
-    /* padding-rioht: 20px; */
+    flex: 1 1 calc(50%-30px)
+    order: 1;
+    padding: 0 10px 0 0;
     box-sizing: border-box;
 }
 .project-description {
@@ -545,17 +547,19 @@ a:active {
 .video-embed-container {
     display: flex; /* Make it a flex container */
     justify-content: center; 
-    flex: 1 1 45%; /* Shares space with .project-content */
-    /* min-width: 300px; Sets a minimum width */
-    max-width: 400px; /* Limits max width to video's intrinsic width */
+    flex: 0 0 40%;
+    margin: 0; /* Shares space with .project-content */
+    order: 2;/* min-width: 300px; Sets a minimum width */
+    max-width: 350px; /* Limits max width to video's intrinsic width */
         /* KEEP the rest of your rules: */
     /* margin: 10px 0;  */
 }
-.video-embded-container iframe {
-    width: 80%;
-    height: 315px;
-    max-width: 60%;
+.video-embed-container iframe {
+    width: 100%;
+    height: auto;
+    max-width: 100%;
     aspect-ratio: 16/9;
+
 }
 
 
