@@ -638,7 +638,7 @@ a:active {
     padding: 15px;
     border: 3px solid #4109a2; /* Example: 3px wide, solid line, in a Teal color */
     border-radius: 12px; /* Rounded corners for a softer look */
-    box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.3); /* Subtle shadow for depth */
+    box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.3); /* Subtle shadow for depth */
     /* Optional: Add a small margin to create space between the border and the card shadow */
     margin: 5px;
 }
@@ -648,7 +648,7 @@ a:active {
     /* Automatically fits 300px wide columns, creating 3 or 4 columns on desktop */
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 30px; /* Space between the cards */
-    background-image: url(/backie.png);
+    background-image: url(/img/back9.png);
     background-blend-mode: overlay;
     background-color: sandybrown;
     /* Ensure the gallery is centered and contained */
@@ -660,7 +660,7 @@ a:active {
     text-shadow: 1px 1px 2px rgb(11, 3, 97);
     padding: 50px;
     border-radius: 12px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.3);
     text-align: center;
     overflow: hidden; /* Keeps iframes contained */
     transition: transform 0.3s ease;
