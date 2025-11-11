@@ -64,7 +64,7 @@ body {
         line-height: 1.2;
 }
 .site-description-blurb {
-        font-family: 'DynaPuff', sans-serif;
+        font-family: 'Coming soon', sans-serif;
         font-size: clamp(0.9em, 2vw, 1.5em); 
         font-weight: normal;
         text-shadow:
@@ -468,6 +468,8 @@ a:active {
     background-color: rgba(161, 21, 107, 0.9);
     color: #e4efed;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    transition: top 0.5s ease-out, left 0.5s ease-out;
+    
     /* transition: transform 0.2s; */
 }
 
@@ -648,7 +650,7 @@ a:active {
     /* Automatically fits 300px wide columns, creating 3 or 4 columns on desktop */
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 30px; /* Space between the cards */
-    background-image: url(/img/back9.png);
+    background-image: url(/backie.png);
     background-blend-mode: overlay;
     background-color: sandybrown;
     /* Ensure the gallery is centered and contained */
@@ -660,17 +662,17 @@ a:active {
     text-shadow: 1px 1px 2px rgb(11, 3, 97);
     padding: 50px;
     border-radius: 12px;
-    box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.3);
+    box-shadow:  4px 10px rgba(0, 0, 0, 0.3);
     text-align: center;
     overflow: hidden; /* Keeps iframes contained */
     transition: transform 0.3s ease;
     -webkit-text-stroke: .5px rgb(215, 214, 201);
 }
 .grid-card-gallery h2 {
-    font-family: 'Chewy', sans-serif;
+    font-family: 'Bebas neue', sans-serif;
     font-style: light;
     font-size: 1.9em;
-    color: rgb(3, 84, 111);
+    color: rgb(3, 57, 75);
     text-shadow: 1px 2px 1px rgb(255, 255, 255);
     -webkit-text-stroke: .5px rgb(236, 232, 113);
 }
@@ -704,16 +706,16 @@ a:active {
 
 
 .project-thumbnail {
-    align-items: right; */
+    align-items: right;
     width: 100px;
     height: auto;
     float: right;
-    max-width: 150px; /* Adjust size as needed */
+    max-width: 100px; Adjust size as needed
     /* height: auto; */
     border-radius: 5px; /* Optional: rounded corners */
     box-shadow: 0 2px 6px rgba(0,0,0,0.9); /* Optional: subtle shadow */
-    position: fixed;
     top: 40px;
+    position: ;
     right: 10px;
     transform: rotate(3deg);
     transition: transform 0.3s ease-in-out;
@@ -743,7 +745,8 @@ a:active {
     flex: 0 0 100%; /* Each card takes up 100% of container width */
     box-sizing: border-box;
     padding: 0; /* Important: No padding here */
-    max-height: height: auto;
+    /* max-width: 100000px; */
+    max-height: 400px;
     display: flex; /* Use flex for side-by-side (image and content) */
     background-color: rgb(130, 139, 141);
     background-size: cover;
