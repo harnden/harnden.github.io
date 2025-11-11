@@ -183,5 +183,31 @@
         <p>&copy; 2025 Josh Harnden. All rights reserved.</p>
     </footer>
 
+<script>
+      // Wait for the page to be fully loaded
+      document.addEventListener('DOMContentLoaded', (event) => {
+        
+        // Find your sticker by its ID
+        const sticker = document.getElementById('sticker-alert');
+
+        // This function calculates a new random spot
+        function banishSticker() {
+          // Get a random new 'top' position (between 20% and 90%)
+          // (to avoid the header/footer)
+          const newTop = Math.floor(Math.random() * 70) + 20;
+
+          // Get a random new 'left' position (between 10% and 90%)
+          const newLeft = Math.floor(Math.random() * 80) + 10;
+
+          // Apply the new position to the sticker's style
+          sticker.style.top = newTop + '%';
+          sticker.style.left = newLeft + '%';
+        }
+
+        // Listen for the mouse to 'enter' the sticker's area
+        sticker.addEventListener('mouseenter', banishSticker);
+      });
+    </script>
+
 </body>
 </html>
