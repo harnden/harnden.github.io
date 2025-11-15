@@ -544,7 +544,8 @@ a:active {
     line-height: 1.2;
 }
 .project-content {
-    flex: 1 1 calc(50%-30px)
+    flex: 1 1 100%;  /* <-- FIX: Make it full-width by default */
+    width: 100%;     /* <-- FIX: Explicitly set width */
     order: 1;
     padding: 10px;
     box-sizing: border-box;
@@ -563,14 +564,12 @@ a:active {
     line-height: 1.2;    
 }
 .video-embed-container {
-    display: flex; /* Make it a flex container */
+  display: flex; 
     justify-content: center; 
-    flex: 0 0 40%;
-    margin: 10px; /* Shares space with .project-content */
-    /* order: 2;min-width: 300px; Sets a minimum width */
-    max-width: 350px; /* Limits max width to video's intrinsic width */
-        /* KEEP the rest of your rules: */
-    /* margin: 10px 0;  */
+    flex: 1 1 100%; /* <-- FIX: Make it full-width by default */
+    width: 100%;    /* <-- FIX: Explicitly set width */
+    margin: 10px; 
+    max-width: 100%; /* <-- FIX: Allow it to be 100% wide */
 }
 .video-embed-container iframe {
     width: 100%;
