@@ -269,13 +269,12 @@ body {
     letter-spacing: 1px;
     text-shadow: 0 2px 2px white;
 }
-
  .form-button-container {
     margin-top: 30px;
     display: flex;
     gap: 20px; /* Space between buttons */
     justify-content: right; /* Center buttons horizontally */
- }
+}
  .btn.btn-primary, .btn.btn-secondary {
     font-family: 'Coming soon', sans-serif;
     font-size: 1.5em;
@@ -285,8 +284,7 @@ body {
     border: none;
     cursor: pointer;
     transition: background-color 0.3s ease, transform 0.2s ease;
- }
-
+}
 .form-group{
     color: lightyellow;
     margin-top: 20px;

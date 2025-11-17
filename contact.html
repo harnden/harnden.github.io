@@ -87,7 +87,7 @@
     <main class="main">
 
        <div class="form-container">
-    <form action="https://node-contact-form-1.onrender.com/send" method="POST">
+    <form id="contact-form" action="https://node-contact-form-1.onrender.com/send" method="POST">
         
         <div class="form-group">
             <label for="name" class="form-label">Your Name:</label>
@@ -127,5 +127,58 @@
 
 <footer class="site-footer">
     <p>&copy; 2024 Joshua Harnden. All rights reserved.</p>
+
+</footer>
+
+<script>
+  // Wait for the page to be fully loaded
+  document.addEventListener('DOMContentLoaded', () => {
+    
+    // Find the form and the submit button
+    const form = document.getElementById('contact-form');
+    const submitButton = form.querySelector('button[type="submit"]');
+
+    form.addEventListener('submit', async (event) => {
+      // 1. Stop the form from doing its default, old-fashioned submit
+      event.preventDefault();
+
+      const originalButtonText = submitButton.textContent;
+      submitButton.textContent = 'Sending...';
+      submitButton.disabled = true;
+
+      // 2. Get the data from the form inputs
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
+
+      try {
+        // 3. Send the data as JSON to your server
+        const response = await fetch('https://node-contact-form-1.onrender.com/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        });
+
+        // 4. Handle the response from the server
+        if (response.ok) {
+          // Success! Redirect to your "thank-you" page
+          window.location.href = 'https://harnden.github.io/thank-you.html';
+        } else {
+          // Server returned an error
+          alert('Something went wrong on the server. Please try again.');
+          submitButton.textContent = originalButtonText;
+          submitButton.disabled = false;
+        }
+      } catch (error) {
+        // Network error (couldn't reach the server)
+        console.error('Fetch error:', error);
+        alert('Could not connect to the server. Please check your network.');
+        submitButton.textContent = originalButtonText;
+        submitButton.disabled = false;
+      }
+    });
+  });
+</script>
 </body>
 </html>
