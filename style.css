@@ -1104,7 +1104,7 @@ a:active {
 }
 
 
-.thank-you-message{
+.thank-you-message {
     margin-top: 160px;
     font-family: 'bebas neue', sans-serif;
     font-size: 2.2em;
@@ -1114,7 +1114,6 @@ a:active {
 }
 .site-footer{
     font-family: 'Trade Winds', sans-serif; 
-
     margin-top: 300px;
     color: rgb(255, 249, 78);
     box-shadow: 1pt 1pt 1pt 1pt black;
