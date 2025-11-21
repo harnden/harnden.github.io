@@ -210,10 +210,14 @@ body {
 
 .main-content-wrapper {
     /* max-width: 1200px; */
+    display: flex;
+    flex-direction: column;
     width: 100%;   
     margin: 0 auto;
     margin-top: 0;
     padding:10px; 
+    align-items: center;
+    justify-content: center;
     box-sizing: border-box;   
 }
 .main-navigation {
@@ -655,9 +659,6 @@ a:active {
 
 
 
-
-
-
 .grid-card {
     padding: 15px;
     border: 3px solid #4109a2; /* Example: 3px wide, solid line, in a Teal color */
@@ -679,10 +680,13 @@ a:active {
     max-width: 1200px; 
     width: 100%;
     margin-top: 140px;
+    margin-bottom: 80px;
+    align-items: center;
+    justify-items: center;
     font-size: 1.2em;
     color: rgb(39, 3, 64);
     text-shadow: 1px 1px 2px rgb(11, 3, 97);
-    padding: 50px;
+    padding: 20px;
     border-radius: 12px;
     box-shadow:  4px 10px rgba(0, 0, 0, 0.3);
     text-align: center;
@@ -725,7 +729,22 @@ a:active {
     font-style: underline;
 }
 
+.page-top-blurb-container {
+    font-family: 'Joti One', sans-serif;
+    font-size: clamp(1.2em, 2vw, 1.8em);
+    color: #f0e68c;
+    margin-top: 160px;
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+    -webkit-text-stroke: 1px black;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+    max-width: 70%
+}
 
+.page-top-blurb-title {
+    color: orange
+}
 
 .project-thumbnail {
     align-items: right;
