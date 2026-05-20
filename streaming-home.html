@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Watch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --text: #f0f0f5;
+    --muted: rgba(240,240,245,0.4);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    padding: 3rem 2.5rem 4rem;
+    cursor: default;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 3rem;
+  }
+
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.2rem;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+
+  .time {
+    font-size: 0.85rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .section-label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 500;
+    margin-bottom: 1rem;
+  }
+
+  .grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+  }
+
+  .tile {
+    flex: 1 1 280px;
+    max-width: 360px;
+    aspect-ratio: 16/10;
+    border-radius: 14px;
+    overflow: hidden;
+    cursor: pointer;
+    background: #000;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tile:hover {
+    transform: translateY(-3px) scale(1.015);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+
+  .tile:active {
+    transform: translateY(0) scale(0.99);
+  }
+
+  .tile img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    flex-shrink: 0;
+    padding: 12%;
+    transition: padding 0.22s ease;
+  }
+
+  .tile:hover img {
+    padding: 6%;
+  }
+
+  .tile img.contain {
+    padding: 12%;
+  }
+
+  .tile:hover img.contain {
+    padding: 6%;
+  }
+
+
+    margin-top: 3.5rem;
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Watch</h1>
+  <span class="time" id="clock"></span>
+</header>
+
+<p class="section-label">Streaming</p>
+
+<div class="grid">
+
+  <a class="tile" href="https://netflix.com" target="_blank">
+    <img class="contain" src="logo-netflix.png" alt="Netflix">
+  </a>
+
+  <a class="tile" href="https://disneyplus.com" target="_blank">
+    <img src="logo-disney.jpeg" alt="Disney+">
+  </a>
+
+  <a class="tile" href="https://max.com" target="_blank">
+    <img class="contain" style="filter:invert(1)" src="logo-hbo.png" alt="Max">
+  </a>
+
+  <a class="tile" href="https://peacocktv.com" target="_blank">
+    <img src="logo-peacock.png" alt="Peacock">
+  </a>
+
+  <a class="tile" href="https://paramountplus.com" target="_blank">
+    <img class="contain" style="filter:invert(1)" src="logo-paramount.png" alt="Paramount+">
+  </a>
+
+  <a class="tile" href="https://tv.apple.com" target="_blank">
+    <img src="logo-appletv.jpeg" alt="Apple TV+">
+  </a>
+
+  <a class="tile" href="https://primevideo.com" target="_blank">
+    <img src="logo-prime.png" alt="Prime Video">
+  </a>
+
+</div>
+
+<footer>Click any tile to open &mdash; opens in a new tab</footer>
+
+<script>
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('clock').textContent = now.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+</script>
+
+</body>
+</html>
