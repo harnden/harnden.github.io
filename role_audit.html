@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team 3 — Role Competency Audit</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f4f5f7;
+    color: #1a1a2e;
+    padding: 32px 24px;
+  }
+  h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 6px; }
+  .subtitle { font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.5; }
+
+  .phase-header {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 6px 16px;
+    color: white;
+    margin-top: 20px;
+    margin-bottom: 0;
+    border-radius: 6px 6px 0 0;
+  }
+  .phase-ql   { background: #1a1a2e; }
+  .phase-mkt  { background: #2d6a4f; }
+  .phase-exec { background: #7b2d8b; }
+
+  .instructions {
+    background: #e8f0fe;
+    border-left: 4px solid #4a6cf7;
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 24px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #333;
+  }
+  .instructions strong { color: #4a6cf7; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    margin-bottom: 0;
+  }
+  table.last-table { border-radius: 0 0 12px 12px; margin-bottom: 28px; }
+  table.only-table { border-radius: 0 0 12px 12px; margin-bottom: 28px; }
+
+  thead th {
+    background: #2c2c3e;
+    color: white;
+    padding: 11px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: left;
+  }
+  thead th.member-col { text-align: center; min-width: 140px; }
+  thead th.section-col { min-width: 200px; }
+  thead th.weight-col { text-align: center; min-width: 50px; }
+
+  tbody tr:nth-child(even) { background: #fafafa; }
+  tbody tr:hover { background: #f0f4ff; transition: background 0.15s; }
+
+  td { padding: 10px 14px; font-size: 13px; border-bottom: 1px solid #eee; vertical-align: middle; }
+  td.section-name { font-weight: 600; color: #1a1a2e; }
+  td.section-desc { font-size: 11px; color: #888; font-weight: 400; margin-top: 2px; }
+  td.weight { text-align: center; font-weight: 700; color: #4a6cf7; font-size: 13px; }
+  td.score-cell { text-align: center; padding: 8px 4px; min-width: 140px; }
+
+  .score-group { display: flex; justify-content: center; gap: 5px; flex-wrap: nowrap; }
+  .score-btn {
+    width: 32px; height: 32px; border-radius: 6px;
+    border: 2px solid #ddd; background: white;
+    font-size: 12px; font-weight: 700; cursor: pointer;
+    transition: all 0.15s; color: #888;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .score-btn:hover { border-color: #4a6cf7; color: #4a6cf7; background: #f0f4ff; }
+  .score-btn.s1 { background: #fee2e2; border-color: #ef4444; color: #ef4444; }
+  .score-btn.s2 { background: #fef3c7; border-color: #f59e0b; color: #b45309; }
+  .score-btn.s3 { background: #fef9c3; border-color: #eab308; color: #92400e; }
+  .score-btn.s4 { background: #d1fae5; border-color: #10b981; color: #065f46; }
+  .score-btn.s5 { background: #e0e7ff; border-color: #4a6cf7; color: #3730a3; }
+
+  .results-section {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    margin-bottom: 28px;
+  }
+  .results-section h2 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+
+  .member-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+  .member-card { border-radius: 10px; padding: 14px; border: 1.5px solid #eee; background: #fafafa; }
+  .member-card h3 { font-size: 13px; font-weight: 700; margin-bottom: 8px; color: #1a1a2e; padding-bottom: 6px; border-bottom: 2px solid #4a6cf7; }
+  .member-card .score-display { font-size: 22px; font-weight: 800; color: #4a6cf7; margin-bottom: 8px; }
+  .top-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #999; margin-bottom: 4px; }
+  .top-section { font-size: 11px; color: #444; line-height: 1.7; }
+
+  .role-row { display: flex; align-items: center; padding: 9px 12px; border-radius: 7px; margin-bottom: 6px; background: #f4f5f7; font-size: 12px; gap: 10px; }
+  .role-name { font-weight: 600; flex: 1; color: #1a1a2e; }
+  .role-owner { color: #4a6cf7; font-weight: 700; }
+  .role-score { color: #aaa; font-size: 11px; }
+
+  .legend { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; font-size: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+
+  button.reset-btn {
+    background: #f4f5f7; border: 1.5px solid #ddd; border-radius: 8px;
+    padding: 7px 16px; font-size: 12px; font-weight: 600; cursor: pointer; color: #666;
+  }
+  button.reset-btn:hover { background: #fee2e2; border-color: #ef4444; color: #ef4444; }
+  button.copy-btn {
+    background: #4a6cf7; border: none; border-radius: 8px;
+    padding: 7px 16px; font-size: 12px; font-weight: 600; cursor: pointer; color: white;
+    margin-right: 8px; transition: background 0.15s;
+  }
+  button.copy-btn:hover { background: #3730a3; }
+  button.copy-btn.copied { background: #10b981; }
+  .note { font-size: 11px; color: #aaa; margin-top: 8px; font-style: italic; }
+</style>
+</head>
+<body>
+
+<h1>Team 3 — Role Competency Audit</h1>
+<p class="subtitle">Rate each member 1–5 on each deliverable section. Highest scorer leads that section. Covers both the Quicklook Report and the Marketing Plan.</p>
+
+<div class="instructions">
+  <strong>How to use:</strong> Everyone rates themselves honestly. Totals update live. Where you score highest, you lead. Ties = shared ownership. This maps directly to Peterson's and De Kinder's grading rubrics.
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#fee2e2;border:1.5px solid #ef4444"></div> 1 — Hard pass</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#fef3c7;border:1.5px solid #f59e0b"></div> 2 — If pushed</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#fef9c3;border:1.5px solid #eab308"></div> 3 — Sure, fine</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#d1fae5;border:1.5px solid #10b981"></div> 4 — Happy to</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#e0e7ff;border:1.5px solid #4a6cf7"></div> 5 — Give it to me</div>
+</div>
+
+<!-- QUICKLOOK REPORT -->
+<div class="phase-header phase-ql">📋 Quicklook Report (Peterson 380) — 100 pts</div>
+<table>
+  <thead>
+    <tr>
+      <th class="section-col">Section</th>
+      <th class="weight-col">Pts</th>
+      <th class="member-col">Josh</th>
+      <th class="member-col">Raj</th>
+      <th class="member-col">Mia</th>
+      <th class="member-col">Mina</th>
+    </tr>
+  </thead>
+  <tbody id="tbody-ql"></tbody>
+</table>
+
+<!-- MARKETING PLAN -->
+<div class="phase-header phase-mkt" style="margin-top:16px">📊 Marketing Plan (De Kinder 382) — unweighted</div>
+<table>
+  <thead>
+    <tr>
+      <th class="section-col">Section</th>
+      <th class="weight-col">Pts</th>
+      <th class="member-col">Josh</th>
+      <th class="member-col">Raj</th>
+      <th class="member-col">Mia</th>
+      <th class="member-col">Mina</th>
+    </tr>
+  </thead>
+  <tbody id="tbody-mkt"></tbody>
+</table>
+
+<!-- EXECUTION -->
+<div class="phase-header phase-exec" style="margin-top:16px">🎤 Execution (Both Courses)</div>
+<table class="last-table">
+  <thead>
+    <tr>
+      <th class="section-col">Section</th>
+      <th class="weight-col">Pts</th>
+      <th class="member-col">Josh</th>
+      <th class="member-col">Raj</th>
+      <th class="member-col">Mia</th>
+      <th class="member-col">Mina</th>
+    </tr>
+  </thead>
+  <tbody id="tbody-exec"></tbody>
+</table>
+
+<!-- RESULTS -->
+<div class="results-section">
+  <h2>Recommended Role Assignments</h2>
+  <div id="member-summary" class="member-summary"></div>
+  <div id="recommended-roles"></div>
+  <p class="note">Assignments based on highest score per section. Ties shown as shared ownership.</p>
+  <button class="copy-btn" id="copy-btn" onclick="copyResults()" style="margin-top:14px">📋 Copy Results as Text</button>
+  <button class="reset-btn" onclick="resetAll()" style="margin-top:14px">Reset All Scores</button>
+</div>
+
+<script>
+const members = ['Josh','Raj','Mia','Mina'];
+
+const sections = {
+  ql: [
+    { id:'tech_desc',   name:'1. Technology Description',             desc:'What the tech does; development status; inventor interview', pts:5 },
+    { id:'uniqueness',  name:'2. Uniqueness',                         desc:'What makes it novel vs. existing solutions', pts:5 },
+    { id:'prob_val',    name:'3. Problem Validation & Market Potential', desc:'Evidence the problem is real; TAM/SAM/SOM market sizing', pts:5 },
+    { id:'tech_val',    name:'4. Technology Validation',              desc:'TRL, lab evidence, inventor interview synthesis', pts:5 },
+    { id:'ip',          name:'5. IP Protection',                      desc:'Patent status, filing dates, strength of IP position', pts:5 },
+    { id:'market_ql',   name:'6. Market Analysis & Strategy',         desc:'Go-to-market, customer segments, beachhead, pricing model', pts:20 },
+    { id:'competitive', name:'7. Competitive Matrix',                 desc:'Who else is solving this; how we differentiate', pts:5 },
+    { id:'findings',    name:'8. Key Findings & Validation Rating',   desc:'Go/no-go recommendation with supporting evidence', pts:5 },
+    { id:'interviews',  name:'Interviews',                            desc:'Customer & expert interviews; synthesis quality', pts:10 },
+  ],
+  mkt: [
+    { id:'exec_summ',   name:'Executive Summary',                     desc:'1-page overview; 5 key points from the full plan', pts:0 },
+    { id:'sit_co',      name:'Situation: Company / Technology',       desc:'Background on org/inventor; tech description; product vision', pts:0 },
+    { id:'sit_cust',    name:'Situation: Customers & Markets',        desc:'2+ customer problems; buyer personas; buying process', pts:0 },
+    { id:'sit_comp',    name:'Situation: Industry & Competition',     desc:'Industry health; 1–2 competitive technologies; differentiators', pts:0 },
+    { id:'sit_ctx',     name:'Situation: Context & Collaborators',    desc:'Macro-environmental factors (PEST); potential partners', pts:0 },
+    { id:'mkt_pot',     name:'Market Potential',                      desc:'Total market estimate; 2+ segment analyses with exhibits', pts:0 },
+    { id:'oi',          name:'Opportunities / Issues Analysis',       desc:'SWOT synthesis; external O&T + internal S&W; issues list', pts:0 },
+    { id:'objectives',  name:'Objectives',                            desc:'2–4 financial and marketing objectives with backing analysis', pts:0 },
+    { id:'strategy',    name:'Marketing Strategies',                  desc:'Target segment; differentiation strategy; positioning statement', pts:0 },
+    { id:'mix',         name:'Marketing Mix',                         desc:'Product / Pricing / Promotion / Place (4Ps)', pts:0 },
+    { id:'action',      name:'Action Programs & Messaging',           desc:'Content themes; campaigns; AI-assisted copy drafts', pts:0 },
+    { id:'research',    name:'Market Research Next Steps',            desc:'Secondary & primary research plan; tracking methodology', pts:0 },
+    { id:'financials',  name:'Financials (P&L)',                      desc:'Pro forma P&L; unit economics; launch year scenarios', pts:0 },
+  ],
+  exec: [
+    { id:'writing',      name:'Writing & Mechanics',                  desc:'Prose quality, narrative flow, citations, editing', pts:15 },
+    { id:'slides',       name:'Slide Deck',                           desc:'Visual design, structure, clarity of materials', pts:20 },
+    { id:'presentation', name:'Presentation Delivery',               desc:'In-room delivery, Q&A, confidence, storytelling', pts:30 },
+  ],
+};
+
+const scores = {};
+Object.values(sections).flat().forEach(s => {
+  scores[s.id] = {};
+  members.forEach(m => { scores[s.id][m] = 0; });
+});
+
+function buildTable(tbodyId, sectionList) {
+  const tbody = document.getElementById(tbodyId);
+  tbody.innerHTML = '';
+  sectionList.forEach(section => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>
+        <div class="section-name">${section.name}</div>
+        <div class="section-desc">${section.desc}</div>
+      </td>
+      <td class="weight">${section.pts > 0 ? section.pts : '—'}</td>
+      ${members.map(m => `
+        <td class="score-cell" id="cell-${section.id}-${m}">
+          <div class="score-group">
+            ${[1,2,3,4,5].map(n => `
+              <button class="score-btn" id="btn-${section.id}-${m}-${n}" onclick="setScore('${section.id}','${m}',${n})">${n}</button>
+            `).join('')}
+          </div>
+        </td>
+      `).join('')}
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function setScore(sectionId, member, score) {
+  scores[sectionId][member] = score;
+  [1,2,3,4,5].forEach(n => {
+    const btn = document.getElementById(`btn-${sectionId}-${member}-${n}`);
+    btn.className = 'score-btn' + (n === score ? ` s${n}` : '');
+  });
+  updateResults();
+}
+
+function updateResults() {
+  const allSections = Object.values(sections).flat();
+  const totals = {};
+  members.forEach(m => { totals[m] = 0; });
+  allSections.forEach(s => members.forEach(m => { totals[m] += scores[s.id][m]; }));
+
+  const maxTotal = Math.max(...Object.values(totals));
+
+  // Member cards
+  document.getElementById('member-summary').innerHTML = members.map(m => {
+    const leads = allSections.filter(s => {
+      const max = Math.max(...members.map(mm => scores[s.id][mm]));
+      return scores[s.id][m] === max && max > 0;
+    }).map(s => s.name.replace(/^\d+\.\s/, ''));
+    return `
+      <div class="member-card">
+        <h3>${m}</h3>
+        <div class="top-label">Total Score</div>
+        <div class="score-display">${totals[m]}</div>
+        <div class="top-label">Section Leads</div>
+        <div class="top-section">${leads.length ? leads.join('<br>') : '<em style="color:#ccc">No leads yet</em>'}</div>
+      </div>`;
+  }).join('');
+
+  // Role rows
+  document.getElementById('recommended-roles').innerHTML = allSections.map(s => {
+    const max = Math.max(...members.map(m => scores[s.id][m]));
+    const owners = max > 0 ? members.filter(m => scores[s.id][m] === max) : [];
+    return `
+      <div class="role-row">
+        <span class="role-name">${s.name}</span>
+        <span style="font-size:11px;color:#999;margin-right:4px">Lead:</span>
+        ${owners.length ? owners.map(o => `<span class="role-owner">${o}</span>`).join(', ') : '<span style="color:#ccc">—</span>'}
+        ${max > 0 ? `<span class="role-score">(${max}/5)</span>` : ''}
+      </div>`;
+  }).join('');
+}
+
+const labelMap = {1:'Hard pass',2:'If pushed',3:'Sure, fine',4:'Happy to',5:'Give it to me'};
+
+function copyResults() {
+  const allSections = Object.values(sections).flat();
+  const lines = [];
+  lines.push('TEAM 3 — ROLE COMPETENCY AUDIT RESULTS');
+  lines.push('='.repeat(45));
+  lines.push('');
+
+  // Phase headers
+  const phases = [
+    { label: 'QUICKLOOK REPORT (Peterson 380)', key: 'ql' },
+    { label: 'MARKETING PLAN (De Kinder 382)', key: 'mkt' },
+    { label: 'EXECUTION', key: 'exec' },
+  ];
+
+  phases.forEach(phase => {
+    lines.push(phase.label);
+    lines.push('-'.repeat(40));
+    sections[phase.key].forEach(s => {
+      const max = Math.max(...members.map(m => scores[s.id][m]));
+      const owners = max > 0 ? members.filter(m => scores[s.id][m] === max) : [];
+      const ownerStr = owners.length ? owners.join(', ') : '(unassigned)';
+      lines.push(`${s.name}`);
+      lines.push(`  Lead: ${ownerStr}  |  Scores: ${members.map(m => `${m}:${scores[s.id][m]||'—'}`).join('  ')}`);
+    });
+    lines.push('');
+  });
+
+  lines.push('TOTALS');
+  lines.push('-'.repeat(40));
+  const totals = {};
+  members.forEach(m => { totals[m] = 0; });
+  allSections.forEach(s => members.forEach(m => { totals[m] += scores[s.id][m]; }));
+  lines.push(members.map(m => `${m}: ${totals[m]}`).join('   '));
+
+  const text = lines.join('
+');
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✓ Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = '📋 Copy Results as Text';
+      btn.classList.remove('copied');
+    }, 2000);
+  }).catch(() => {
+    // Fallback for non-https
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✓ Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = '📋 Copy Results as Text';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+function resetAll() {
+  Object.values(sections).flat().forEach(s => {
+    members.forEach(m => {
+      scores[s.id][m] = 0;
+      [1,2,3,4,5].forEach(n => {
+        const btn = document.getElementById(`btn-${s.id}-${m}-${n}`);
+        if (btn) btn.className = 'score-btn';
+      });
+    });
+  });
+  updateResults();
+}
+
+buildTable('tbody-ql', sections.ql);
+buildTable('tbody-mkt', sections.mkt);
+buildTable('tbody-exec', sections.exec);
+updateResults();
+</script>
+</body>
+</html>
