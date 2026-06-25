@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chump Change Command Center</title>
+    <style>
+        :root {
+            /* Theme Base - Optimized for high-contrast neon pop */
+            --bg-color: #0b0f19;               
+            --card-bg: rgba(255, 255, 255, 0.02); 
+            --text-main: #f8fafc;
+            --text-muted: #64748b;             
+            --track-color: #1e293b;            
+            --axis-color: #334155;             
+
+            /* Your Vibrant New Palette Mapping */
+            --housing-color: #67C0AC;   /* Seafoam/Mint Green */
+            --auto-color: #FED148;      /* Canary Yellow */
+            --util-color: #FF9A32;      /* Electric Orange */
+            --cushion-color: #FF6695;   /* Bright Coral Pink */
+            /* #FFCABA (the pale peach) works beautifully as the shared 3D glow highlight! */
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1150px;
+            position: relative;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 42px;
+            letter-spacing: 4px;
+            font-weight: 900;
+            font-family: 'Segoe UI Black', 'Arial Black', sans-serif; 
+            text-transform: uppercase;
+            background: linear-gradient(to right, var(--housing-color), var(--cushion-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* --- DASHBOARD WRAPPER --- */
+        .dashboard-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 110px 240px 1fr; 
+            gap: 20px;
+            align-items: end; 
+            height: 580px; 
+            border-bottom: 3px solid var(--axis-color);
+            padding-bottom: 10px;
+            position: relative;
+            z-index: 2; 
+        }
+
+        /* --- STABLE BACKGROUND CONNECTIONS --- */
+        .connecting-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* --- Y-AXIS CONTAINERS --- */
+        .y-axis-container {
+            display: flex;
+            align-items: center;      
+            height: 100%;             
+            align-self: stretch;      
+            border-right: 1px dashed var(--axis-color);
+            padding-right: 10px;
+            box-sizing: border-box;
+        }
+
+        .y-axis-title {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-family: monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            writing-mode: vertical-lr; 
+            transform: rotate(180deg); 
+            white-space: nowrap;
+            margin-right: 8px;
+        }
+
+        .y-axis {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;             
+            color: var(--text-muted);
+            font-size: 11px;
+            font-family: monospace;
+            text-align: right;
+            box-sizing: border-box;
+            flex-grow: 1;             
+        }
+
+        /* --- 3D MACRO STACK --- */
+        .macro-stack {
+            display: flex;
+            flex-direction: column-reverse; 
+            width: 100%;
+            height: 100%;
+            justify-content: flex-start;
+        }
+
+        .cylinder {
+            width: 100%;
+            text-align: center;
+            font-weight: bold;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            margin-top: -14px; 
+        }
+
+        .cylinder::before {
+            content: '';
+            position: absolute;
+            top: -12px; 
+            left: 0; 
+            right: 0; 
+            height: 24px;
+            border-radius: 50%;
+            z-index: 2;
+            box-shadow: inset 0 1px 2px rgba(255,255,255,0.5);
+        }
+
+        .cylinder.housing { 
+            height: 58%; 
+            background: linear-gradient(to right, #11362f, var(--housing-color) 30%, #fff 50%, var(--housing-color) 70%, #11362f);
+            z-index: 1;
+        }
+        .cylinder.housing::before { background: linear-gradient(to bottom, #fff, var(--housing-color)); }
+
+        .cylinder.auto { 
+            height: 21%; 
+            background: linear-gradient(to right, #473a11, var(--auto-color) 30%, #fff 50%, var(--auto-color) 70%, #473a11);
+            color: #0b0f19; 
+            z-index: 2;
+        }
+        .cylinder.auto::before { background: linear-gradient(to bottom, #fff, var(--auto-color)); }
+
+        .cylinder.utilities { 
+            height: 16%; 
+            background: linear-gradient(to right, #4c2d0b, var(--util-color) 30%, #fff 50%, var(--util-color) 70%, #4c2d0b);
+            z-index: 3;
+        }
+        .cylinder.utilities::before { background: linear-gradient(to bottom, #fff, var(--util-color)); }
+
+        .cylinder.cushion { 
+            height: 5%; 
+            background: linear-gradient(to right, #4c1122, var(--cushion-color) 30%, #fff 50%, var(--cushion-color) 70%, #4c1122);
+            border-radius: 0 0 16px 16px;
+            color: #0b0f19; 
+            z-index: 4;
+        }
+        .cylinder.cushion::before { background: linear-gradient(to bottom, #fff, var(--cushion-color)); }
+
+        .cylinder .label {
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 12px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+            z-index: 5;
+        }
+
+        .cylinder .value {
+            font-size: 18px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+            z-index: 5;
+        }
+
+        /* --- MICRO BREAKOUT CARDS --- */
+        .breakout-sections {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+            width: 50%;
+            padding-left: 60px;
+            box-sizing: border-box;
+        }
+
+        .breakout-card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 14px 20px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+            backdrop-filter: none; 
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .card-title {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            letter-spacing: 0.5px;
+            text-align: center; 
+        }
+
+        .card-title.utilities { color: var(--util-color); }
+        .card-title.auto { color: var(--auto-color); }
+        .card-title.housing { color: var(--housing-color); }
+
+        .vertical-charts-container {
+            display: flex;
+            gap: 30px; 
+        }
+
+        .chart-vial {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 85px;
+        }
+
+        .vial-track {
+            width: 24px;
+            background: linear-gradient(to right, #070a10, var(--track-color) 40%, #2e3d54 70%, #070a10);
+            border-radius: 0 0 12px 12px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.8);
+            border: 1px solid rgba(255, 255, 255, 0.15); 
+            border-top: none;
+            box-sizing: border-box; 
+        }
+
+        .vial-fill {
+            width: 100%;
+            position: relative;
+            border-radius: 0 0 12px 12px;
+            box-sizing: border-box;
+        }
+
+        .vial-fill::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: 0;
+            right: 0;
+            height: 8px;
+            border-radius: 50%;
+            z-index: 3;
+            box-shadow: inset 0 0.5px 1px rgba(255,255,255,0.6);
+        }
+
+        .utilities .vial-fill { 
+            background: linear-gradient(to right, #4c2d0b, var(--util-color) 30%, #fff 50%, var(--util-color) 70%, #4c2d0b); 
+        }
+        .utilities .vial-fill::before { background: linear-gradient(to bottom, #fff, var(--util-color)); }
+
+        .auto .vial-fill { 
+            background: linear-gradient(to right, #473a11, var(--auto-color) 30%, #fff 50%, var(--auto-color) 70%, #473a11); 
+        }
+        .auto .vial-fill::before { background: linear-gradient(to bottom, #fff, var(--auto-color)); }
+
+        .housing .vial-fill { 
+            background: linear-gradient(to right, #11362f, var(--housing-color) 30%, #fff 50%, var(--housing-color) 70%, #11362f); 
+        }
+        .housing .vial-fill::before { background: linear-gradient(to bottom, #fff, var(--housing-color)); }
+
+        .vial-amount {
+            font-size: 11px;
+            font-weight: bold;
+            margin-top: 8px;
+            white-space: nowrap;
+        }
+
+        .vial-total {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 1px;
+        }
+
+        .vial-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>CHUMP CHANGE</h1>
+    </header>
+
+    <div class="dashboard-container">
+        
+        <svg class="connecting-lines" id="svg-canvas"></svg>
+
+        <div class="dashboard-layout">
+            
+            <div class="y-axis-container">
+                <div class="y-axis-title">Sum of Total Budgeted Bills</div>
+                <div class="y-axis">
+                    <div>$3,500</div>
+                    <div>$3,000</div>
+                    <div>$2,500</div>
+                    <div>$2,000</div>
+                    <div>$1,500</div>
+                    <div>$1,000</div>
+                    <div>$500</div>
+                    <div>$0</div>
+                </div>
+            </div>
+            
+            <div class="macro-stack" id="macro-container">
+                <div id-origin="housing" class="cylinder housing">
+                    <div class="label">Housing</div>
+                    <div class="value">$2,055</div>
+                </div>
+                <div id-origin="auto" class="cylinder auto">
+                    <div class="label">Auto</div>
+                    <div class="value">$740</div>
+                </div>
+                <div id-origin="utilities" class="cylinder utilities">
+                    <div class="label">Utilities</div>
+                    <div class="value">$594</div>
+                </div>
+                <div class="cylinder cushion">
+                    <div class="label">Kept: $156</div>
+                </div>
+            </div>
+
+            <div class="breakout-sections">
+                
+                <div class="breakout-card utilities">
+                    <div class="card-title utilities">⚡ Utilities Progress</div>
+                    <div class="vertical-charts-container">
+                        <div class="chart-vial" id-target="utilities">
+                            <div class="vial-track" style="height: 36px;"><div class="vial-fill" style="height: 67%;"></div></div>
+                            <div class="vial-amount">$66 Left</div>
+                            <div class="vial-total">of $200</div>
+                            <div class="vial-label">Electric</div>
+                        </div>
+                        <div class="chart-vial" id-target="utilities">
+                            <div class="vial-track" style="height: 32px;"><div class="vial-fill" style="height: 78%;"></div></div>
+                            <div class="vial-amount">$34 Left</div>
+                            <div class="vial-total">of $154</div>
+                            <div class="vial-label">Phone</div>
+                        </div>
+                        <div class="chart-vial" id-target="utilities">
+                            <div class="vial-track" style="height: 40px;"><div class="vial-fill" style="height: 67%;"></div></div>
+                            <div class="vial-amount">$80 Left</div>
+                            <div class="vial-total">of $240</div>
+                            <div class="vial-label">Internet</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="breakout-card auto">
+                    <div class="card-title auto">🚗 Auto Progress</div>
+                    <div class="vertical-charts-container">
+                        <div class="chart-vial" id-target="auto">
+                            <div class="vial-track" style="height: 48px;"><div class="vial-fill" style="height: 55%;"></div></div>
+                            <div class="vial-amount">$180 Left</div>
+                            <div class="vial-total">of $400</div>
+                            <div class="vial-label">Payment</div>
+                        </div>
+                        <div class="chart-vial" id-target="auto">
+                            <div class="vial-track" style="height: 36px;"><div class="vial-fill" style="height: 40%;"></div></div>
+                            <div class="vial-amount">$120 Left</div>
+                            <div class="vial-total">of $200</div>
+                            <div class="vial-label">Insurance</div>
+                        </div>
+                        <div class="chart-vial" id-target="auto">
+                            <div class="vial-track" style="height: 31px;"><div class="vial-fill" style="height: 57%;"></div></div>
+                            <div class="vial-amount">$60 Left</div>
+                            <div class="vial-total">of $140</div>
+                            <div class="vial-label">Gas</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="breakout-card housing">
+                    <div class="card-title housing">🏠 Housing Progress</div>
+                    <div class="vertical-charts-container">
+                        <div class="chart-vial" id-target="housing">
+                            <div class="vial-track" style="height: 70px;"><div class="vial-fill" style="height: 41%;"></div></div>
+                            <div class="vial-amount">$885 Left</div>
+                            <div class="vial-total">of $1,500</div>
+                            <div class="vial-label">Rent</div>
+                        </div>
+                        <div class="chart-vial" id-target="housing">
+                            <div class="vial-track" style="height: 50px;"><div class="vial-fill" style="height: 37%;"></div></div>
+                            <div class="vial-amount">$287 Left</div>
+                            <div class="vial-total">of $455</div>
+                            <div class="vial-label">Utilities</div>
+                        </div>
+                        <div class="chart-vial" id-target="housing">
+                            <div class="vial-track" style="height: 25px;"><div class="vial-fill" style="height: 9%;"></div></div>
+                            <div class="vial-amount">$91 Left</div>
+                            <div class="vial-total">of $100</div>
+                            <div class="vial-label">HOA</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function drawConnectorLines() {
+        const canvas = document.getElementById('svg-canvas');
+        const containerRect = document.querySelector('.dashboard-container').getBoundingClientRect();
+        
+        canvas.innerHTML = '';
+
+        const colors = {
+            utilities: 'rgba(255, 154, 50, 0.4)', 
+            auto: 'rgba(254, 209, 72, 0.4)',      
+            housing: 'rgba(103, 192, 172, 0.4)'     
+        };
+
+        const origins = ['utilities', 'auto', 'housing'];
+        
+        origins.forEach(type => {
+            const originEl = document.querySelector(`[id-origin="${type}"]`);
+            const targetEls = document.querySelectorAll(`[id-target="${type}"]`);
+            
+            if (!originEl || targetEls.length === 0) return;
+
+            const originRect = originEl.getBoundingClientRect();
+            
+            const startX = (originRect.left + originRect.width) - containerRect.left;
+            const startY = (originRect.top + (originRect.height / 2)) - containerRect.top;
+
+            targetEls.forEach(targetEl => {
+                const targetRect = targetEl.getBoundingClientRect();
+                
+                const endX = targetRect.left - containerRect.left;
+                const endY = (targetRect.top + (targetRect.height / 4)) - containerRect.top;
+
+                const controlX1 = startX + (endX - startX) * 0.4;
+                const controlX2 = startX + (endX - startX) * 0.6;
+                
+                const pathData = `M ${startX},${startY} C ${controlX1},${startY} ${controlX2},${endY} ${endX},${endY}`;
+                
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', pathData);
+                path.setAttribute('stroke', colors[type]);
+                path.setAttribute('stroke-width', '2');
+                path.setAttribute('fill', 'none');
+                canvas.appendChild(path);
+            });
+        });
+    }
+
+    window.addEventListener('load', drawConnectorLines);
+    window.addEventListener('resize', drawConnectorLines);
+</script>
+
+</body>
+</html>
