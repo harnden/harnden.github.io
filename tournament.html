@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Tournament" />
+  <meta name="theme-color" content="#1a4a2e" />
+  <title>⚽ Tournament Manager</title>
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; padding: 0; background: #1a4a2e; }
+    body {
+      font-family: -apple-system, 'Inter', system-ui, sans-serif;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    input, button, textarea { font-family: inherit; }
+    /* prevent iOS zoom on input focus */
+    input, textarea { font-size: 16px !important; }
+    input[type=number] { -moz-appearance: textfield; }
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+
+  <script type="text/babel">
+    const { useState, useMemo, useEffect, useCallback, useRef } = React;
+
+    // ── palette ────────────────────────────────────────────────────────────────
+    const C = {
+      pitch: "#1a4a2e", mid: "#2d7a4f", cream: "#f5f0e8",
+      amber: "#f0b429", dark: "#1c1c1e", muted: "#6b7c74",
+      error: "#e05252", green: "#6fcf97",
+    };
+
+    const baseStyle = {
+      fontFamily: "-apple-system, 'Inter', system-ui, sans-serif",
+      background: C.pitch, minHeight: "100vh", color: C.cream,
+      backgroundImage: `
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)`,
+      backgroundSize: "32px 32px",
+    };
+
+    // ── localStorage ───────────────────────────────────────────────────────────
+    const LS_KEY = "soccer-tournament-v1";
+    const lsSave = (s) => { try { localStorage.setItem(LS_KEY, JSON.stringify(s)); return true; } catch(e) { return false; } };
+    const lsLoad = ()  => { try { const r = localStorage.getItem(LS_KEY); return r ? JSON.parse(r) : null; } catch(e) { return null; } };
+    const lsClear = () => { try { localStorage.removeItem(LS_KEY); } catch(e) {} };
+
+    // ── tournament logic ───────────────────────────────────────────────────────
+    function generateRoundRobin(teams) {
+      const t = [...teams];
+      if (t.length % 2 !== 0) t.push("BYE");
+      const rounds = [], n = t.length;
+      for (let r = 0; r < n - 1; r++) {
+        const pairs = [];
+        for (let i = 0; i < n / 2; i++) {
+          const home = t[i], away = t[n - 1 - i];
+          if (home !== "BYE" && away !== "BYE") pairs.push({ home, away });
+        }
+        rounds.push(pairs);
+        t.splice(1, 0, t.pop());
+      }
+      return rounds;
+    }
+
+    function buildFirstRound(teams) {
+      let size = 1;
+      while (size < teams.length) size *= 2;
+      const seeded = [...teams];
+      while (seeded.length < size) seeded.push("BYE");
+      const matches = [];
+      for (let i = 0; i < size / 2; i++)
+        matches.push({ home: seeded[i], away: seeded[size-1-i], winner: null, homeScore: "", awayScore: "" });
+      return matches;
+    }
+
+    function standingsFromResults(teams, results) {
+      const tbl = {};
+      teams.forEach(t => { tbl[t] = { team: t, w:0, d:0, l:0, gf:0, ga:0, pts:0 }; });
+      results.forEach(r => {
+        if (r.homeScore === "" || r.awayScore === "") return;
+        const h = parseInt(r.homeScore), a = parseInt(r.awayScore);
+        if (isNaN(h) || isNaN(a)) return;
+        tbl[r.home].gf += h; tbl[r.home].ga += a;
+        tbl[r.away].gf += a; tbl[r.away].ga += h;
+        if (h > a)      { tbl[r.home].w++; tbl[r.home].pts += 3; tbl[r.away].l++; }
+        else if (a > h) { tbl[r.away].w++; tbl[r.away].pts += 3; tbl[r.home].l++; }
+        else            { tbl[r.home].d++; tbl[r.away].d++; tbl[r.home].pts++; tbl[r.away].pts++; }
+      });
+      return Object.values(tbl).sort((a,b) => b.pts-a.pts || (b.gf-b.ga)-(a.gf-a.ga) || b.gf-a.gf);
+    }
+
+    // ── shared components ──────────────────────────────────────────────────────
+    function Pill({ label, active, onClick }) {
+      return <button onClick={onClick} style={{
+        padding: "8px 20px", borderRadius: 999, border: "none", cursor: "pointer",
+        fontWeight: 600, fontSize: 15,
+        background: active ? C.amber : "rgba(255,255,255,0.12)",
+        color: active ? C.dark : C.cream,
+      }}>{label}</button>;
+    }
+
+    function ScoreInput({ value, onChange }) {
+      return <input
+        inputMode="numeric" pattern="[0-9]*" value={value}
+        onChange={e => onChange(e.target.value.replace(/\D/g, ""))}
+        placeholder="0"
+        style={{
+          width: 48, height: 48, borderRadius: 8, border: `2px solid ${C.mid}`,
+          background: "rgba(255,255,255,0.07)", color: C.cream,
+          fontFamily: "monospace", fontSize: 24, fontWeight: 700,
+          textAlign: "center", outline: "none",
+        }}
+      />;
+    }
+
+    function Card({ children, style }) {
+      return <div style={{
+        background: "rgba(255,255,255,0.06)", borderRadius: 14,
+        padding: "14px 16px", border: "1px solid rgba(255,255,255,0.09)", ...style,
+      }}>{children}</div>;
+    }
+
+    function SaveBadge({ status }) {
+      if (status === "idle") return null;
+      const cfg = {
+        saving: { color: C.amber, text: "Saving…" },
+        saved:  { color: C.green, text: "Saved ✓" },
+        error:  { color: C.error, text: "⚠ Save failed — use Export Backup now" },
+      }[status];
+      if (!cfg) return null;
+      return <div style={{ fontSize: 12, fontWeight: status==="error"?700:500, color: cfg.color, marginBottom: 10 }}>{cfg.text}</div>;
+    }
+
+    function BackupBar({ getSnapshot, onImport }) {
+      const [copied, setCopied] = useState(false);
+      const [showImport, setShowImport] = useState(false);
+      const [showExport, setShowExport] = useState(false);
+      const [importText, setImportText] = useState("");
+      const [exportText, setExportText] = useState("");
+      const [importErr, setImportErr] = useState("");
+
+      const handleExport = () => {
+        const json = JSON.stringify(getSnapshot(), null, 2);
+        try {
+          navigator.clipboard.writeText(json)
+            .then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500); })
+            .catch(() => { setExportText(json); setShowExport(true); setShowImport(false); });
+        } catch { setExportText(json); setShowExport(true); setShowImport(false); }
+      };
+
+      const handleImport = () => {
+        try {
+          const parsed = JSON.parse(importText);
+          if (!parsed.teams || !parsed.appState) throw new Error();
+          onImport(parsed);
+          setShowImport(false); setImportText(""); setImportErr("");
+        } catch { setImportErr("Invalid backup — copy the full JSON."); }
+      };
+
+      return (
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={handleExport} style={{
+              flex:1, padding:"8px", borderRadius:8, border:`1px solid ${C.mid}`,
+              background:"transparent", color: copied ? C.green : C.cream, fontSize:13, cursor:"pointer", fontWeight:600,
+            }}>{copied ? "Copied ✓" : "Export Backup"}</button>
+            <button onClick={() => { setShowImport(s=>!s); setShowExport(false); }} style={{
+              flex:1, padding:"8px", borderRadius:8, border:`1px solid ${C.mid}`,
+              background:"transparent", color:C.cream, fontSize:13, cursor:"pointer", fontWeight:600,
+            }}>Restore Backup</button>
+          </div>
+
+          {showExport && (
+            <div style={{ marginTop:8 }}>
+              <p style={{ fontSize:11, color:C.amber, margin:"0 0 6px" }}>Clipboard blocked — select all &amp; copy:</p>
+              <textarea readOnly value={exportText} rows={4} onFocus={e=>e.target.select()} style={{
+                width:"100%", padding:8, borderRadius:8, border:`1px solid ${C.mid}`,
+                background:"rgba(0,0,0,0.3)", color:C.cream, fontSize:11, fontFamily:"monospace", resize:"none",
+              }}/>
+              <button onClick={()=>setShowExport(false)} style={{
+                marginTop:6, padding:"6px 14px", borderRadius:8, border:"none",
+                background:"rgba(255,255,255,0.1)", color:C.muted, fontSize:12, cursor:"pointer",
+              }}>Close</button>
+            </div>
+          )}
+
+          {showImport && (
+            <div style={{ marginTop:8 }}>
+              <textarea value={importText} onChange={e=>{setImportText(e.target.value);setImportErr("");}}
+                placeholder="Paste backup JSON here…" rows={5} style={{
+                  width:"100%", padding:10, borderRadius:8, border:`2px solid ${C.mid}`,
+                  background:"rgba(255,255,255,0.07)", color:C.cream, fontSize:11,
+                  fontFamily:"monospace", outline:"none", resize:"vertical",
+                }}/>
+              {importErr && <p style={{ color:C.error, fontSize:12, margin:"4px 0" }}>{importErr}</p>}
+              <div style={{ display:"flex", gap:8, marginTop:6 }}>
+                <button onClick={handleImport} disabled={!importText.trim()} style={{
+                  flex:1, padding:"8px", borderRadius:8, border:"none",
+                  background: importText.trim() ? C.amber : "rgba(255,255,255,0.1)",
+                  color: importText.trim() ? C.dark : C.muted,
+                  fontSize:13, fontWeight:700, cursor: importText.trim() ? "pointer" : "default",
+                }}>Restore</button>
+                <button onClick={()=>{setShowImport(false);setImportText("");setImportErr("");}} style={{
+                  padding:"8px 14px", borderRadius:8, border:"none",
+                  background:"rgba(255,255,255,0.08)", color:C.muted, fontSize:13, cursor:"pointer",
+                }}>Cancel</button>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ── Team Entry ─────────────────────────────────────────────────────────────
+    function TeamEntry({ onStart }) {
+      const [input, setInput] = useState("");
+      const [teams, setTeams] = useState([]);
+      const [mode, setMode] = useState("roundrobin");
+      const [err, setErr] = useState("");
+
+      const add = () => {
+        const name = input.trim();
+        if (!name) return;
+        if (teams.includes(name)) { setErr("Already added."); return; }
+        setTeams(t => [...t, name]); setInput(""); setErr("");
+      };
+
+      return (
+        <div style={{ padding:"24px 16px", maxWidth:480, margin:"0 auto" }}>
+          <div style={{ textAlign:"center", marginBottom:28 }}>
+            <div style={{ fontSize:40, marginBottom:4 }}>⚽</div>
+            <h1 style={{ margin:0, fontSize:28, fontWeight:800, color:C.cream }}>Tournament Manager</h1>
+            <p style={{ margin:"4px 0 0", color:C.muted, fontSize:14 }}>Add teams, pick your format</p>
+          </div>
+
+          <div style={{ display:"flex", gap:10, marginBottom:20, justifyContent:"center" }}>
+            <Pill label="Round Robin" active={mode==="roundrobin"} onClick={()=>setMode("roundrobin")} />
+            <Pill label="Bracket"    active={mode==="bracket"}    onClick={()=>setMode("bracket")} />
+          </div>
+
+          {mode === "bracket" && (
+            <p style={{ fontSize:12, color:C.muted, textAlign:"center", marginBottom:12 }}>
+              Teams seeded in order · padded to next power of 2 with BYEs
+            </p>
+          )}
+
+          <div style={{ display:"flex", gap:8, marginBottom:12 }}>
+            <input value={input} onChange={e=>{setInput(e.target.value);setErr("");}}
+              onKeyDown={e=>e.key==="Enter"&&add()} placeholder="Team name…"
+              style={{
+                flex:1, padding:"12px 14px", borderRadius:10, border:`2px solid ${C.mid}`,
+                background:"rgba(255,255,255,0.07)", color:C.cream, outline:"none",
+              }}
+            />
+            <button onClick={add} style={{
+              padding:"12px 18px", borderRadius:10, border:"none",
+              background:C.mid, color:C.cream, fontSize:22, cursor:"pointer",
+            }}>+</button>
+          </div>
+
+          {err && <p style={{ color:C.error, fontSize:13, marginBottom:8 }}>{err}</p>}
+
+          {teams.length > 0 && (
+            <Card style={{ marginBottom:20 }}>
+              {teams.map((t,i) => (
+                <div key={i} style={{
+                  display:"flex", justifyContent:"space-between", alignItems:"center",
+                  padding:"9px 0", borderBottom: i<teams.length-1 ? "1px solid rgba(255,255,255,0.07)" : "none",
+                }}>
+                  <span style={{ fontSize:15, display:"flex", alignItems:"center", gap:8 }}>
+                    <span style={{ color:C.muted, fontSize:12, minWidth:18 }}>{i+1}</span>{t}
+                  </span>
+                  <button onClick={()=>setTeams(t=>t.filter((_,j)=>j!==i))} style={{
+                    background:"none", border:"none", color:C.muted, fontSize:20, cursor:"pointer", padding:"2px 6px",
+                  }}>×</button>
+                </div>
+              ))}
+            </Card>
+          )}
+
+          <button onClick={()=>{ if(teams.length<2){setErr("Need at least 2 teams.");return;} onStart(teams,mode); }}
+            disabled={teams.length<2} style={{
+              width:"100%", padding:"16px", borderRadius:12, border:"none",
+              background: teams.length>=2 ? C.amber : "rgba(255,255,255,0.1)",
+              color: teams.length>=2 ? C.dark : C.muted,
+              fontWeight:700, fontSize:17, cursor: teams.length>=2 ? "pointer" : "default",
+            }}>
+            Start Tournament ({teams.length} teams)
+          </button>
+        </div>
+      );
+    }
+
+    // ── Round Robin ────────────────────────────────────────────────────────────
+    function RoundRobin({ teams, results, onResultsChange, onReset, saveStatus, getSnapshot, onImport }) {
+      const rounds = useMemo(() => generateRoundRobin(teams), [teams]);
+      const [tab, setTab] = useState("fixtures");
+      const [openRound, setOpenRound] = useState(0);
+
+      const update = (round, idx, field, val) =>
+        onResultsChange(results.map(r => r.round===round && r.idx===idx ? {...r,[field]:val} : r));
+
+      const standings = useMemo(() => standingsFromResults(teams, results), [teams, results]);
+      const played = results.filter(r => r.homeScore!==""&&r.awayScore!=="").length;
+
+      return (
+        <div style={{ padding:"16px", maxWidth:480, margin:"0 auto" }}>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
+            <div>
+              <div style={{ fontSize:11, color:C.muted, letterSpacing:1, textTransform:"uppercase" }}>Round Robin</div>
+              <div style={{ fontWeight:700, fontSize:19 }}>{teams.length} Teams</div>
+            </div>
+            <button onClick={onReset} style={{
+              background:"rgba(255,255,255,0.1)", border:"none", color:C.cream,
+              borderRadius:8, padding:"7px 14px", fontSize:14, cursor:"pointer",
+            }}>← Reset</button>
+          </div>
+
+          <SaveBadge status={saveStatus} />
+          <BackupBar getSnapshot={getSnapshot} onImport={onImport} />
+
+          <div style={{ marginBottom:18 }}>
+            <div style={{ fontSize:12, color:C.muted, marginBottom:6 }}>{played} / {results.length} matches played</div>
+            <div style={{ background:"rgba(255,255,255,0.1)", borderRadius:999, height:6 }}>
+              <div style={{
+                background:C.amber, height:6, borderRadius:999,
+                width:`${results.length?(played/results.length)*100:0}%`, transition:"width .3s",
+              }}/>
+            </div>
+          </div>
+
+          <div style={{ display:"flex", gap:8, marginBottom:18 }}>
+            <Pill label="Fixtures"  active={tab==="fixtures"}  onClick={()=>setTab("fixtures")} />
+            <Pill label="Standings" active={tab==="standings"} onClick={()=>setTab("standings")} />
+          </div>
+
+          {tab==="fixtures" && rounds.map((round,ri) => (
+            <div key={ri} style={{ marginBottom:10 }}>
+              <button onClick={()=>setOpenRound(openRound===ri?-1:ri)} style={{
+                width:"100%", textAlign:"left", background:"rgba(255,255,255,0.08)",
+                border:"none", borderRadius:10, padding:"11px 14px",
+                color:C.cream, fontWeight:600, fontSize:15, cursor:"pointer",
+                display:"flex", justifyContent:"space-between",
+              }}>
+                <span>Round {ri+1}</span>
+                <span style={{ color:C.muted }}>
+                  {results.filter(r=>r.round===ri&&r.homeScore!==""&&r.awayScore!=="").length}/{round.length} ✓
+                  {" "}{openRound===ri?"▲":"▼"}
+                </span>
+              </button>
+
+              {openRound===ri && (
+                <div style={{ marginTop:6, display:"flex", flexDirection:"column", gap:8 }}>
+                  {round.map((m,mi) => {
+                    const res = results.find(r=>r.round===ri&&r.idx===mi);
+                    return (
+                      <Card key={mi}>
+                        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                          <span style={{ flex:1, fontWeight:600, fontSize:14, textAlign:"right" }}>{m.home}</span>
+                          <ScoreInput value={res.homeScore} onChange={v=>update(ri,mi,"homeScore",v)} />
+                          <span style={{ color:C.muted, fontWeight:700 }}>–</span>
+                          <ScoreInput value={res.awayScore} onChange={v=>update(ri,mi,"awayScore",v)} />
+                          <span style={{ flex:1, fontWeight:600, fontSize:14 }}>{m.away}</span>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ))}
+
+          {tab==="standings" && (
+            <Card>
+              <div style={{
+                display:"grid", gridTemplateColumns:"1fr 28px 28px 28px 40px 32px", gap:4,
+                fontSize:11, color:C.muted, textTransform:"uppercase",
+                paddingBottom:8, borderBottom:"1px solid rgba(255,255,255,0.1)", marginBottom:8,
+              }}>
+                <span>Team</span>
+                {["W","D","L","GD","Pts"].map(h=><span key={h} style={{ textAlign:"center" }}>{h}</span>)}
+              </div>
+              {standings.map((row,i) => (
+                <div key={i} style={{
+                  display:"grid", gridTemplateColumns:"1fr 28px 28px 28px 40px 32px", gap:4,
+                  alignItems:"center", padding:"8px 0",
+                  borderBottom: i<standings.length-1 ? "1px solid rgba(255,255,255,0.06)" : "none",
+                }}>
+                  <span style={{ display:"flex", alignItems:"center", gap:6 }}>
+                    <span style={{
+                      width:22, height:22, borderRadius:"50%", fontSize:11, fontWeight:700,
+                      display:"flex", alignItems:"center", justifyContent:"center",
+                      background: i===0?C.amber:i===1?"rgba(255,255,255,0.2)":"rgba(255,255,255,0.07)",
+                      color: i===0?C.dark:C.cream,
+                    }}>{i+1}</span>
+                    <span style={{ fontSize:14, fontWeight:600 }}>{row.team}</span>
+                  </span>
+                  <span style={{ textAlign:"center", fontSize:14 }}>{row.w}</span>
+                  <span style={{ textAlign:"center", fontSize:14 }}>{row.d}</span>
+                  <span style={{ textAlign:"center", fontSize:14 }}>{row.l}</span>
+                  <span style={{ textAlign:"center", fontSize:14, color: row.gf-row.ga>0?C.green:row.gf-row.ga<0?C.error:C.muted }}>
+                    {row.gf-row.ga>0?"+":""}{row.gf-row.ga}
+                  </span>
+                  <span style={{ textAlign:"center", fontSize:16, fontWeight:700, color:C.amber }}>{row.pts}</span>
+                </div>
+              ))}
+            </Card>
+          )}
+        </div>
+      );
+    }
+
+    // ── Bracket ────────────────────────────────────────────────────────────────
+    function Bracket({ teams, rounds, onRoundsChange, onReset, saveStatus, getSnapshot, onImport }) {
+      const [editing, setEditing] = useState(null);
+      const seedCount = useMemo(()=>{ let s=1; while(s<teams.length) s*=2; return s; }, [teams]);
+      const totalRounds = Math.log2(seedCount);
+
+      const getRoundName = ri => {
+        const rem = totalRounds - ri;
+        if (rem===1) return "Final";
+        if (rem===2) return "Semi-Final";
+        if (rem===3) return "Quarter-Final";
+        return "Round of " + Math.pow(2,rem);
+      };
+
+      const advanceWinner = (ri, mi, winner) => {
+        const next = rounds.map(r=>r.map(m=>({...m})));
+        next[ri][mi].winner = winner;
+        const ni = ri+1, nmi = Math.floor(mi/2), isHome = mi%2===0;
+        if (!next[ni]) {
+          next[ni] = Array.from({length:Math.pow(2,totalRounds-ni-1)},()=>
+            ({home:"",away:"",winner:null,homeScore:"",awayScore:""}));
+        }
+        if (isHome) next[ni][nmi].home = winner;
+        else        next[ni][nmi].away = winner;
+        onRoundsChange(next); setEditing(null);
+      };
+
+      const resolveMatch = (ri,mi) => {
+        const m = rounds[ri][mi];
+        const h=parseInt(m.homeScore), a=parseInt(m.awayScore);
+        if (isNaN(h)||isNaN(a)||h===a) return;
+        advanceWinner(ri,mi,h>a?m.home:m.away);
+      };
+
+      const updateScore = (ri,mi,field,val) => {
+        const next = rounds.map(r=>r.map(m=>({...m})));
+        next[ri][mi][field]=val; onRoundsChange(next);
+      };
+
+      const champion = rounds.length>=totalRounds && rounds[rounds.length-1]?.[0]?.winner;
+
+      return (
+        <div style={{ padding:"16px", maxWidth:480, margin:"0 auto" }}>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
+            <div>
+              <div style={{ fontSize:11, color:C.muted, letterSpacing:1, textTransform:"uppercase" }}>Bracket</div>
+              <div style={{ fontWeight:700, fontSize:19 }}>{teams.length} Teams</div>
+            </div>
+            <button onClick={onReset} style={{
+              background:"rgba(255,255,255,0.1)", border:"none", color:C.cream,
+              borderRadius:8, padding:"7px 14px", fontSize:14, cursor:"pointer",
+            }}>← Reset</button>
+          </div>
+
+          <SaveBadge status={saveStatus} />
+          <BackupBar getSnapshot={getSnapshot} onImport={onImport} />
+
+          {champion && (
+            <Card style={{
+              textAlign:"center", marginBottom:18,
+              background:`linear-gradient(135deg,${C.amber}22,${C.mid}44)`,
+              border:`1px solid ${C.amber}55`,
+            }}>
+              <div style={{ fontSize:32 }}>🏆</div>
+              <div style={{ fontSize:22, fontWeight:800, color:C.amber }}>{champion}</div>
+              <div style={{ fontSize:12, color:C.muted }}>Tournament Champion</div>
+            </Card>
+          )}
+
+          {rounds.map((round,ri) => (
+            <div key={ri} style={{ marginBottom:18 }}>
+              <div style={{ fontSize:11, color:C.amber, letterSpacing:1, textTransform:"uppercase", marginBottom:8, fontWeight:700 }}>
+                {getRoundName(ri)}
+              </div>
+              <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                {round.map((match,mi) => {
+                  const isEdit = editing?.round===ri && editing?.match===mi;
+                  const homeWon = match.winner===match.home, awayWon = match.winner===match.away;
+                  const hasScore = match.homeScore!==""&&match.awayScore!=="";
+                  const isTied = hasScore && parseInt(match.homeScore)===parseInt(match.awayScore);
+
+                  return (
+                    <Card key={mi} style={{ background: match.winner?"rgba(45,122,79,0.15)":"rgba(255,255,255,0.06)" }}>
+                      {[{name:match.home,side:"home",won:homeWon},{name:match.away,side:"away",won:awayWon}].map(({name,side,won})=>(
+                        <div key={side} style={{
+                          display:"flex", alignItems:"center", justifyContent:"space-between", padding:"7px 0",
+                          borderBottom: side==="home"?"1px solid rgba(255,255,255,0.07)":"none",
+                        }}>
+                          <span style={{ fontSize:15, fontWeight:won?700:500, color:won?C.amber:!name?C.muted:C.cream, fontStyle:!name?"italic":"normal" }}>
+                            {won&&"★ "}{name||"TBD"}
+                          </span>
+                          <span style={{ fontFamily:"monospace", fontSize:20, fontWeight:700, color:won?C.amber:hasScore?C.cream:C.muted, minWidth:24, textAlign:"right" }}>
+                            {match[side+"Score"]!==""?match[side+"Score"]:"–"}
+                          </span>
+                        </div>
+                      ))}
+
+                      {!match.winner && match.home && match.away && (
+                        <div style={{ marginTop:10 }}>
+                          {!isEdit ? (
+                            <button onClick={()=>setEditing({round:ri,match:mi})} style={{
+                              width:"100%", padding:"9px", borderRadius:8,
+                              border:`1px solid ${C.mid}`, background:"transparent",
+                              color:C.muted, fontSize:14, cursor:"pointer",
+                            }}>{hasScore?"Edit Score":"Enter Score"}</button>
+                          ) : (
+                            <div>
+                              <div style={{ display:"flex", alignItems:"center", gap:8, justifyContent:"center", marginBottom:10 }}>
+                                <span style={{ fontSize:13, flex:1, textAlign:"right", fontWeight:600 }}>{match.home}</span>
+                                <ScoreInput value={match.homeScore} onChange={v=>updateScore(ri,mi,"homeScore",v)} />
+                                <span style={{ color:C.muted }}>–</span>
+                                <ScoreInput value={match.awayScore} onChange={v=>updateScore(ri,mi,"awayScore",v)} />
+                                <span style={{ fontSize:13, flex:1, fontWeight:600 }}>{match.away}</span>
+                              </div>
+                              {isTied && <p style={{ fontSize:11, color:C.amber, textAlign:"center", margin:"0 0 8px" }}>Tied — pick who advances:</p>}
+                              <div style={{ display:"flex", gap:8 }}>
+                                {isTied ? (
+                                  <>
+                                    <button onClick={()=>advanceWinner(ri,mi,match.home)} style={{ flex:1,padding:"9px",borderRadius:8,border:"none",background:C.mid,color:C.cream,fontSize:13,cursor:"pointer",fontWeight:600 }}>{match.home}</button>
+                                    <button onClick={()=>advanceWinner(ri,mi,match.away)} style={{ flex:1,padding:"9px",borderRadius:8,border:"none",background:C.mid,color:C.cream,fontSize:13,cursor:"pointer",fontWeight:600 }}>{match.away}</button>
+                                  </>
+                                ) : (
+                                  <button onClick={()=>resolveMatch(ri,mi)} disabled={!hasScore} style={{
+                                    flex:1,padding:"9px",borderRadius:8,border:"none",
+                                    background:hasScore?C.amber:"rgba(255,255,255,0.1)",
+                                    color:hasScore?C.dark:C.muted,fontSize:14,fontWeight:700,cursor:hasScore?"pointer":"default",
+                                  }}>Confirm</button>
+                                )}
+                                <button onClick={()=>setEditing(null)} style={{
+                                  padding:"9px 14px",borderRadius:8,border:"none",
+                                  background:"rgba(255,255,255,0.08)",color:C.muted,fontSize:13,cursor:"pointer",
+                                }}>Cancel</button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {match.winner && (
+                        <div style={{ fontSize:11, color:C.muted, marginTop:6, textAlign:"right" }}>
+                          {match.homeScore} – {match.awayScore} · {match.winner} advances
+                        </div>
+                      )}
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // ── App Root ───────────────────────────────────────────────────────────────
+    function App() {
+      const [appState,      setAppState]      = useState("setup");
+      const [teams,         setTeams]         = useState([]);
+      const [mode,          setMode]          = useState("roundrobin");
+      const [rrResults,     setRrResults]     = useState([]);
+      const [bracketRounds, setBracketRounds] = useState([]);
+      const [saveStatus,    setSaveStatus]    = useState("idle");
+      const saveTimer = useRef(null);
+
+      useEffect(() => {
+        const saved = lsLoad();
+        if (saved) {
+          setAppState(saved.appState || "setup");
+          setTeams(saved.teams || []);
+          setMode(saved.mode || "roundrobin");
+          setRrResults(saved.rrResults || []);
+          setBracketRounds(saved.bracketRounds || []);
+          setSaveStatus("saved");
+          setTimeout(()=>setSaveStatus("idle"), 1500);
+        }
+      }, []);
+
+      useEffect(() => {
+        if (appState==="setup" && teams.length===0) return;
+        setSaveStatus("saving");
+        const ok = lsSave({ appState, teams, mode, rrResults, bracketRounds });
+        setSaveStatus(ok?"saved":"error");
+        if (ok) {
+          if (saveTimer.current) clearTimeout(saveTimer.current);
+          saveTimer.current = setTimeout(()=>setSaveStatus("idle"), 2000);
+        }
+      }, [appState, teams, mode, rrResults, bracketRounds]);
+
+      const handleStart = (t, m) => {
+        setTeams(t); setMode(m);
+        if (m==="roundrobin") {
+          const rounds = generateRoundRobin(t);
+          setRrResults(rounds.flatMap((r,ri)=>r.map((match,mi)=>({...match,round:ri,idx:mi,homeScore:"",awayScore:""}))));
+          setBracketRounds([]);
+        } else {
+          setBracketRounds([buildFirstRound(t)]); setRrResults([]);
+        }
+        setAppState("playing");
+      };
+
+      const handleReset = () => {
+        lsClear();
+        setTeams([]); setRrResults([]); setBracketRounds([]);
+        setMode("roundrobin"); setAppState("setup"); setSaveStatus("idle");
+      };
+
+      const getSnapshot = useCallback(
+        () => ({ appState, teams, mode, rrResults, bracketRounds, exportedAt: new Date().toISOString() }),
+        [appState, teams, mode, rrResults, bracketRounds]
+      );
+
+      const handleImport = useCallback((parsed) => {
+        setAppState(parsed.appState || "setup");
+        setTeams(parsed.teams || []);
+        setMode(parsed.mode || "roundrobin");
+        setRrResults(parsed.rrResults || []);
+        setBracketRounds(parsed.bracketRounds || []);
+      }, []);
+
+      return (
+        <div style={baseStyle}>
+          {appState==="setup" && <TeamEntry onStart={handleStart} />}
+          {appState==="playing" && mode==="roundrobin" && (
+            <RoundRobin teams={teams} results={rrResults} onResultsChange={setRrResults}
+              onReset={handleReset} saveStatus={saveStatus} getSnapshot={getSnapshot} onImport={handleImport} />
+          )}
+          {appState==="playing" && mode==="bracket" && (
+            <Bracket teams={teams} rounds={bracketRounds} onRoundsChange={setBracketRounds}
+              onReset={handleReset} saveStatus={saveStatus} getSnapshot={getSnapshot} onImport={handleImport} />
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
