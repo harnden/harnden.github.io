@@ -39,14 +39,15 @@
   }
   nav button {
     flex: 1;
-    padding: 14px 4px;
+    padding: 14px 2px;
     background: none;
     border: none;
     color: var(--muted);
-    font-size: 0.85rem;
+    font-size: 0.72rem;
     font-weight: 700;
     cursor: pointer;
     border-bottom: 3px solid transparent;
+    white-space: nowrap;
   }
   nav button.active {
     color: var(--text);
@@ -93,7 +94,7 @@
     line-height: 1.5;
   }
   .count-hint { font-size: 0.78rem; color: var(--muted); margin-top: 6px; }
-  select {
+  select, input[type="text"] {
     width: 100%;
     padding: 12px;
     border-radius: 10px;
@@ -103,7 +104,9 @@
     font-size: 1rem;
     font-weight: 600;
     margin-top: 4px;
+    font-family: inherit;
   }
+  input[type="text"]::placeholder { color: var(--muted); font-weight: 400; }
   .team-size-note { text-align: center; font-size: 0.82rem; color: var(--muted); margin-top: 10px; }
 
   button.primary {
@@ -282,6 +285,7 @@
   <button class="tab-btn active" data-tab="namesScreen">👤 Names</button>
   <button class="tab-btn" data-tab="teamsScreen">🎲 Teams</button>
   <button class="tab-btn" data-tab="scoreScreen">⚽ Score</button>
+  <button class="tab-btn" data-tab="historyScreen">📜 History</button>
 </nav>
 
 <div class="content">
@@ -338,8 +342,9 @@ Emily
 
       <div class="panel">
         <label for="playerInput">Scorer (optional)</label>
-        <select id="playerInput"></select>
-        <div class="hint">Pick a name before tapping a team to credit that goal to them.</div>
+        <input type="text" id="playerInput" list="playerDatalist" placeholder="Type or pick a name" autocomplete="off">
+        <datalist id="playerDatalist"></datalist>
+        <div class="hint">Type a name or pick one from the roster, then tap a team to credit that goal.</div>
       </div>
 
       <button class="undo-btn" id="undoBtn" disabled>Undo Last Goal</button>
@@ -365,6 +370,16 @@ Emily
     </div>
   </div>
 
+  <!-- ===== HISTORY ===== -->
+  <div class="screen" id="historyScreen">
+    <h1>📜 Goal History</h1>
+    <div class="count-hint" id="historyCountHint" style="text-align:center; margin-bottom:14px;">0 goals logged</div>
+    <div class="panel">
+      <div id="historyLog"><div class="empty">No goals logged yet this camp</div></div>
+    </div>
+    <button class="reset-btn" id="clearHistoryBtn">Clear All History</button>
+  </div>
+
 </div>
 
 <script>
@@ -374,6 +389,7 @@ let pickedIndices = [];        // indices into generatedTeams chosen for the liv
 let teamNames = { t1: "Team 1", t2: "Team 2" };
 let teamRosters = { t1: [], t2: [] };
 let goals = [];
+let allTimeGoals = [];   // persists across matches/resets — the full camp-day log
 
 /* ================= PERSISTENCE ================= */
 const STORAGE_KEY = 'soccerCampToolkitState';
@@ -387,7 +403,8 @@ function saveState() {
       pickedIndices,
       teamNames,
       teamRosters,
-      goals: goals.map(g => ({ ...g, timestamp: g.timestamp.toISOString() }))
+      goals: goals.map(g => ({ ...g, timestamp: g.timestamp.toISOString() })),
+      allTimeGoals: allTimeGoals.map(g => ({ ...g, timestamp: g.timestamp.toISOString() }))
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch (e) {
@@ -411,6 +428,9 @@ function loadState() {
     if (Array.isArray(state.goals)) {
       goals = state.goals.map(g => ({ ...g, timestamp: new Date(g.timestamp) }));
     }
+    if (Array.isArray(state.allTimeGoals)) {
+      allTimeGoals = state.allTimeGoals.map(g => ({ ...g, timestamp: new Date(g.timestamp) }));
+    }
   } catch (e) {
     console.warn('Could not load saved state', e);
   }
@@ -430,6 +450,7 @@ tabBtns.forEach(btn => {
     document.getElementById(btn.dataset.tab).classList.add('active');
     if (btn.dataset.tab === 'teamsScreen') updateTeamsCountHint();
     if (btn.dataset.tab === 'scoreScreen') refreshMatchupScreen();
+    if (btn.dataset.tab === 'historyScreen') renderHistory();
   });
 });
 function goToTab(tabId) {
@@ -438,6 +459,7 @@ function goToTab(tabId) {
   document.getElementById(tabId).classList.add('active');
   if (tabId === 'teamsScreen') updateTeamsCountHint();
   if (tabId === 'scoreScreen') refreshMatchupScreen();
+  if (tabId === 'historyScreen') renderHistory();
 }
 
 /* ================= NAMES TAB ================= */
@@ -611,9 +633,13 @@ const team2Score = document.getElementById('team2Score');
 const team1Label = document.getElementById('team1Label');
 const team2Label = document.getElementById('team2Label');
 const playerInput = document.getElementById('playerInput');
+const playerDatalist = document.getElementById('playerDatalist');
 const undoBtn = document.getElementById('undoBtn');
 const resetBtn = document.getElementById('resetBtn');
 const logList = document.getElementById('logList');
+const historyLog = document.getElementById('historyLog');
+const historyCountHint = document.getElementById('historyCountHint');
+const clearHistoryBtn = document.getElementById('clearHistoryBtn');
 
 function formatTime(date) {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -648,30 +674,39 @@ function renderLog() {
     logList.appendChild(entry);
   });
 }
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+function renderHistory() {
+  const n = allTimeGoals.length;
+  historyCountHint.textContent = `${n} goal${n === 1 ? '' : 's'} logged`;
+  if (n === 0) {
+    historyLog.innerHTML = '<div class="empty">No goals logged yet this camp</div>';
+    return;
+  }
+  historyLog.innerHTML = '';
+  [...allTimeGoals].reverse().forEach(g => {
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    entry.innerHTML = `
+      <div class="log-left">
+        <div class="log-scorer">${escapeHtml(g.player || 'Unknown scorer')}</div>
+        <div class="log-team">${escapeHtml(g.teamName)} &middot; ${escapeHtml(g.matchLabel || '')}</div>
+      </div>
+      <div class="log-time">${formatTime(g.timestamp)}</div>
+    `;
+    historyLog.appendChild(entry);
+  });
+}
 function renderPlayerSuggestions() {
-  playerInput.innerHTML = '';
-  const blank = document.createElement('option');
-  blank.value = '';
-  blank.textContent = 'No scorer / unknown';
-  playerInput.appendChild(blank);
-
-  const group1 = document.createElement('optgroup');
-  group1.label = teamNames.t1;
-  teamRosters.t1.forEach(p => {
+  playerDatalist.innerHTML = '';
+  [...teamRosters.t1, ...teamRosters.t2].forEach(p => {
     const opt = document.createElement('option');
-    opt.value = p; opt.textContent = p;
-    group1.appendChild(opt);
+    opt.value = p;
+    playerDatalist.appendChild(opt);
   });
-  playerInput.appendChild(group1);
-
-  const group2 = document.createElement('optgroup');
-  group2.label = teamNames.t2;
-  teamRosters.t2.forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p; opt.textContent = p;
-    group2.appendChild(opt);
-  });
-  playerInput.appendChild(group2);
 }
 
 let armedTeam = null;
@@ -694,8 +729,16 @@ function armGoal(teamKey) {
   armTimer = setTimeout(resetArming, 2500);
 }
 function confirmGoal(teamKey) {
-  const player = playerInput.value;
-  goals.push({ teamKey, teamName: teamNames[teamKey], player, timestamp: new Date() });
+  const player = playerInput.value.trim();
+  const entry = {
+    teamKey,
+    teamName: teamNames[teamKey],
+    matchLabel: `${teamNames.t1} vs ${teamNames.t2}`,
+    player,
+    timestamp: new Date()
+  };
+  goals.push(entry);
+  allTimeGoals.push(entry);
   renderScoreboard();
   renderLog();
   playerInput.value = '';
@@ -706,7 +749,13 @@ team1Btn.addEventListener('click', () => armGoal('t1'));
 team2Btn.addEventListener('click', () => armGoal('t2'));
 
 undoBtn.addEventListener('click', () => {
-  goals.pop();
+  const removed = goals.pop();
+  // Undo only ever removes the goal that was just scored, which is also
+  // the most recent entry in the all-time log (goals are always pushed
+  // to both arrays together, in order).
+  if (removed && allTimeGoals.length && allTimeGoals[allTimeGoals.length - 1] === removed) {
+    allTimeGoals.pop();
+  }
   renderScoreboard();
   renderLog();
   saveState();
@@ -733,6 +782,29 @@ resetBtn.addEventListener('click', () => {
   goals = [];
   renderScoreboard();
   renderLog();
+  saveState();
+});
+
+let clearHistoryArmed = false;
+let clearHistoryTimer = null;
+clearHistoryBtn.addEventListener('click', () => {
+  if (!clearHistoryArmed) {
+    clearHistoryArmed = true;
+    clearHistoryBtn.textContent = 'Tap again to confirm — erases all goals';
+    clearHistoryBtn.classList.add('confirming');
+    clearHistoryTimer = setTimeout(() => {
+      clearHistoryArmed = false;
+      clearHistoryBtn.textContent = 'Clear All History';
+      clearHistoryBtn.classList.remove('confirming');
+    }, 3000);
+    return;
+  }
+  clearTimeout(clearHistoryTimer);
+  clearHistoryArmed = false;
+  clearHistoryBtn.textContent = 'Clear All History';
+  clearHistoryBtn.classList.remove('confirming');
+  allTimeGoals = [];
+  renderHistory();
   saveState();
 });
 
