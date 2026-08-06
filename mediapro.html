@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -38,6 +39,34 @@
 
   h2 { font-size: 17px; font-weight: 700; margin: 36px 0 14px; display: flex; align-items: center; gap: 10px; }
   h2::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+  .tencard {
+    background: var(--ink); color: #fff; border-radius: 14px;
+    padding: 20px 24px; margin-bottom: 32px;
+  }
+  .tencard .tc-head {
+    font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase;
+    font-weight: 700; color: #cdb8e8; margin-bottom: 12px;
+  }
+  .tencard ol {
+    margin: 0; padding: 0; list-style: none; counter-reset: tip;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px;
+  }
+  @media (max-width: 620px) { .tencard ol { grid-template-columns: 1fr; } }
+  .tencard li {
+    counter-increment: tip; font-size: 13px; line-height: 1.45;
+    display: flex; gap: 10px; align-items: baseline; color: #e8e6f4;
+  }
+  .tencard li::before {
+    content: counter(tip);
+    flex: none; width: 20px; height: 20px; border-radius: 50%;
+    background: var(--magenta); color: #fff; font-size: 11px; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center;
+    transform: translateY(3px);
+  }
+  .tencard li b { color: #fff; }
+  @media print { .tencard { background: #fff; color: var(--ink); border: 2px solid var(--ink); }
+    .tencard li { color: var(--ink-soft); } .tencard li b { color: var(--ink); } }
 
   .center-card {
     max-width: 400px; margin: 0 auto; background: #fff;
@@ -140,6 +169,22 @@
     <h1>Team decision map<span class="lite"> · brand MOJO</span></h1>
     <p class="subtitle">5 years · 3 regions (Urban, Rural, Tourism) · 3 segments (Gen Z, Millennials, Gen X)</p>
   </header>
+
+  <div class="tencard">
+    <div class="tc-head">Ten rules of thumb</div>
+    <ol>
+      <li><b>Feed Gen X now, court Millennials next, plant seeds with Gen Z</b> — harvest the big segment while positioning for growth.</li>
+      <li><b>Protect EBT in all three regions</b> — the budget formula punishes lopsided empires.</li>
+      <li><b>Max insight quality early, then stop</b> — Content Powerhouse multiplies everything else.</li>
+      <li><b>Let the funnel charts pick your objectives</b> — put the 60% weight where the numbers break.</li>
+      <li><b>Follow the media habits you were handed</b> — TV/print for Gen X, mobile/social for Millennials, multi-channel for Gen Z.</li>
+      <li><b>Never go all-digital on Gen Z</b> — pair sponsorship and print with social, as the handbook says.</li>
+      <li><b>Match objective to psychology</b> — Action for bargain-hunting Millennials, Interest/Engagement for premium Gen X.</li>
+      <li><b>Graduate from Year to Quarter to Month timing</b> — chase seasonality and Events once you can read the patterns.</li>
+      <li><b>Forecast like competitors are watching</b> — assume every share gain gets contested.</li>
+      <li><b>Nobody touches RUN without a team huddle</b> — it's irreversible and you only get five.</li>
+    </ol>
+  </div>
 
   <div class="center-card">
     <div class="t">Annual budget</div>
