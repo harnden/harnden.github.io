@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -48,10 +47,18 @@
     font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase;
     font-weight: 700; color: #cdb8e8; margin-bottom: 12px;
   }
+  .tencard .tc-phase {
+    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    font-weight: 700; color: #ff9ed8; margin: 16px 0 8px;
+    border-top: 1px solid rgba(255,255,255,0.15); padding-top: 12px;
+  }
+  .tencard .tc-phase:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+  @media print { .tencard .tc-phase { color: var(--magenta); border-top-color: var(--line); } }
   .tencard ol {
     margin: 0; padding: 0; list-style: none; counter-reset: tip;
     display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px;
   }
+  .tencard ol.steps { grid-template-columns: 1fr; gap: 10px; }
   @media (max-width: 620px) { .tencard ol { grid-template-columns: 1fr; } }
   .tencard li {
     counter-increment: tip; font-size: 13px; line-height: 1.45;
@@ -171,18 +178,37 @@
   </header>
 
   <div class="tencard">
-    <div class="tc-head">Ten rules of thumb</div>
-    <ol>
-      <li><b>Feed Gen X now, court Millennials next, plant seeds with Gen Z</b> — harvest the big segment while positioning for growth.</li>
-      <li><b>Protect EBT in all three regions</b> — the budget formula punishes lopsided empires.</li>
-      <li><b>Max insight quality early, then stop</b> — Content Powerhouse multiplies everything else.</li>
-      <li><b>Let the funnel charts pick your objectives</b> — put the 60% weight where the numbers break.</li>
-      <li><b>Follow the media habits you were handed</b> — TV/print for Gen X, mobile/social for Millennials, multi-channel for Gen Z.</li>
-      <li><b>Never go all-digital on Gen Z</b> — pair sponsorship and print with social, as the handbook says.</li>
-      <li><b>Match objective to psychology</b> — Action for bargain-hunting Millennials, Interest/Engagement for premium Gen X.</li>
-      <li><b>Graduate from Year to Quarter to Month timing</b> — chase seasonality and Events once you can read the patterns.</li>
-      <li><b>Forecast like competitors are watching</b> — assume every share gain gets contested.</li>
-      <li><b>Nobody touches RUN without a team huddle</b> — it's irreversible and you only get five.</li>
+    <div class="tc-head">The playbook — phases &amp; steps</div>
+    <div class="tc-phase">Phase 0 · Setup (first session only)</div>
+    <ol class="steps">
+      <li><b>Assign owners.</b> One teammate each for Content Powerhouse, Communication Goals, Media Mix, and Schedule+Forecast — one person per decision page at a time; only disconnect inactive teammates.</li>
+      <li><b>Pick the team name together.</b> Max 8 characters; letters, digits, space, dash only.</li>
+      <li><b>Confirm the budget in the home bar.</b> Year 1: $12.5M — Urban 4.0 / Rural 4.8 / Tourism 3.7.</li>
+    </ol>
+    <div class="tc-phase">Phase 1 · Analyze</div>
+    <ol class="steps" style="counter-reset: tip 3">
+      <li><b>Split the 8 ANALYZE reports.</b> Confirm the Year 0 picture: MOJO #1 (29%), leads Millennials (40.2%), #2 in Gen Z (45.3 vs ROCX 50.2), locked out of Gen X (11.6%), best efficiency (63%), lowest awareness (69%).</li>
+      <li><b>Check ROCX first</b> in every competitor view — same price, same segments, the only real rival.</li>
+      <li><b>Read each region's funnel rings</b> on the Communication Goals screen: fat outer / thin inner &rarr; Action; thin outer ring &rarr; Awareness.</li>
+    </ol>
+    <div class="tc-phase">Phase 2 · Decide</div>
+    <ol class="steps" style="counter-reset: tip 6">
+      <li><b>Content Powerhouse: 10&ndash;20% of budget</b> (~$1.3&ndash;2.5M) across Social Listening / Data Analytics / Creativity, each split ~45/45/10 toward Millennials/Gen Z; use the helper charts; reach max insight quality in 1&ndash;2 years, then taper.</li>
+      <li><b>Communication Goals per region:</b> default Action first (60%), Awareness second (40%) — override only where step 6 showed a different funnel break.</li>
+      <li><b>Media Mix per region:</b> Urban digital-first (social, mobile, SEO; TV for Gen Z's traditional slice) · Rural adds real print/radio/billboards (Gen X 85% offline; Millennials read print there) · Tourism heaviest digital plus a modest sponsored-events bet timed to Tennis GS. Favor high-ROMI types everywhere (Social 8.16 · TV 6.90 · SEO 6.60 · Mobile 6.46); starve viral, blogs, display. Minimal Gen X spend outside Rural.</li>
+      <li><b>Media Schedule per region:</b> Tourism = Month, front-loaded May&ndash;Aug (Tennis GS + tourist peak) · Rural = Quarter, weight Q2 &amp; Q4 · Urban = Year/Semester.</li>
+      <li><b>Forecast conservatively.</b> Assume ROCX contests every gain; verify projected EBT stays healthy in all three regions (budget &asymp; 20% of regional EBT — every $1M of EBT &asymp; $200K next year).</li>
+    </ol>
+    <div class="tc-phase">Phase 3 · Run</div>
+    <ol class="steps" style="counter-reset: tip 11">
+      <li><b>Fix all errors; read every warning</b> — warnings catch things like a media category left at zero.</li>
+      <li><b>Re-check expenses vs. authorized budget</b> in the home bar.</li>
+      <li><b>Full-team huddle, then RUN.</b> Irreversible; five total.</li>
+    </ol>
+    <div class="tc-phase">Phase 4 · After results</div>
+    <ol class="steps" style="counter-reset: tip 14">
+      <li><b>Diagnose before deciding:</b> actual vs. forecast, ROCX's moves, new funnel breaks, fresh ROMI numbers — returns shift as the mix changes.</li>
+      <li><b>Re-pull events &amp; seasonality for the new year.</b> Tennis GS was next year only; events change annually.</li>
     </ol>
   </div>
 
@@ -277,13 +303,98 @@
     </ul>
   </div>
 
+  <h2>Year 0 data readout — the battle map</h2>
+  <div class="grid">
+    <div class="card c-teal">
+      <h3>Millennials — defend the lead</h3>
+      <ul>
+        <li><b>MOJO #1 at 40.2%</b> share (ROCX 36.3% close behind)</li>
+        <li>Funnel break: preference 67.1% &rarr; intention 36.6% &rarr; <b>Action objective</b></li>
+        <li>Segment overtakes Gen X in size by year 5 (12,494 KU)</li>
+        <li>Media: 70% digital, balanced owned mix, SEO strongest in paid, viral strongest in earned</li>
+      </ul>
+    </div>
+    <div class="card c-pink">
+      <h3>Gen Z — winnable knife-fight</h3>
+      <ul>
+        <li><b>MOJO #2 at 45.3%</b> vs ROCX 50.2% — a 5-point gap</li>
+        <li>Funnel break: awareness 66% is <b>lowest of all four brands</b> &rarr; Awareness objective</li>
+        <li>~50% segment growth over five years</li>
+        <li>Media: mobile apps 50% + social 40% of owned; SEO 50% of paid; blogs/viral in earned; traditional slice = <b>TV 80%</b></li>
+      </ul>
+    </div>
+    <div class="card c-coral">
+      <h3>Gen X — expensive uphill war</h3>
+      <ul>
+        <li><b>MOJO only 11.6%</b> — TOIZ 42.9% and SOFT 39.6% are entrenched</li>
+        <li>Preference 47% but intention 13.5% — a costly gap to fix against strong incumbents</li>
+        <li>Largest segment today, but lowest growth; don't overinvest early</li>
+        <li>If contested: print 40% &gt; TV 30% in traditional; sponsored events, website, reviews dominate their other categories</li>
+      </ul>
+    </div>
+    <div class="card c-purple">
+      <h3>Media mix by region — habits differ, don't copy-paste</h3>
+      <ul>
+        <li><b>Urban:</b> digital-first for Gen Z/Millennials (Owned 40/30, mobile apps &amp; social lead); TV is 80% of Gen Z's traditional slice</li>
+        <li><b>Rural:</b> notably traditional — Gen X 85% offline (print 50%), Millennials' print/radio at 40/40 and display ads tie SEO; add real print, radio &amp; billboard weight here</li>
+        <li><b>Tourism:</b> most digital — Gen Z Owned 45% (social/mobile 40/40), paid = SEO/PPC 45/45; <b>sponsored events are 50% of Millennials' outdoor</b> — pair with Tennis GS in May&ndash;Jun</li>
+        <li>Blend each region's mix by its dominant segments, then overweight the high-ROMI types within categories</li>
+      </ul>
+    </div>
+    <div class="card c-teal">
+      <h3>Competitive position — ROCX is the arch-rival</h3>
+      <ul>
+        <li><b>MOJO is already #1</b>: 29.0% unit share vs ROCX 26.3%, SOFT 23.5%, TOIZ 21.3%</li>
+        <li>ROCX mirrors you: $14.10 price, $5.70 cost, same value segments — and leads you in Gen Z</li>
+        <li>Dollar race is tighter (26.7% vs SOFT 25.0%) — premium brands monetize better per can</li>
+        <li>Check ROCX's moves first in every competitor report</li>
+      </ul>
+    </div>
+    <div class="card c-coral">
+      <h3>Price &amp; distribution facts</h3>
+      <ul>
+        <li>Value tier: MOJO $14 / ROCX $14.10 · Premium tier: SOFT $16.20 / TOIZ $17</li>
+        <li>Premium pricing is <b>why</b> SOFT+TOIZ own 82% of Gen X — and price is a management call, not a media one; Gen X is structurally out of reach</li>
+        <li>Low price is a tailwind with price-sensitive Gen Z and bargain-hunting Millennials</li>
+        <li><b>Distribution 41%</b> vs TOIZ's 45% — the Action objective raises coverage, unlocking stuck purchase intention</li>
+      </ul>
+    </div>
+    <div class="card c-teal">
+      <h3>Measured ROMI per $ spent — reallocate accordingly</h3>
+      <ul>
+        <li><b>Winners:</b> Social Media 8.16 · TV 6.90 · SEO 6.60 · Mobile Apps 6.46 · Print 5.87 · Web 5.67</li>
+        <li><b>Losers:</b> Sponsored Events 0.12 · Viral 0.45 · Blogs 2.80 · Display Ads 3.23 · PPC 3.41</li>
+        <li>Overrides the handbook's sponsorship suggestion — trust measured returns</li>
+        <li>Caveat: ROMI reflects the current mix — and events scored 0.12 in a year with <b>no events</b>; Tennis GS + Tourism's event-heavy habits justify a small, measured bet there</li>
+      </ul>
+    </div>
+    <div class="card c-purple">
+      <h3>Budget &amp; efficiency facts</h3>
+      <ul>
+        <li><b>Year 1 budget: $12.5M</b> — Urban 4.0 / Rural 4.8 / Tourism 3.7</li>
+        <li>Empirically, budget = <b>20% of regional EBT</b> — every $1M of EBT earns $200K of next year's budget</li>
+        <li><b>MOJO's comms efficiency 63%</b> — best in market (ROCX 55, SOFT 48, TOIZ 32); lowest awareness (69%) yet highest share — awareness is the weak rung</li>
+        <li>All four firms have near-identical EBT and budgets — win on allocation, not outspending</li>
+        <li>Seasonality and events differ sharply by region — see the regional rhythms card</li>
+      </ul>
+    </div>
+    <div class="card c-pink">
+      <h3>Regional rhythms — schedule each region differently</h3>
+      <ul>
+        <li><b>Tourism:</b> Tennis GS event May&ndash;Jun (~1.3M extra visitors) + strong Aug peak (~25% swing) &rarr; <b>Month timing, front-load May&ndash;Aug</b>. ROCX outsells MOJO here every month — the knife-fight region.</li>
+        <li><b>Rural:</b> peaks May &amp; Nov, trough in Aug — the inverse of Tourism &rarr; <b>Quarter timing, weight Q2 &amp; Q4</b>. MOJO's fortress: biggest lead, biggest EBT ($24.1M), biggest budget ($4.8M).</li>
+        <li><b>Urban:</b> flat with a mild Sep&ndash;Nov bump, no events &rarr; Year or Semester timing is fine.</li>
+      </ul>
+    </div>
+  </div>
+
   <h2>Insights &amp; implications</h2>
   <div class="insights">
 
     <div class="insight">
-      <div class="i-title">Growth lives with Millennials &amp; Gen Z — Gen X pays today's bills</div>
-      <p><span class="tag stated">Stated</span> Gen X: largest segment, low growth. Millennials: near-largest, significant growth predicted. Gen Z: consumption grows as they start work and university.</p>
-      <p><span class="tag inference">Implication</span> Milk Gen X early for EBT, build Millennials as the near-term growth engine, treat Gen Z as the years 3&ndash;5 payoff. Verify sizes in the SEGMENTS report before committing.</p>
+      <div class="i-title">Growth lives with Millennials &amp; Gen Z — and so does MOJO's position</div>
+      <p><span class="tag stated">Stated</span> Handbook: Gen X is the largest segment. Year 0 data: MOJO holds just 11.6% of it, vs 40.2% of Millennials (#1) and 45.3% of Gen Z (#2).</p>
+      <p><span class="tag inference">Implication</span> The "milk Gen X" play doesn't exist for MOJO — the incumbents own it. Fight where you're strong and where growth is: defend Millennials, close the 5-point Gen Z gap.</p>
     </div>
 
     <div class="insight">
