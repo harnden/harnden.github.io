@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DIGITAL MediaPRO — Team Decision Map</title>
+<style>
+  :root {
+    --ink: #26215C;
+    --ink-soft: #4a4668;
+    --purple: #534AB7; --purple-bg: #EEEDFE; --purple-dark: #3C3489;
+    --teal: #0F6E56;   --teal-bg: #E1F5EE;   --teal-dark: #085041;
+    --coral: #993C1D;  --coral-bg: #FAECE7;  --coral-dark: #712B13;
+    --pink: #993556;   --pink-bg: #FBEAF0;   --pink-dark: #72243E;
+    --magenta: #C2308F;
+    --line: #d9d7e6;
+    --paper: #f7f7fa;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    font-family: "Segoe UI", -apple-system, "Helvetica Neue", Arial, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.55;
+    padding: 40px 20px 60px;
+  }
+  .page { max-width: 860px; margin: 0 auto; }
+
+  header { text-align: center; margin-bottom: 36px; }
+  .eyebrow {
+    display: inline-block; font-size: 12px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--magenta); font-weight: 700;
+    border-bottom: 2px solid var(--magenta); padding-bottom: 4px; margin-bottom: 12px;
+  }
+  h1 { font-size: 30px; font-weight: 800; letter-spacing: -0.01em; }
+  h1 .lite { color: var(--purple); }
+  .subtitle { color: var(--ink-soft); font-size: 14px; margin-top: 6px; }
+
+  h2 { font-size: 17px; font-weight: 700; margin: 36px 0 14px; display: flex; align-items: center; gap: 10px; }
+  h2::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+  .center-card {
+    max-width: 400px; margin: 0 auto; background: #fff;
+    border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px 20px; text-align: center;
+    box-shadow: 0 1px 3px rgba(38,33,92,0.06);
+  }
+  .center-card .t { font-weight: 700; font-size: 15px; }
+  .center-card .s { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+
+  .down-arrow { text-align: center; color: var(--purple); font-size: 20px; line-height: 1; margin: 8px 0; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 620px) { .grid { grid-template-columns: 1fr; } }
+
+  .card { border-radius: 12px; padding: 16px 18px; border: 1px solid; }
+  .card .num {
+    display: inline-flex; width: 22px; height: 22px; border-radius: 50%;
+    align-items: center; justify-content: center;
+    color: #fff; font-size: 12px; font-weight: 700; margin-right: 8px; vertical-align: middle;
+  }
+  .card h3 { font-size: 15px; font-weight: 700; display: flex; align-items: center; }
+  .card ul { margin: 8px 0 0 2px; padding-left: 18px; font-size: 13px; }
+  .card li { margin-bottom: 4px; }
+
+  .c-purple { background: var(--purple-bg); border-color: var(--purple); color: var(--purple-dark); }
+  .c-purple .num { background: var(--purple); }
+  .c-teal   { background: var(--teal-bg);   border-color: var(--teal);   color: var(--teal-dark); }
+  .c-teal   .num { background: var(--teal); }
+  .c-coral  { background: var(--coral-bg);  border-color: var(--coral);  color: var(--coral-dark); }
+  .c-coral  .num { background: var(--coral); }
+  .c-pink   { background: var(--pink-bg);   border-color: var(--pink);   color: var(--pink-dark); }
+  .c-pink   .num { background: var(--pink); }
+
+  .funnel { display: flex; align-items: stretch; gap: 8px; }
+  .funnel .stage {
+    flex: 1; background: var(--teal-bg); border: 1px solid var(--teal);
+    border-radius: 10px; padding: 12px 8px; text-align: center;
+  }
+  .funnel .stage .t { font-weight: 700; font-size: 14px; color: var(--teal-dark); }
+  .funnel .stage .s { font-size: 11.5px; color: var(--teal); margin-top: 2px; }
+  .funnel .fa { align-self: center; color: var(--teal); font-size: 16px; }
+  @media (max-width: 620px) {
+    .funnel { flex-direction: column; }
+    .funnel .fa { transform: rotate(90deg); align-self: center; }
+  }
+
+  .loop { display: flex; align-items: center; gap: 8px; }
+  .loop .step {
+    flex: 1; background: #fff; border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 10px; text-align: center; font-size: 14px; font-weight: 600;
+    box-shadow: 0 1px 3px rgba(38,33,92,0.06);
+  }
+  .loop .fa { color: var(--purple); font-size: 16px; }
+  @media (max-width: 620px) {
+    .loop { flex-direction: column; }
+    .loop .fa { transform: rotate(90deg); }
+  }
+  .loop-note { text-align: center; font-size: 12.5px; color: var(--ink-soft); margin-top: 12px; }
+
+  .rules { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 18px 22px; box-shadow: 0 1px 3px rgba(38,33,92,0.06); }
+  .rules ul { padding-left: 18px; font-size: 13.5px; }
+  .rules li { margin-bottom: 7px; }
+  .rules b { color: var(--magenta); }
+
+  .budget-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+  .budget-table td { border: 1px solid var(--line); padding: 6px 12px; background: #fff; }
+  .budget-table td:first-child { font-weight: 600; }
+
+  .insights { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 620px) { .insights { grid-template-columns: 1fr; } }
+  .insight {
+    background: #fff; border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px 16px; box-shadow: 0 1px 3px rgba(38,33,92,0.06);
+  }
+  .insight .i-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; color: var(--ink); }
+  .insight p { font-size: 12.5px; color: var(--ink-soft); margin-bottom: 6px; }
+  .insight p:last-child { margin-bottom: 0; }
+  .tag {
+    display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; border-radius: 4px; padding: 1px 6px; margin-right: 4px;
+    vertical-align: 1px;
+  }
+  .tag.stated { background: var(--teal-bg); color: var(--teal-dark); border: 1px solid var(--teal); }
+  .tag.inference { background: var(--purple-bg); color: var(--purple-dark); border: 1px solid var(--purple); }
+
+  footer { text-align: center; font-size: 11.5px; color: var(--ink-soft); margin-top: 44px; }
+
+  @media print {
+    body { background: #fff; padding: 0; }
+    .card, .center-card, .rules, .loop .step { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <span class="eyebrow">Digital MediaPRO</span>
+    <h1>Team decision map<span class="lite"> · brand MOJO</span></h1>
+    <p class="subtitle">5 years · 3 regions (Urban, Rural, Tourism) · 3 segments (Gen Z, Millennials, Gen X)</p>
+  </header>
+
+  <div class="center-card">
+    <div class="t">Annual budget</div>
+    <div class="s">Based on last year's EBT per region · no carryover</div>
+  </div>
+
+  <div class="down-arrow">&#8595;</div>
+
+  <div class="grid">
+    <div class="card c-purple">
+      <h3><span class="num">1</span>Content powerhouse</h3>
+      <ul>
+        <li>10&ndash;20% of total budget</li>
+        <li>Social listening · data analytics · creativity</li>
+        <li>Split each initiative across the 3 segments (rows total 100%)</li>
+        <li>Higher insight quality &rarr; stronger message impact</li>
+      </ul>
+    </div>
+    <div class="card c-teal">
+      <h3><span class="num">2</span>Communication goals</h3>
+      <ul>
+        <li>Per region, choose two funnel objectives</li>
+        <li>First objective = 60% weight · second = 40%</li>
+        <li>Same level twice is allowed</li>
+        <li>Stay consistent with brand situation (Market Facts)</li>
+      </ul>
+    </div>
+    <div class="card c-coral">
+      <h3><span class="num">3</span>Media mix &amp; budget</h3>
+      <ul>
+        <li>Traditional (print, radio, TV) · outdoor · digital owned / paid / earned</li>
+        <li>Per region, or National column for one strategy</li>
+        <li>Match segment media habits (Gen X = TV/print, Millennials = mobile/social, Gen Z = multi-channel)</li>
+      </ul>
+    </div>
+    <div class="card c-pink">
+      <h3><span class="num">4</span>Media schedule</h3>
+      <ul>
+        <li>Timing by year, semester, quarter, or month</li>
+        <li>Follow seasonality data and next year's events</li>
+        <li>Each region must total 100%</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="down-arrow">&#8595;</div>
+
+  <div class="center-card">
+    <div class="t">Forecast, check, then RUN</div>
+    <div class="s">Fix errors, validate warnings · RUN cannot be undone · 5 rounds total</div>
+  </div>
+
+  <h2>Communication goals target the purchase funnel</h2>
+  <div class="funnel">
+    <div class="stage"><div class="t">Awareness</div><div class="s">Brand recognition</div></div>
+    <div class="fa">&#8594;</div>
+    <div class="stage"><div class="t">Interest</div><div class="s">Consideration, preference, purchase intention</div></div>
+    <div class="fa">&#8594;</div>
+    <div class="stage"><div class="t">Action</div><div class="s">Distribution coverage, market share</div></div>
+    <div class="fa">&#8594;</div>
+    <div class="stage"><div class="t">Engagement</div><div class="s">Loyalty, advocacy</div></div>
+  </div>
+
+  <h2>The yearly loop</h2>
+  <div class="loop">
+    <div class="step">Analyze 8 reports</div>
+    <div class="fa">&#8594;</div>
+    <div class="step">Decide (4 areas)</div>
+    <div class="fa">&#8594;</div>
+    <div class="step">Forecast &amp; check</div>
+    <div class="fa">&#8594;</div>
+    <div class="step">Run the year</div>
+  </div>
+  <p class="loop-note">&#8635; Results set next year's budget — repeat for 5 years</p>
+
+  <h2>Key rules to remember</h2>
+  <div class="rules">
+    <ul>
+      <li><b>Budget compounds.</b> Next year's budget is set by this year's EBT per region:
+        <table class="budget-table">
+          <tr><td>EBT &le; $30M</td><td>Budget = $6M</td></tr>
+          <tr><td>$30M &le; EBT &le; $60M</td><td>Budget = 20% &times; EBT</td></tr>
+          <tr><td>EBT &ge; $60M</td><td>Budget = $9M + 5% &times; EBT</td></tr>
+        </table>
+      </li>
+      <li><b>Two scorecards.</b> Purchase Funnel Performance (PFP) measures media management; the Overall Performance Index (OPI) combines sales, share, and profit — and matters most.</li>
+      <li><b>Errors block the run</b> (e.g., overspending). Warnings deserve a careful look before running.</li>
+      <li><b>One person per decision page.</b> Divide areas among teammates; only disconnect inactive teammates.</li>
+      <li><b>Get team sign-off before RUN.</b> It cannot be cancelled or rolled back.</li>
+    </ul>
+  </div>
+
+  <h2>Insights &amp; implications</h2>
+  <div class="insights">
+
+    <div class="insight">
+      <div class="i-title">Growth lives with Millennials &amp; Gen Z — Gen X pays today's bills</div>
+      <p><span class="tag stated">Stated</span> Gen X: largest segment, low growth. Millennials: near-largest, significant growth predicted. Gen Z: consumption grows as they start work and university.</p>
+      <p><span class="tag inference">Implication</span> Milk Gen X early for EBT, build Millennials as the near-term growth engine, treat Gen Z as the years 3&ndash;5 payoff. Verify sizes in the SEGMENTS report before committing.</p>
+    </div>
+
+    <div class="insight">
+      <div class="i-title">Balanced regional profit beats one dominant region</div>
+      <p><span class="tag stated">Stated</span> Budget is computed per region, then summed. Marginal return is 20% of EBT between $30&ndash;60M but only 5% above $60M.</p>
+      <p><span class="tag inference">Implication</span> Three regions at $60M EBT each &rarr; ~$36M budget. One region at $180M + two weak &rarr; ~$30M. Don't starve two regions to feed one.</p>
+    </div>
+
+    <div class="insight">
+      <div class="i-title">Pick the first objective off the funnel data — it carries 60%</div>
+      <p><span class="tag stated">Stated</span> Awareness &rarr; recognition · Interest &rarr; consideration/preference/intention · Action &rarr; distribution &amp; share · Engagement &rarr; loyalty &amp; advocacy.</p>
+      <p><span class="tag inference">Implication</span> Diagnose where each region's funnel breaks. If awareness is 80% but purchase intention is 38%, more Awareness spend is wasted — target the bottleneck.</p>
+    </div>
+
+    <div class="insight">
+      <div class="i-title">Match objectives to segment psychology</div>
+      <p><span class="tag stated">Stated</span> Millennials are less brand loyal and bargain-hunt. Gen X prefers premium; price signals quality. Gen Z is ad-skeptical.</p>
+      <p><span class="tag inference">Implication</span> Action (promos, availability) fits Millennials; Engagement fights their nature. Heavy promotion may cheapen the brand for Gen X — Interest/Engagement fit better. Earned media &amp; advocacy punch above their weight with Gen Z.</p>
+    </div>
+
+    <div class="insight">
+      <div class="i-title">Gen Z requires multi-channel — don't go all-digital</div>
+      <p><span class="tag stated">Stated</span> Short attention spans; best reached via multiple channels, e.g. sponsorship and print to complement a social or mobile campaign.</p>
+      <p><span class="tag inference">Implication</span> Dumping 100% into social/mobile for the "digital natives" is the exact mistake this line warns against.</p>
+    </div>
+
+    <div class="insight">
+      <div class="i-title">Media mapping is mostly handed to you</div>
+      <p><span class="tag stated">Stated</span> Gen X: TV first, print second, plus internet/email. Millennials: mobile and social throughout the day, every day.</p>
+      <p><span class="tag inference">Implication</span> Open with allocations that follow these habits; fine-tune with in-game media consumption reports.</p>
+    </div>
+
+    <div class="insight">
+      <div class="i-title">Seasonality is a real lever — especially Tourism</div>
+      <p><span class="tag stated">Stated</span> The doc's own example bumps Jul/Aug spend in Tourism and Q2 in Urban, and says to review next year's Events to reallocate spending and gain sales.</p>
+      <p><span class="tag inference">Implication</span> Teams that leave timing on "Year / even" all five rounds leave sales on the table. Graduate to quarter/month timing as you learn the patterns.</p>
+    </div>
+
+    <div class="insight">
+      <div class="i-title">Insight quality is a multiplier, not a cost</div>
+      <p><span class="tag stated">Stated</span> High-quality insights increase the impact of messages; you can stop investing once max quality is reached.</p>
+      <p><span class="tag inference">Implication</span> Underspending Content Powerhouse makes every downstream dollar work less hard. Treat it as a front-loaded investment, not a permanent tax.</p>
+    </div>
+
+    <div class="insight">
+      <div class="i-title">Competitors react — forecast conservatively</div>
+      <p><span class="tag stated">Stated</span> Competitors are dynamic and will react to what is happening in the market.</p>
+      <p><span class="tag inference">Implication</span> Assume your share gains are contested when entering forecast estimates. Rosy forecasts lead to overbuilt plans and budget misses.</p>
+    </div>
+
+  </div>
+
+  <footer>Team reference · Digital MediaPRO simulation (StratX) · print-friendly</footer>
+
+</div>
+</body>
+</html>
