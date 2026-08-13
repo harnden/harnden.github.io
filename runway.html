@@ -52,6 +52,10 @@
   ul.items{list-style:none; margin:0; padding:0;}
   ul.items li{display:flex; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid var(--hairline); font-size:14px; flex-wrap:wrap;}
   ul.items li:last-child{border-bottom:none;}
+  #ledgerList .ledger-row{padding:10px 12px; margin:0 -12px; border-radius:6px;}
+  #ledgerList .tag-recurring{background:rgba(124,106,142,0.90); border-left:4px solid var(--plum);}
+  #ledgerList .tag-utility{background:rgba(8, 124, 128, 0.88); border-left:4px solid var(--brick);}
+  #ledgerList .tag-annual{background:rgba(124,106,142,0.92); border-left:4px solid #D9CBE8;}
   li.paid{opacity:0.6;}
   li.paid .lname{text-decoration:line-through;}
   .lname{min-width:130px; flex:1 1 130px;}
@@ -60,8 +64,11 @@
   .date-input{width:130px;}
   .tag{font-size:10px; text-transform:uppercase; letter-spacing:.03em; padding:2px 7px; border-radius:20px; font-weight:600; margin-left:6px; white-space:nowrap;}
   .tag.urgent{background:var(--brick-soft); color:var(--brick);}
-  .tag.soon{background:rgba(186,138,61,0.14); color:var(--amber);}
-  .tag.later{background:rgba(63,99,103,0.10); color:var(--teal);}
+  .tag.soon{background:rgba(233, 145, 4, 0.14); color:var(--amber);}
+  .tag.later{background:rgba(250, 240, 225, 0.96); color:var(--teal);}
+  .tag.recurring{background:rgba(250, 240, 225, 0.96); color:var(--plum);}
+  .tag.utility{background:rgba(250, 240, 225, 0.96); color:var(--teal);}
+  .tag.annual{background:rgba(250, 240, 225, 0.96); color:#D9CBE8;}
   .tier-select{width:118px; font-size:12px;}
   .add-form{margin-top:14px; padding-top:14px; border-top:1px dashed var(--hairline);}
   .empty{color:var(--ink-soft); font-size:13px; padding:14px 0;}
@@ -148,8 +155,63 @@
       <div class="row">
         <div class="field"><label>Source</label><input type="text" id="incName" ></div>
         <div class="field" style="max-width:120px;"><label>Amount</label><input type="number" id="incAmt" placeholder="0"></div>
-        <div class="field" style="max-width:150px;"><label>Date</label><input type="date" id="incDate"></div>
+        <div class="field" style="max-width:150px;" id="incDateWrap"><label>Date</label><input type="date" id="incDate"></div>
+        <div class="field" style="max-width:100px; display:none;" id="incRecurringDayWrap"><label>Day of month</label><input type="number" id="incRecurringDay" min="1" max="31" placeholder="1"></div>
+        <div class="field" style="max-width:150px;">
+          <label>&nbsp;</label>
+          <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink-soft); font-weight:500; padding:8px 0;">
+            <input type="checkbox" id="incRecurring" style="width:auto;" onchange="toggleIncRecurringUI()"> Recurring monthly
+          </label>
+        </div>
         <button onclick="addIncome()">Add</button>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <div class="card" data-card="subscriptions">
+    <h2><span class="drag-handle" title="Drag to move">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('subscriptions')"><span id="chev-subscriptions">&#9662;</span> Subscriptions</span></h2>
+    <div id="body-subscriptions">
+    <p class="card-note">Each one auto-generates its next 6 months of charges into "Money going out," tagged &#8635; monthly. Editing here only changes future, unpaid months.</p>
+    <ul class="items" id="subscriptionList"></ul>
+    <div class="row" style="margin-top:12px; align-items:center;">
+      <div style="flex:1; font-family:'IBM Plex Mono',monospace; font-size:13px;" id="subTotals"></div>
+    </div>
+    <div class="add-form">
+      <div class="row">
+        <div class="field"><label>Subscription</label><input type="text" id="subName"></div>
+        <div class="field" style="max-width:110px;"><label>Amount</label><input type="number" id="subAmt" placeholder="0"></div>
+        <div class="field" style="max-width:110px;">
+          <label>Billed</label>
+          <select id="subCycle" onchange="toggleSubCycleUI()">
+            <option value="monthly">Monthly</option>
+            <option value="annual">Annual</option>
+          </select>
+        </div>
+        <div class="field" style="max-width:100px;" id="subDayWrap"><label>Day of month</label><input type="number" id="subDay" min="1" max="31" placeholder="1"></div>
+        <div class="field" style="max-width:150px; display:none;" id="subRenewalWrap"><label>Renews on</label><input type="date" id="subRenewal"></div>
+        <div class="field" style="max-width:150px;"><label>Card (optional)</label><input type="text" id="subCard" placeholder="e.g. Visa 4021"></div>
+        <button onclick="addSubscription()">Add</button>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <div class="card" data-card="utilities">
+    <h2><span class="drag-handle" title="Drag to move">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('utilities')"><span id="chev-utilities">&#9662;</span> Utilities</span></h2>
+    <div id="body-utilities">
+    <p class="card-note">Monthly, but the amount moves. Enter a typical figure — each generated month lands in "Money going out" where you can correct it to the real bill. Editing the estimate here only rewrites future unpaid months.</p>
+    <ul class="items" id="utilityList"></ul>
+    <div class="row" style="margin-top:12px; align-items:center;">
+      <div style="flex:1; font-family:'IBM Plex Mono',monospace; font-size:15px;">Typical month: <strong id="utilityTotal">$0</strong></div>
+    </div>
+    <div class="add-form">
+      <div class="row">
+        <div class="field"><label>Utility</label><input type="text" id="utName" placeholder="Electric"></div>
+        <div class="field" style="max-width:110px;"><label>Typical / mo</label><input type="number" id="utAmt" placeholder="0"></div>
+        <div class="field" style="max-width:100px;"><label>Day of month</label><input type="number" id="utDay" min="1" max="31" placeholder="1"></div>
+        <div class="field" style="max-width:150px;"><label>Provider (optional)</label><input type="text" id="utProvider" placeholder="e.g. Austin Energy"></div>
+        <button onclick="addUtility()">Add</button>
       </div>
     </div>
     </div>
@@ -164,15 +226,14 @@
       <div class="row">
         <div class="field"><label>What</label><input type="text" id="obName"></div>
         <div class="field" style="max-width:110px;"><label>Amount</label><input type="number" id="obAmt" placeholder="0"></div>
-        <div class="field" style="max-width:130px;">
-          <label>Tier</label>
-          <select id="obTier" onchange="toggleObDateUI()">
-            <option value="fixed">Fixed &amp; immovable</option>
-            <option value="atsomepoint">At some point</option>
-          </select>
-        </div>
         <div class="field" style="max-width:140px;" id="obDateWrap"><label>Due</label><input type="date" id="obDate"></div>
-        <div class="field" style="max-width:140px; display:none;" id="obGuessDateWrap"><label>Guess date</label><input type="date" id="obGuessDate"></div>
+        <div class="field" style="max-width:150px;">
+          <label>&nbsp;</label>
+          <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink-soft); font-weight:500; padding:8px 0;">
+            <input type="checkbox" id="obRecurring" style="width:auto;" onchange="toggleObRecurringUI()"> Recurring monthly
+          </label>
+        </div>
+        <div class="field" style="max-width:100px; display:none;" id="obRecurringDayWrap"><label>Day of month</label><input type="number" id="obRecurringDay" min="1" max="31" placeholder="1"></div>
         <button onclick="addLedgerItem()">Add</button>
       </div>
     </div>
@@ -196,7 +257,6 @@
       <span class="dot" style="background:var(--sage)"></span>
       <span class="dot" style="background:var(--brick)"></span>
       <span class="dot" style="background:var(--amber)"></span>
-      <span class="dot" style="background:var(--teal)"></span>
     </div>
     </div>
   </div>
@@ -265,10 +325,134 @@
 const STORAGE_KEY = 'runway-state-v3';
 const todayStr = new Date().toISOString().slice(0,10);
 
-let state = { balance:0, incomes:[], items:[], scratch:[], toxicDebts:[], ui:{collapsed:{}, layout:null}, sheetEmbedUrl:'' };
-const CARD_IDS = ['tally','stand','income','ledger','thisweek','runway','vault','sheet','toxic'];
+let state = { balance:0, incomes:[], items:[], scratch:[], toxicDebts:[], recurring:[], recurringIncomes:[], ui:{collapsed:{}, layout:null}, sheetEmbedUrl:'' };
+const CARD_IDS = ['tally','stand','income','subscriptions','utilities','ledger','thisweek','runway','vault','sheet','toxic'];
 
 function uid(){ return Math.random().toString(36).slice(2,9); }
+function pad2(n){ return String(n).padStart(2,'0'); }
+function monthDateStr(y, m0, day){
+  const lastDay = new Date(y, m0+1, 0).getDate();
+  const d = Math.min(Math.max(1, day||1), lastDay);
+  return `${y}-${pad2(m0+1)}-${pad2(d)}`;
+}
+const RECURRING_MONTHS_AHEAD = 6;
+const RECURRING_KINDS = ['subscription','utility','recurring'];
+// Legacy entries predate the subscription/utility/recurring split. Infer a kind for those
+// ONLY — anything already carrying a valid kind must be left exactly as the user set it.
+function migrateItemTiers(){
+  if(!Array.isArray(state.items)) { state.items = []; return; }
+  state.items.forEach(it=>{
+    if(it.tier !== 'wish' && it.tier !== 'fixed'){
+      it.tier = 'fixed';
+      if(!it.date) it.date = it.windowEnd || todayStr;
+    }
+    it.windowStart = null; it.windowEnd = null;
+  });
+}
+function migrateRecurringKinds(){
+  if(!Array.isArray(state.recurring)) { state.recurring = []; return; }
+  state.recurring.forEach(sub=>{
+    if(!RECURRING_KINDS.includes(sub.kind)){
+      sub.kind = sub.card ? 'subscription' : 'recurring';
+    }
+  });
+}
+// An annual subscription lands once a year, so we generate only its next renewal —
+// dated from the stored renewal month/day, rolled to next year if it already passed.
+function nextAnnualDate(renewalDate){
+  if(!renewalDate) return null;
+  const parts = String(renewalDate).split('-');
+  if(parts.length<3) return null;
+  const m0 = parseInt(parts[1],10)-1, day = parseInt(parts[2],10);
+  if(isNaN(m0) || isNaN(day)) return null;
+  const thisYear = new Date().getFullYear();
+  let cand = monthDateStr(thisYear, m0, day);
+  if(cand < todayStr) cand = monthDateStr(thisYear+1, m0, day);
+  return cand;
+}
+// A monthly figure for any cycle, so annual and monthly costs can be compared directly.
+function monthlyEquivalent(sub){
+  const amt = Number(sub.amount)||0;
+  return sub.cycle==='annual' ? amt/12 : amt;
+}
+
+function generateRecurringItems(){
+  if(!Array.isArray(state.recurring)) state.recurring = [];
+  const today = new Date();
+  const startY = today.getFullYear(), startM = today.getMonth();
+  let changed = false;
+  state.recurring.forEach(sub=>{
+    if(sub.cycle==='annual'){
+      const dateStr = nextAnnualDate(sub.renewalDate);
+      if(!dateStr) return;
+      const monthKey = dateStr.slice(0,7);
+      const skipped = Array.isArray(sub.skipMonths) && sub.skipMonths.includes(monthKey);
+      const exists = state.items.some(it=>it.recurringId===sub.id && it.recurringMonth===monthKey);
+      if(!exists && !skipped){
+        state.items.push({
+          id: uid(), name: sub.name, tier:'fixed', amount: Number(sub.amount)||0,
+          date: dateStr, windowStart:null, windowEnd:null,
+          paid:false, addedDate: todayStr, timesReconsidered:0,
+          recurringId: sub.id, recurringMonth: monthKey
+        });
+        changed = true;
+      }
+      return;
+    }
+    for(let i=0; i<RECURRING_MONTHS_AHEAD; i++){
+      const y = startY + Math.floor((startM+i)/12);
+      const m = (startM+i)%12;
+      const monthKey = `${y}-${pad2(m+1)}`;
+      const skipped = Array.isArray(sub.skipMonths) && sub.skipMonths.includes(monthKey);
+      const exists = state.items.some(it=>it.recurringId===sub.id && it.recurringMonth===monthKey);
+      if(!exists && !skipped){
+        state.items.push({
+          id: uid(), name: sub.name, tier:'fixed', amount: Number(sub.amount)||0,
+          date: monthDateStr(y,m,sub.dayOfMonth), windowStart:null, windowEnd:null,
+          paid:false, addedDate: todayStr, timesReconsidered:0,
+          recurringId: sub.id, recurringMonth: monthKey
+        });
+        changed = true;
+      }
+    }
+  });
+  return changed;
+}
+// Drops future, unpaid, machine-generated items for a subscription so it can be regenerated
+// with fresh values. Past and already-paid items are left alone as history.
+// Same template-and-generate approach as outflows, but spawning income entries.
+function generateRecurringIncomes(){
+  if(!Array.isArray(state.recurringIncomes)) state.recurringIncomes = [];
+  const today = new Date();
+  const startY = today.getFullYear(), startM = today.getMonth();
+  let changed = false;
+  state.recurringIncomes.forEach(tpl=>{
+    for(let i=0; i<RECURRING_MONTHS_AHEAD; i++){
+      const y = startY + Math.floor((startM+i)/12);
+      const m = (startM+i)%12;
+      const monthKey = `${y}-${pad2(m+1)}`;
+      const skipped = Array.isArray(tpl.skipMonths) && tpl.skipMonths.includes(monthKey);
+      const exists = state.incomes.some(inc=>inc.recurringId===tpl.id && inc.recurringMonth===monthKey);
+      if(!exists && !skipped){
+        state.incomes.push({
+          id: uid(), label: tpl.label, amount: Number(tpl.amount)||0,
+          date: monthDateStr(y,m,tpl.dayOfMonth),
+          recurringId: tpl.id, recurringMonth: monthKey
+        });
+        changed = true;
+      }
+    }
+  });
+  return changed;
+}
+
+function clearFutureUnpaidForRecurring(subId, includeOverridden){
+  const nowMonthKey = todayStr.slice(0,7);
+  state.items = state.items.filter(it => !(
+    it.recurringId===subId && !it.paid && it.recurringMonth >= nowMonthKey &&
+    (includeOverridden || !it.amountOverridden)
+  ));
+}
 
 function normalizeLayout(){
   if(!state.ui) state.ui = {};
@@ -296,6 +480,8 @@ function seedDefaults(){
     ],
     scratch: Array.from({length:8}, ()=>({label:'', amount:0})),
     toxicDebts: [],
+    recurring: [],
+    recurringIncomes: [],
     ui: { collapsed:{}, layout:{ primary: CARD_IDS.filter(id=>id!=='sheet' && id!=='toxic'), secondary: ['sheet','toxic'] } },
     sheetEmbedUrl: '',
     items: [
@@ -320,6 +506,10 @@ async function loadState(){
         state.scratch = migrated;
       }
       if(!Array.isArray(state.toxicDebts)) state.toxicDebts = [];
+      if(!Array.isArray(state.recurring)) state.recurring = [];
+      if(!Array.isArray(state.recurringIncomes)) state.recurringIncomes = [];
+      migrateRecurringKinds();
+      migrateItemTiers();
       if(!state.ui) state.ui = { collapsed:{} };
       if(!state.ui.collapsed) state.ui.collapsed = {};
       if(state.ui.tallyCollapsed && !('tally' in state.ui.collapsed)){
@@ -354,14 +544,14 @@ function urgencyTag(dateStr){
   if(d <= 10) return {cls:'soon', label: d+'d'};
   return {cls:'later', label: d+'d'};
 }
-function tierColor(t){ return t==='fixed' ? 'var(--amber)' : t==='atsomepoint' ? 'var(--teal)' : 'var(--plum)'; }
+function tierColor(t){ return t==='wish' ? 'var(--plum)' : 'var(--amber)'; }
 function nextIncomeDate(){
   const upcoming = state.incomes.filter(i=>i.date>=todayStr).sort((a,b)=>new Date(a.date)-new Date(b.date));
   return upcoming.length ? upcoming[0].date : null;
 }
 function buildSeries(deductionMode){
-  // deductionMode: 'none' (flat reference at today's cash on hand, nothing added or subtracted),
-  // 'fixed' (only Fixed items subtract, income adds), 'all' (Fixed + At-some-point subtract, income adds)
+  // deductionMode: 'none' (flat reference at today's cash on hand, nothing added or subtracted)
+  // or 'all' (every unpaid committed item subtracts on its date, income adds)
   const A = Number(state.balance)||0;
   const committed = state.items.filter(o=>o.tier!=='wish' && !o.paid && o.date);
   const allDates = [todayStr, ...committed.map(o=>o.date), ...state.incomes.map(i=>i.date)];
@@ -375,7 +565,6 @@ function buildSeries(deductionMode){
     if(deductionMode!=='none'){
       committed.forEach(o=>{
         if(o.date!==dateStr) return;
-        if(deductionMode==='fixed' && o.tier!=='fixed') return;
         running -= Number(o.amount)||0;
       });
       state.incomes.forEach(i=>{ if(i.date===dateStr) running += Number(i.amount)||0; });
@@ -393,16 +582,17 @@ function findFirstNegative(series){
 function computeBalances(){
   const A = Number(state.balance)||0;
   const baseline = buildSeries('none');
-  const safe = buildSeries('fixed');
   const full = buildSeries('all');
   const nid = nextIncomeDate();
-  let safeWindow = nid ? safe.filter(p=>p.dateStr<=nid) : safe;
-  if(safeWindow.length===0) safeWindow = safe;
-  const B = Math.min(...safeWindow.map(p=>p.balance));
+  // Short range = low point before the next money arrives; long range = low point overall.
+  // With every committed item treated alike, these differ by time window, not by tier.
+  let nearWindow = nid ? full.filter(p=>p.dateStr<=nid) : full;
+  if(nearWindow.length===0) nearWindow = full;
+  const B = Math.min(...nearWindow.map(p=>p.balance));
   const C = Math.min(...full.map(p=>p.balance));
-  const bFirstNeg = findFirstNegative(safeWindow);
+  const bFirstNeg = findFirstNegative(nearWindow);
   const cFirstNeg = findFirstNegative(full);
-  return { A, B, C, baseline, safe, full, bFirstNeg, cFirstNeg };
+  return { A, B, C, baseline, full, bFirstNeg, cFirstNeg };
 }
 
 function updateSecondaryHint(){
@@ -497,7 +687,13 @@ function importBackup(file){
       }
       delete state.ui.tallyCollapsed;
       if(typeof state.sheetEmbedUrl !== 'string') state.sheetEmbedUrl = '';
+      if(!Array.isArray(state.recurring)) state.recurring = [];
+      if(!Array.isArray(state.recurringIncomes)) state.recurringIncomes = [];
+      migrateRecurringKinds();
+      migrateItemTiers();
       normalizeLayout();
+      generateRecurringItems();
+      generateRecurringIncomes();
       await saveState();
       applyLayout();
       render();
@@ -542,7 +738,7 @@ function renderToxicDebt(){
 }
 
 function render(){
-  const {A,B,C,baseline,safe,full,bFirstNeg,cFirstNeg} = computeBalances();
+  const {A,B,C,baseline,full,bFirstNeg,cFirstNeg} = computeBalances();
   document.getElementById('balanceInput').value = state.balance;
   document.getElementById('balA').textContent = '$'+fmt(A);
   document.getElementById('balB').textContent = '$'+fmt(B);
@@ -566,12 +762,14 @@ function render(){
   renderIncome();
   renderScratch();
   applyAllCardCollapse();
+  renderSubscriptions();
+  renderUtilities();
   renderLedger();
   renderThisWeek();
   renderWish();
   renderToxicDebt();
   renderSheetCard();
-  drawChart(baseline, safe, full);
+  drawChart(baseline, full);
 }
 
 function renderIncome(){
@@ -584,6 +782,7 @@ function renderIncome(){
       <input type="text" class="lname lname-input" value="${inc.label}" onchange="updateIncome('${inc.id}','label',this.value)">
       <input type="date" class="date-input" value="${inc.date}" onchange="updateIncome('${inc.id}','date',this.value)">
       <input type="number" class="amt-input" value="${inc.amount}" style="color:var(--sage)" onchange="updateIncome('${inc.id}','amount',this.value)">
+      ${inc.recurringId ? '<span class="tag recurring" title="Auto-generated monthly">&#8635; monthly</span>' : ''}
       <button class="danger-ghost" onclick="removeIncome('${inc.id}')">remove</button>`;
     incUl.appendChild(li);
   });
@@ -603,36 +802,29 @@ function renderLedger(){
   sorted.forEach(it=>{
     const li = document.createElement('li');
     if(it.paid) li.classList.add('paid');
-    const tag = it.date ? urgencyTag(it.date) : null;
+    li.classList.add('ledger-row');
+    const recurring = it.recurringId ? state.recurring.find(sub=>sub.id===it.recurringId) : null;
+    if(!it.paid && recurring){
+      li.classList.add(recurring.cycle==='annual' ? 'tag-annual' : recurring.kind==='utility' ? 'tag-utility' : 'tag-recurring');
+    }
 
     if(it.paid){
       li.innerHTML = `
         <input type="checkbox" checked onchange="togglePaid('${it.id}')">
         <span class="dot" style="background:${tierColor(it.tier)}"></span>
         <span class="lname">${it.name}</span>
+        ${it.recurringId ? recurringBadge(it.recurringId) : ''}
         <span class="wish-meta">${it.date||''}</span>
         <span class="amt-input" style="text-align:right; display:inline-block;">$${fmt(it.amount)}</span>`;
     } else {
-      let dateField;
-      if(it.tier==='fixed'){
-        dateField = `<input type="date" class="date-input" value="${it.date||''}" onchange="updateItem('${it.id}','date',this.value)">`;
-      } else {
-        dateField = `
-          <span class="wish-meta">guess</span>
-          <input type="date" class="date-input" value="${it.date||''}" title="guess date" onchange="updateItem('${it.id}','date',this.value)">`;
-      }
       li.innerHTML = `
         <input type="checkbox" onchange="togglePaid('${it.id}')">
         <span class="dot" style="background:${tierColor(it.tier)}"></span>
         <input type="text" class="lname lname-input" value="${it.name}" onchange="updateItem('${it.id}','name',this.value)">
-        <select class="tier-select" onchange="changeTier('${it.id}', this.value)">
-          <option value="fixed" ${it.tier==='fixed'?'selected':''}>Fixed &amp; immovable</option>
-          <option value="atsomepoint" ${it.tier==='atsomepoint'?'selected':''}>At some point</option>
-          <option value="wish">I wish</option>
-        </select>
-        ${dateField}
-        ${tag ? `<span class="tag ${tag.cls}">${tag.label}</span>` : ''}
+        <input type="date" class="date-input" value="${it.date||''}" onchange="updateItem('${it.id}','date',this.value)">
+        ${it.recurringId ? recurringBadge(it.recurringId) : ''}
         <input type="number" class="amt-input" value="${it.amount}" onchange="updateItem('${it.id}','amount',this.value)">
+        <button class="mini subtle" title="Move to Vault" onclick="changeTier('${it.id}','wish')">vault</button>
         <button class="danger-ghost" onclick="removeItem('${it.id}')">remove</button>`;
     }
     ul.appendChild(li);
@@ -669,11 +861,7 @@ function renderWish(){
     li.innerHTML = `
       <span class="dot" style="background:${tierColor('wish')}"></span>
       <input type="text" class="lname lname-input" value="${it.name}" onchange="updateItem('${it.id}','name',this.value)">
-      <select class="tier-select" onchange="changeTier('${it.id}', this.value)">
-        <option value="wish" selected>I wish</option>
-        <option value="fixed">Fixed &amp; immovable</option>
-        <option value="atsomepoint">At some point</option>
-      </select>
+      <button class="mini subtle" title="Move to Money going out" onclick="changeTier('${it.id}','fixed')">commit &#8594;</button>
       <input type="number" class="amt-input" value="${it.amount}" onchange="updateItem('${it.id}','amount',this.value)">
       ${it.timesReconsidered>0 ? `<span class="wish-meta">passed ${it.timesReconsidered}x</span>` : ''}
       <button class="mini subtle" onclick="notYet('${it.id}')">Not yet</button>
@@ -743,19 +931,22 @@ function useScratchAsBalance(){
 function updateItem(id, field, value){
   const it = state.items.find(i=>i.id===id); if(!it) return;
   it[field] = field==='amount' ? (parseFloat(value)||0) : value;
+  // A hand-corrected amount on a generated row (e.g. the real electric bill) is real data.
+  // Mark it so re-editing the template estimate doesn't wipe it out.
+  if(field==='amount' && it.recurringId) it.amountOverridden = true;
   saveState(); render();
 }
 function changeTier(id, newTier){
   const it = state.items.find(i=>i.id===id); if(!it) return;
-  it.tier = newTier;
+  // Two states remain: committed (stored as 'fixed' so existing filters keep working)
+  // and vaulted ('wish').
   if(newTier==='wish'){
+    it.tier = 'wish';
     it.date = null; it.windowStart=null; it.windowEnd=null; it.paid=false;
-  } else if(newTier==='fixed'){
+  } else {
+    it.tier = 'fixed';
     if(!it.date) it.date = todayStr;
     it.windowStart=null; it.windowEnd=null;
-  } else if(newTier==='atsomepoint'){
-    it.windowStart=null; it.windowEnd=null;
-    if(!it.date){ const d=new Date(); d.setDate(d.getDate()+14); it.date = d.toISOString().slice(0,10); }
   }
   saveState(); render();
 }
@@ -766,42 +957,265 @@ function togglePaid(id){
   else { state.balance = (Number(state.balance)||0) + amt; it.paid = false; }
   saveState(); render();
 }
-function removeItem(id){ state.items = state.items.filter(i=>i.id!==id); saveState(); render(); }
-function removeIncome(id){ state.incomes = state.incomes.filter(i=>i.id!==id); saveState(); render(); }
+function removeItem(id){
+  const it = state.items.find(i=>i.id===id);
+  // Removing a generated row has to be remembered, or the engine just recreates it
+  // on the next load. Record the month as skipped for that template.
+  if(it && it.recurringId && it.recurringMonth){
+    const sub = state.recurring.find(s=>s.id===it.recurringId);
+    if(sub){
+      if(!Array.isArray(sub.skipMonths)) sub.skipMonths = [];
+      if(!sub.skipMonths.includes(it.recurringMonth)) sub.skipMonths.push(it.recurringMonth);
+    }
+  }
+  state.items = state.items.filter(i=>i.id!==id);
+  saveState(); render();
+}
+function removeIncome(id){
+  const inc = state.incomes.find(i=>i.id===id);
+  // Same as the outflow side: a removed month has to be remembered or it regenerates.
+  if(inc && inc.recurringId && inc.recurringMonth){
+    const tpl = state.recurringIncomes.find(t=>t.id===inc.recurringId);
+    if(tpl){
+      if(!Array.isArray(tpl.skipMonths)) tpl.skipMonths = [];
+      if(!tpl.skipMonths.includes(inc.recurringMonth)) tpl.skipMonths.push(inc.recurringMonth);
+    }
+  }
+  state.incomes = state.incomes.filter(i=>i.id!==id);
+  saveState(); render();
+}
 function notYet(id){
   const it = state.items.find(i=>i.id===id);
   if(it){ it.timesReconsidered = (it.timesReconsidered||0)+1; saveState(); render(); }
 }
 
+function toggleSubCycleUI(){
+  const annual = document.getElementById('subCycle').value==='annual';
+  document.getElementById('subDayWrap').style.display = annual ? 'none' : 'flex';
+  document.getElementById('subRenewalWrap').style.display = annual ? 'flex' : 'none';
+}
+function addSubscription(){
+  const name = document.getElementById('subName').value.trim();
+  const amt = parseFloat(document.getElementById('subAmt').value)||0;
+  const cycle = document.getElementById('subCycle').value==='annual' ? 'annual' : 'monthly';
+  let day = parseInt(document.getElementById('subDay').value, 10);
+  if(!day || day<1) day = 1; if(day>31) day = 31;
+  const renewal = document.getElementById('subRenewal').value;
+  const card = document.getElementById('subCard').value.trim();
+  if(!name) return;
+  const sub = { id:uid(), name, amount:amt, dayOfMonth:day, card: card||null, kind:'subscription', cycle };
+  if(cycle==='annual') sub.renewalDate = renewal || todayStr;
+  state.recurring.push(sub);
+  document.getElementById('subName').value=''; document.getElementById('subAmt').value='';
+  document.getElementById('subDay').value=''; document.getElementById('subCard').value='';
+  document.getElementById('subRenewal').value=''; document.getElementById('subCycle').value='monthly';
+  toggleSubCycleUI();
+  generateRecurringItems();
+  saveState(); render();
+}
+function updateSubscription(id, field, value){
+  const sub = state.recurring.find(s=>s.id===id); if(!sub) return;
+  if(field==='amount') sub.amount = parseFloat(value)||0;
+  else if(field==='dayOfMonth'){ let d=parseInt(value,10); if(!d||d<1) d=1; if(d>31) d=31; sub.dayOfMonth = d; }
+  else if(field==='card') sub.card = value.trim()||null;
+  else if(field==='cycle'){
+    sub.cycle = value==='annual' ? 'annual' : 'monthly';
+    // Switching cycle invalidates every generated month, including hand-corrected ones —
+    // twelve monthly rows and one annual lump are not the same schedule.
+    if(sub.cycle==='annual' && !sub.renewalDate){
+      sub.renewalDate = monthDateStr(new Date().getFullYear(), new Date().getMonth(), sub.dayOfMonth||1);
+    }
+    sub.skipMonths = [];
+    clearFutureUnpaidForRecurring(id, true);
+    generateRecurringItems();
+    saveState(); render();
+    return;
+  }
+  else if(field==='renewalDate'){
+    sub.renewalDate = value || null;
+    sub.skipMonths = [];
+    clearFutureUnpaidForRecurring(id, true);
+    generateRecurringItems();
+    saveState(); render();
+    return;
+  }
+  else sub[field] = value;
+  clearFutureUnpaidForRecurring(id);
+  generateRecurringItems();
+  saveState(); render();
+}
+function removeSubscription(id){
+  state.recurring = state.recurring.filter(s=>s.id!==id);
+  clearFutureUnpaidForRecurring(id, true);
+  saveState(); render();
+}
+function addUtility(){
+  const name = document.getElementById('utName').value.trim();
+  const amt = parseFloat(document.getElementById('utAmt').value)||0;
+  let day = parseInt(document.getElementById('utDay').value, 10);
+  if(!day || day<1) day = 1; if(day>31) day = 31;
+  const provider = document.getElementById('utProvider').value.trim();
+  if(!name) return;
+  state.recurring.push({ id:uid(), name, amount:amt, dayOfMonth:day, card: provider||null, kind:'utility' });
+  document.getElementById('utName').value=''; document.getElementById('utAmt').value='';
+  document.getElementById('utDay').value=''; document.getElementById('utProvider').value='';
+  generateRecurringItems();
+  saveState(); render();
+}
+function renderUtilities(){
+  const ul = document.getElementById('utilityList');
+  if(!ul) return;
+  ul.innerHTML = '';
+  const utils = Array.isArray(state.recurring) ? state.recurring.filter(s=>s.kind==='utility') : [];
+  if(utils.length===0){
+    ul.innerHTML = '<div class="empty">No utilities tracked yet.</div>';
+    document.getElementById('utilityTotal').textContent = '$0';
+    return;
+  }
+  [...utils].sort((a,b)=> a.dayOfMonth - b.dayOfMonth).forEach(u=>{
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <span class="dot" style="background:var(--amber)"></span>
+      <input type="text" class="lname lname-input" value="${u.name}" onchange="updateSubscription('${u.id}','name',this.value)">
+      <input type="number" class="amt-input" value="${u.amount}" onchange="updateSubscription('${u.id}','amount',this.value)">
+      <span class="wish-meta">day</span>
+      <input type="number" class="amt-input" style="width:56px" min="1" max="31" value="${u.dayOfMonth}" onchange="updateSubscription('${u.id}','dayOfMonth',this.value)">
+      <input type="text" class="lname-input" style="min-width:110px; flex:0 1 130px;" placeholder="provider" value="${u.card||''}" onchange="updateSubscription('${u.id}','card',this.value)">
+      ${kindSelect(u)}
+      <button class="danger-ghost" onclick="removeSubscription('${u.id}')">remove</button>`;
+    ul.appendChild(li);
+  });
+  const total = utils.reduce((s,u)=> s + (Number(u.amount)||0), 0);
+  document.getElementById('utilityTotal').textContent = '$'+fmt(total);
+}
+
+function recurringBadge(recurringId){
+  const sub = Array.isArray(state.recurring) ? state.recurring.find(s=>s.id===recurringId) : null;
+  if(sub && sub.cycle==='annual') return '<span class="tag annual" title="Annual renewal — one lump sum per year">&#8635; annual</span>';
+  if(sub && sub.kind==='utility') return '<span class="tag utility" title="Auto-generated utility — correct the amount when the real bill lands">&#8635; utility</span>';
+  return '<span class="tag recurring" title="Auto-generated monthly">&#8635; monthly</span>';
+}
+
+function kindSelect(sub){
+  const opt = (v,label)=> `<option value="${v}" ${sub.kind===v?'selected':''}>${label}</option>`;
+  return `<select class="tier-select" style="width:104px" title="Which pane this lives in" onchange="changeRecurringKind('${sub.id}', this.value)">
+    ${opt('subscription','Subscription')}${opt('utility','Utility')}${opt('recurring','Other monthly')}
+  </select>`;
+}
+function changeRecurringKind(id, kind){
+  const sub = state.recurring.find(s=>s.id===id); if(!sub) return;
+  if(!RECURRING_KINDS.includes(kind)) return;
+  sub.kind = kind;
+  saveState(); render();
+}
+
+function renderSubscriptions(){
+  const ul = document.getElementById('subscriptionList');
+  ul.innerHTML = '';
+  const subs = Array.isArray(state.recurring) ? state.recurring.filter(s=>s.kind==='subscription') : [];
+  const totalEl = document.getElementById('subTotals');
+  if(subs.length===0){
+    ul.innerHTML = '<div class="empty">No subscriptions tracked yet.</div>';
+    if(totalEl) totalEl.innerHTML = '';
+    return;
+  }
+  const annualFirst = [...subs].sort((a,b)=>{
+    if((a.cycle==='annual') !== (b.cycle==='annual')) return a.cycle==='annual' ? -1 : 1;
+    return (a.dayOfMonth||0) - (b.dayOfMonth||0);
+  });
+  annualFirst.forEach(sub=>{
+    const isAnnual = sub.cycle==='annual';
+    const li = document.createElement('li');
+    const timingField = isAnnual
+      ? `<span class="wish-meta">renews</span>
+         <input type="date" class="date-input" style="width:130px" value="${nextAnnualDate(sub.renewalDate)||''}" onchange="updateSubscription('${sub.id}','renewalDate',this.value)">`
+      : `<span class="wish-meta">day</span>
+         <input type="number" class="amt-input" style="width:56px" min="1" max="31" value="${sub.dayOfMonth}" onchange="updateSubscription('${sub.id}','dayOfMonth',this.value)">`;
+    li.innerHTML = `
+      <span class="dot" style="background:${isAnnual ? 'var(--plum)' : 'var(--teal)'}"></span>
+      <input type="text" class="lname lname-input" value="${sub.name}" onchange="updateSubscription('${sub.id}','name',this.value)">
+      <input type="number" class="amt-input" value="${sub.amount}" onchange="updateSubscription('${sub.id}','amount',this.value)">
+      <select class="tier-select" style="width:88px" title="Billing cycle" onchange="updateSubscription('${sub.id}','cycle',this.value)">
+        <option value="monthly" ${!isAnnual?'selected':''}>Monthly</option>
+        <option value="annual" ${isAnnual?'selected':''}>Annual</option>
+      </select>
+      ${timingField}
+      ${isAnnual ? `<span class="tag recurring" title="What this costs per month if you could pay monthly">&#8776; $${fmt(monthlyEquivalent(sub))}/mo</span>` : ''}
+      <input type="text" class="lname-input" style="min-width:100px; flex:0 1 120px;" placeholder="card" value="${sub.card||''}" onchange="updateSubscription('${sub.id}','card',this.value)">
+      ${kindSelect(sub)}
+      <button class="danger-ghost" onclick="removeSubscription('${sub.id}')">remove</button>`;
+    ul.appendChild(li);
+  });
+  if(totalEl){
+    const monthlySubs = subs.filter(s=>s.cycle!=='annual');
+    const annualSubs = subs.filter(s=>s.cycle==='annual');
+    const monthlyRun = monthlySubs.reduce((s,x)=> s + (Number(x.amount)||0), 0);
+    const annualLump = annualSubs.reduce((s,x)=> s + (Number(x.amount)||0), 0);
+    const combinedPerMonth = subs.reduce((s,x)=> s + monthlyEquivalent(x), 0);
+    totalEl.innerHTML = `Monthly billed: <strong>$${fmt(monthlyRun)}</strong>
+      &nbsp;·&nbsp; Annual lump sums: <strong>$${fmt(annualLump)}</strong>
+      &nbsp;·&nbsp; True cost per month: <strong>$${fmt(combinedPerMonth)}</strong>`;
+  }
+}
+
+function toggleObRecurringUI(){
+  const on = document.getElementById('obRecurring').checked;
+  document.getElementById('obRecurringDayWrap').style.display = on ? 'flex' : 'none';
+  document.getElementById('obDateWrap').style.display = on ? 'none' : 'flex';
+}
+
 function toggleObDateUI(){
-  const tier = document.getElementById('obTier').value;
-  document.getElementById('obDateWrap').style.display = tier==='fixed' ? 'flex' : 'none';
-  document.getElementById('obGuessDateWrap').style.display = tier==='atsomepoint' ? 'flex' : 'none';
+  document.getElementById('obDateWrap').style.display =
+    document.getElementById('obRecurring').checked ? 'none' : 'flex';
 }
 function addLedgerItem(){
   const name = document.getElementById('obName').value.trim();
   const amt = parseFloat(document.getElementById('obAmt').value)||0;
-  const tier = document.getElementById('obTier').value;
+  const isRecurring = document.getElementById('obRecurring').checked;
   if(!name) return;
-  let item = { id:uid(), name, tier, amount:amt, paid:false, addedDate:todayStr, timesReconsidered:0,
-    date:null, windowStart:null, windowEnd:null };
-  if(tier==='fixed'){
-    item.date = document.getElementById('obDate').value || todayStr;
+
+  if(isRecurring){
+    let day = parseInt(document.getElementById('obRecurringDay').value, 10);
+    if(!day || day<1) day = 1; if(day>31) day = 31;
+    state.recurring.push({ id:uid(), name, amount:amt, dayOfMonth:day, card:null, kind:'recurring' });
+    generateRecurringItems();
   } else {
-    item.date = document.getElementById('obGuessDate').value || todayStr;
+    state.items.push({ id:uid(), name, tier:'fixed', amount:amt, paid:false,
+      addedDate:todayStr, timesReconsidered:0,
+      date: document.getElementById('obDate').value || todayStr,
+      windowStart:null, windowEnd:null });
   }
-  state.items.push(item);
+
   document.getElementById('obName').value=''; document.getElementById('obAmt').value='';
-  document.getElementById('obDate').value=''; document.getElementById('obGuessDate').value='';
+  document.getElementById('obDate').value='';
+  document.getElementById('obRecurringDay').value=''; document.getElementById('obRecurring').checked=false;
+  toggleObRecurringUI();
   saveState(); render();
+}
+function toggleIncRecurringUI(){
+  const on = document.getElementById('incRecurring').checked;
+  document.getElementById('incDateWrap').style.display = on ? 'none' : 'flex';
+  document.getElementById('incRecurringDayWrap').style.display = on ? 'flex' : 'none';
 }
 function addIncome(){
   const label = document.getElementById('incName').value.trim();
   const amt = parseFloat(document.getElementById('incAmt').value)||0;
-  const date = document.getElementById('incDate').value || todayStr;
+  const isRecurring = document.getElementById('incRecurring').checked;
   if(!label) return;
-  state.incomes.push({id:uid(), label, amount:amt, date});
+
+  if(isRecurring){
+    let day = parseInt(document.getElementById('incRecurringDay').value, 10);
+    if(!day || day<1) day = 1; if(day>31) day = 31;
+    state.recurringIncomes.push({ id:uid(), label, amount:amt, dayOfMonth:day });
+    generateRecurringIncomes();
+  } else {
+    const date = document.getElementById('incDate').value || todayStr;
+    state.incomes.push({id:uid(), label, amount:amt, date});
+  }
+
   document.getElementById('incName').value=''; document.getElementById('incAmt').value=''; document.getElementById('incDate').value='';
+  document.getElementById('incRecurringDay').value=''; document.getElementById('incRecurring').checked=false;
+  toggleIncRecurringUI();
   saveState(); render();
 }
 function addWishItem(){
@@ -819,7 +1233,7 @@ document.getElementById('balanceInput').addEventListener('change', (e)=>{
   saveState(); render();
 });
 
-function drawChart(baseline, safe, full){
+function drawChart(baseline, full){
   const holder = document.getElementById('chartHolder');
   const dipsNegative = full.some(p=>p.balance<0);
   const committed = state.items.filter(o=>o.tier!=='wish' && !o.paid && o.date);
@@ -827,7 +1241,7 @@ function drawChart(baseline, safe, full){
 
   const W = 920, H = 240, padL=54, padR=16, padT=16, padB=30;
   const chartW = W-padL-padR, chartH = H-padT-padB;
-  const allVals = [...baseline, ...safe, ...full].map(p=>p.balance);
+  const allVals = [...baseline, ...full].map(p=>p.balance);
   const maxB = Math.max(...allVals, Number(state.balance)||0, 50);
   const minB = Math.min(...allVals, 0);
   const range = (maxB-minB)||1;
@@ -840,7 +1254,6 @@ function drawChart(baseline, safe, full){
     return series.map((p,i)=> (i===0?'M':'L') + x(i).toFixed(1) + ',' + y(p.balance).toFixed(1)).join(' ');
   }
   const baselinePath = pathFor(baseline);
-  const safePath = pathFor(safe);
   const fullPath = pathFor(full);
 
   let belowPath = 'M' + x(0) + ',' + zeroY + ' ';
@@ -852,16 +1265,7 @@ function drawChart(baseline, safe, full){
     const idx = full.findIndex(p=>p.dateStr===o.date);
     if(idx<0) return;
     const cx = x(idx), cy = y(full[idx].balance);
-    if(o.tier==='atsomepoint'){
-      const sIdx = full.findIndex(p=>p.dateStr===o.windowStart);
-      const eIdx = full.findIndex(p=>p.dateStr===o.windowEnd);
-      if(sIdx>=0 && eIdx>=0){
-        markers += `<line x1="${x(sIdx)}" y1="${padT+6}" x2="${x(eIdx)}" y2="${padT+6}" stroke="var(--teal)" stroke-width="1.5" stroke-dasharray="3,3"/>`;
-      }
-      markers += `<rect x="${(cx-4.5).toFixed(1)}" y="${(cy-4.5).toFixed(1)}" width="9" height="9" transform="rotate(45 ${cx.toFixed(1)} ${cy.toFixed(1)})" fill="var(--teal)" stroke="#fff" stroke-width="1.5"><title>${o.name}: $${fmt(o.amount)}, between ${o.windowStart} and ${o.windowEnd}</title></rect>`;
-    } else {
-      markers += `<circle cx="${cx}" cy="${cy}" r="4.5" fill="var(--amber)" stroke="#fff" stroke-width="1.5"><title>${o.name}: $${fmt(o.amount)} due ${o.date}</title></circle>`;
-    }
+    markers += `<circle cx="${cx}" cy="${cy}" r="4.5" fill="var(--amber)" stroke="#fff" stroke-width="1.5"><title>${o.name}: $${fmt(o.amount)} due ${o.date}</title></circle>`;
   });
   state.incomes.forEach(inc=>{
     const idx = full.findIndex(p=>p.dateStr===inc.date);
@@ -914,7 +1318,6 @@ function drawChart(baseline, safe, full){
     <path d="${belowPath}" fill="var(--brick)" opacity="0.28" stroke="none"/>
     ${monthDividers}
     <path d="${baselinePath}" fill="none" stroke="var(--ink-soft)" stroke-width="1.75" stroke-dasharray="5,4"/>
-    <path d="${safePath}" fill="none" stroke="var(--sage)" stroke-width="2.25"/>
     <path d="${fullPath}" fill="none" stroke="var(--brick)" stroke-width="2.25"/>
     ${markers}
     ${monthLabels}
@@ -937,17 +1340,16 @@ function drawChart(baseline, safe, full){
     idx = Math.max(0, Math.min(points.length - 1, idx));
 
     const gx = x(idx);
-    const byBase = baseline[idx].balance, bySafe = safe[idx].balance, byFull = full[idx].balance;
+    const byBase = baseline[idx].balance, byFull = full[idx].balance;
     const dateStr = points[idx].dateStr;
 
     hoverLayer.innerHTML = `
       <line x1="${gx}" y1="${padT}" x2="${gx}" y2="${padT+chartH}" stroke="var(--ink)" stroke-width="1" stroke-dasharray="2,2" opacity="0.35"/>
       <circle cx="${gx}" cy="${y(byBase)}" r="4" fill="var(--ink-soft)" stroke="#fff" stroke-width="1.5"/>
-      <circle cx="${gx}" cy="${y(bySafe)}" r="4" fill="var(--sage)" stroke="#fff" stroke-width="1.5"/>
       <circle cx="${gx}" cy="${y(byFull)}" r="4" fill="var(--brick)" stroke="#fff" stroke-width="1.5"/>`;
 
     // Show only the value of whichever line the cursor is actually closest to.
-    const candidates = [byBase, bySafe, byFull];
+    const candidates = [byBase, byFull];
     let nearest = candidates[0], bestDist = Infinity;
     candidates.forEach(v=>{
       const d = Math.abs(svgY - y(v));
@@ -978,6 +1380,12 @@ function drawChart(baseline, safe, full){
   applyLayout();
   initSortable();
   toggleObDateUI();
+  toggleObRecurringUI();
+  toggleIncRecurringUI();
+  toggleSubCycleUI();
+  const gen = generateRecurringItems();
+  const genInc = generateRecurringIncomes();
+  if(gen || genInc) await saveState();
   render();
 })();
 </script>
