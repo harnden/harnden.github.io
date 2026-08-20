@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta name="robots" content="noindex, nofollow">
 <meta charset="UTF-8">
 <title>Runway</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,18 +12,8 @@
     --sage:#94d2bd; --plum:#7C6A8E; --hairline:#DAD7C9;
   }
   *{box-sizing:border-box;}
-  html{overflow-x:auto;}
-  body{margin:0; background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif; overflow-x:auto;}
-  .page{padding:32px 20px 60px 20px;}
-  .board{display:flex; align-items:flex-start; gap:24px;}
-  .col-primary{flex:0 0 940px; width:940px;}
-  .col-secondary{flex:0 0 auto; display:grid; grid-template-columns:minmax(300px,1fr); gap:18px; align-content:start; min-width:300px;}
-  .secondary-hint{width:300px; min-height:120px; border:1.5px dashed var(--hairline); border-radius:10px; padding:20px;
-    color:var(--ink-soft); font-size:13px; display:flex; align-items:center; justify-content:center; text-align:center;}
-  .drag-handle{cursor:grab; color:var(--ink-soft); font-size:15px; letter-spacing:1px; padding:0 3px; user-select:none; line-height:1;}
-  .drag-handle:active{cursor:grabbing;}
-  .card.sortable-ghost{opacity:0.35;}
-  .card.sortable-chosen{box-shadow:0 0 0 2px var(--teal);}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif; padding:32px 20px 60px;}
+  .wrap{max-width:980px; margin:0 auto;}
   h1{font-family:'Fraunces',serif; font-weight:600; font-size:40px; margin:0 0 2px; letter-spacing:-0.01em;}
   .sub{color:var(--ink-soft); font-size:14px; margin-bottom:28px;}
   .card{background:var(--panel); border:1px solid var(--hairline); border-radius:10px; padding:20px 22px; margin-bottom:18px;}
@@ -52,10 +41,6 @@
   ul.items{list-style:none; margin:0; padding:0;}
   ul.items li{display:flex; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid var(--hairline); font-size:14px; flex-wrap:wrap;}
   ul.items li:last-child{border-bottom:none;}
-  #ledgerList .ledger-row{padding:10px 12px; margin:0 -12px; border-radius:6px;}
-  #ledgerList .tag-recurring{background:rgba(124,106,142,0.90); border-left:4px solid var(--plum);}
-  #ledgerList .tag-utility{background:rgba(8, 124, 128, 0.88); border-left:4px solid var(--brick);}
-  #ledgerList .tag-annual{background:rgba(124,106,142,0.92); border-left:4px solid #D9CBE8;}
   li.paid{opacity:0.6;}
   li.paid .lname{text-decoration:line-through;}
   .lname{min-width:130px; flex:1 1 130px;}
@@ -64,17 +49,15 @@
   .date-input{width:130px;}
   .tag{font-size:10px; text-transform:uppercase; letter-spacing:.03em; padding:2px 7px; border-radius:20px; font-weight:600; margin-left:6px; white-space:nowrap;}
   .tag.urgent{background:var(--brick-soft); color:var(--brick);}
-  .tag.soon{background:rgba(233, 145, 4, 0.14); color:var(--amber);}
-  .tag.later{background:rgba(250, 240, 225, 0.96); color:var(--teal);}
-  .tag.recurring{background:rgba(250, 240, 225, 0.96); color:var(--plum);}
-  .tag.utility{background:rgba(250, 240, 225, 0.96); color:var(--teal);}
-  .tag.annual{background:rgba(250, 240, 225, 0.96); color:#D9CBE8;}
+  .tag.soon{background:rgba(186,138,61,0.14); color:var(--amber);}
+  .tag.later{background:rgba(63,99,103,0.10); color:var(--teal);}
   .tier-select{width:118px; font-size:12px;}
   .add-form{margin-top:14px; padding-top:14px; border-top:1px dashed var(--hairline);}
+  .add-form-top{margin-bottom:14px; padding-bottom:14px; border-bottom:1px dashed var(--hairline);}
   .empty{color:var(--ink-soft); font-size:13px; padding:14px 0;}
   .save-badge{position:fixed; top:16px; right:20px; font-size:12px; color:var(--ink-soft); font-family:'IBM Plex Mono',monospace; opacity:0; transition:opacity .3s;}
   .save-badge.show{opacity:1;}
-  ::placeholder{color:#454642;}
+  ::placeholder{color:#B7BAA9;}
   .wish-meta{font-size:11px; color:var(--ink-soft); margin-left:4px;}
   .tally-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px 18px;}
   @media (max-width:560px){ .tally-grid{grid-template-columns:1fr;} }
@@ -82,37 +65,30 @@
   .tally-slot input[type=text]{flex:1.4; min-width:0;}
   .tally-slot input[type=number]{flex:1; min-width:0;}
   #chartHolder{position:relative;}
-  .neg-alert{margin-top:7px; font-weight:600; font-size:12.5px; font-family:'IBM Plex Mono',monospace; color:#fff; background:#48284a; padding:5px 8px; border-radius:4px; line-height:1.4;}
   .chart-tooltip{
-    position:absolute; pointer-events:none; background:var(--ink); color:#070707;
+    position:absolute; pointer-events:none; background:var(--ink); color:#fff;
     font-family:'IBM Plex Mono',monospace; font-size:11.5px; padding:8px 10px;
-    border-radius:6px; line-height:1.5; white-space:normal; max-width:230px; opacity:0; transition:opacity .1s;
+    border-radius:6px; line-height:1.5; white-space:nowrap; opacity:0; transition:opacity .1s;
     z-index:5;
   }
   .chart-tooltip .tt-date{font-weight:600; margin-bottom:3px; font-family:'Inter',sans-serif;}
   .chart-tooltip .tt-row{display:flex; gap:8px; justify-content:space-between;}
-  .chart-tooltip .tt-row span:first-child{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:150px;}
-  .chart-tooltip .tt-detail{margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,0.18);}
-  .chart-tooltip .tt-empty{color:#4a5a05; font-style:italic; margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,0.18);}
 </style>
 </head>
 <body>
 <div class="save-badge" id="saveBadge">saved</div>
-<div class="page">
+<div class="wrap">
   <h1>Runway</h1>
-  <div class="sub">try harder</div>
+  <div class="sub">what you've got, what's coming out, what's coming in — and what's still just an idea</div>
   <div class="row" style="margin-bottom:20px; gap:10px;">
     <button class="subtle" onclick="exportBackup()">&#8595; Backup (download)</button>
     <button class="subtle" onclick="document.getElementById('importFile').click()">&#8593; Restore from backup</button>
     <input type="file" id="importFile" accept="application/json" style="display:none;" onchange="importBackup(this.files[0])">
   </div>
 
-  <div class="board">
-    <div class="col-primary" id="colPrimary">
-
-  <div class="card" data-card="tally">
-    <h2><span class="drag-handle" title="Drag to move">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('tally')"><span id="chev-tally">&#9662;</span> Quick tally</span></h2>
-    <div id="body-tally">
+  <div class="card">
+    <h2 style="cursor:pointer;" onclick="toggleTally()"><span id="tallyChevron">&#9662;</span> Quick tally</h2>
+    <div id="tallyBody">
       <div class="tally-grid" id="tallyGrid"></div>
       <div class="row" style="margin-top:12px; align-items:center;">
         <div style="flex:1; font-family:'IBM Plex Mono',monospace; font-size:15px;">Total: <strong id="scratchTotal">$0</strong></div>
@@ -121,149 +97,85 @@
     </div>
   </div>
 
-  <div class="card" data-card="stand">
-    <h2><span class="drag-handle" title="Drag to move">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('stand')"><span id="chev-stand">&#9662;</span> Where things stand</span></h2>
-    <div id="body-stand">
+  <div class="card">
+    <h2>Where things stand</h2>
     <div class="balances">
       <div class="bal-block">
         <div class="bal-label">Cash on hand</div>
         <div class="bal-figure" id="balA">$0</div>
-        <div class="bal-caption">Actual</div>
+        <div class="bal-caption">Whatever's actually in the account. You update this by hand — or it updates itself when you check something off as paid.</div>
         <input type="number" id="balanceInput" class="edit-balance" step="1">
       </div>
       <div class="bal-block">
-        <div class="bal-label" style="color:var(--sage)">short range</div>
+        <div class="bal-label" style="color:var(--sage)">Safe, near-term</div>
         <div class="bal-figure" id="balB" style="color:var(--sage)">$0</div>
-        <div class="bal-caption">med range</div>
-        <div class="neg-alert" id="negAlertB" style="display:none;"></div>
+        <div class="bal-caption">The lowest point you'd hit before your next income, counting only Fixed items as they come due.</div>
       </div>
       <div class="bal-block">
-        <div class="bal-label" style="color:var(--brick)">long range</div>
+        <div class="bal-label" style="color:var(--brick)">Full exposure</div>
         <div class="bal-figure" id="balC" style="color:var(--brick)">$0</div>
-        <div class="bal-caption">furthest out</div>
-        <div class="neg-alert" id="negAlertC" style="display:none;"></div>
+        <div class="bal-caption">The lowest point on the whole runway if every commitment, Fixed or At some point, lands exactly as scheduled.</div>
       </div>
-    </div>
     </div>
   </div>
 
-  <div class="card" data-card="income">
-    <h2><span class="drag-handle" title="Drag to move">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('income')"><span id="chev-income">&#9662;</span> Money coming in</span></h2>
-    <div id="body-income">
+  <div class="card">
+    <h2>Money coming in</h2>
     <ul class="items" id="incomeList"></ul>
     <div class="add-form">
       <div class="row">
         <div class="field"><label>Source</label><input type="text" id="incName" ></div>
         <div class="field" style="max-width:120px;"><label>Amount</label><input type="number" id="incAmt" placeholder="0"></div>
-        <div class="field" style="max-width:150px;" id="incDateWrap"><label>Date</label><input type="date" id="incDate"></div>
-        <div class="field" style="max-width:100px; display:none;" id="incRecurringDayWrap"><label>Day of month</label><input type="number" id="incRecurringDay" min="1" max="31" placeholder="1"></div>
-        <div class="field" style="max-width:150px;">
-          <label>&nbsp;</label>
-          <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink-soft); font-weight:500; padding:8px 0;">
-            <input type="checkbox" id="incRecurring" style="width:auto;" onchange="toggleIncRecurringUI()"> Recurring monthly
-          </label>
-        </div>
+        <div class="field" style="max-width:150px;"><label>Date</label><input type="date" id="incDate"></div>
         <button onclick="addIncome()">Add</button>
       </div>
     </div>
-    </div>
   </div>
 
-  <div class="card" data-card="subscriptions">
-    <h2><span class="drag-handle" title="Drag to move">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('subscriptions')"><span id="chev-subscriptions">&#9662;</span> Subscriptions</span></h2>
-    <div id="body-subscriptions">
-    <p class="card-note">Each one auto-generates its next 6 months of charges into "Money going out," tagged &#8635; monthly. Editing here only changes future, unpaid months.</p>
-    <ul class="items" id="subscriptionList"></ul>
-    <div class="row" style="margin-top:12px; align-items:center;">
-      <div style="flex:1; font-family:'IBM Plex Mono',monospace; font-size:13px;" id="subTotals"></div>
-    </div>
-    <div class="add-form">
-      <div class="row">
-        <div class="field"><label>Subscription</label><input type="text" id="subName"></div>
-        <div class="field" style="max-width:110px;"><label>Amount</label><input type="number" id="subAmt" placeholder="0"></div>
-        <div class="field" style="max-width:110px;">
-          <label>Billed</label>
-          <select id="subCycle" onchange="toggleSubCycleUI()">
-            <option value="monthly">Monthly</option>
-            <option value="annual">Annual</option>
-          </select>
-        </div>
-        <div class="field" style="max-width:100px;" id="subDayWrap"><label>Day of month</label><input type="number" id="subDay" min="1" max="31" placeholder="1"></div>
-        <div class="field" style="max-width:150px; display:none;" id="subRenewalWrap"><label>Renews on</label><input type="date" id="subRenewal"></div>
-        <div class="field" style="max-width:150px;"><label>Card (optional)</label><input type="text" id="subCard" placeholder="e.g. Visa 4021"></div>
-        <button onclick="addSubscription()">Add</button>
-      </div>
-    </div>
-    </div>
-  </div>
-
-  <div class="card" data-card="utilities">
-    <h2><span class="drag-handle" title="Drag to move">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('utilities')"><span id="chev-utilities">&#9662;</span> Utilities</span></h2>
-    <div id="body-utilities">
-    <p class="card-note">Monthly, but the amount moves. Enter a typical figure — each generated month lands in "Money going out" where you can correct it to the real bill. Editing the estimate here only rewrites future unpaid months.</p>
-    <ul class="items" id="utilityList"></ul>
-    <div class="row" style="margin-top:12px; align-items:center;">
-      <div style="flex:1; font-family:'IBM Plex Mono',monospace; font-size:15px;">Typical month: <strong id="utilityTotal">$0</strong></div>
-    </div>
-    <div class="add-form">
-      <div class="row">
-        <div class="field"><label>Utility</label><input type="text" id="utName" placeholder="Electric"></div>
-        <div class="field" style="max-width:110px;"><label>Typical / mo</label><input type="number" id="utAmt" placeholder="0"></div>
-        <div class="field" style="max-width:100px;"><label>Day of month</label><input type="number" id="utDay" min="1" max="31" placeholder="1"></div>
-        <div class="field" style="max-width:150px;"><label>Provider (optional)</label><input type="text" id="utProvider" placeholder="e.g. Austin Energy"></div>
-        <button onclick="addUtility()">Add</button>
-      </div>
-    </div>
-    </div>
-  </div>
-
-  <div class="card" data-card="ledger">
-    <h2><span class="drag-handle" title="Drag to move">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('ledger')"><span id="chev-ledger">&#9662;</span> Money going out</span></h2>
-    <div id="body-ledger">
-    
-    <ul class="items" id="ledgerList"></ul>
-    <div class="add-form">
+  <div class="card">
+    <h2>Money going out</h2>
+    <p class="card-note">Everything committed. Every field here is live — edit the amount, date, or tier directly, no separate edit mode.</p>
+    <div class="add-form-top">
       <div class="row">
         <div class="field"><label>What</label><input type="text" id="obName"></div>
         <div class="field" style="max-width:110px;"><label>Amount</label><input type="number" id="obAmt" placeholder="0"></div>
-        <div class="field" style="max-width:140px;" id="obDateWrap"><label>Due</label><input type="date" id="obDate"></div>
-        <div class="field" style="max-width:150px;">
-          <label>&nbsp;</label>
-          <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink-soft); font-weight:500; padding:8px 0;">
-            <input type="checkbox" id="obRecurring" style="width:auto;" onchange="toggleObRecurringUI()"> Recurring monthly
-          </label>
+        <div class="field" style="max-width:130px;">
+          <label>Tier</label>
+          <select id="obTier" onchange="toggleObDateUI()">
+            <option value="fixed">Fixed &amp; immovable</option>
+            <option value="atsomepoint">At some point</option>
+          </select>
         </div>
-        <div class="field" style="max-width:100px; display:none;" id="obRecurringDayWrap"><label>Day of month</label><input type="number" id="obRecurringDay" min="1" max="31" placeholder="1"></div>
+        <div class="field" style="max-width:140px;" id="obDateWrap"><label>Due</label><input type="date" id="obDate"></div>
+        <div class="field" style="max-width:140px; display:none;" id="obWinStartWrap"><label>Earliest</label><input type="date" id="obWinStart"></div>
+        <div class="field" style="max-width:140px; display:none;" id="obWinEndWrap"><label>Must pay by</label><input type="date" id="obWinEnd"></div>
         <button onclick="addLedgerItem()">Add</button>
       </div>
     </div>
-    </div>
+    <ul class="items" id="ledgerList"></ul>
   </div>
 
-  <div class="card" data-card="thisweek">
-    <h2><span class="drag-handle" title="Drag to move">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('thisweek')"><span id="chev-thisweek">&#9662;</span> Due this week</span></h2>
-    <div id="body-thisweek">
+  <div class="card">
+    <h2>Due this week</h2>
     <ul class="items" id="thisWeekList"></ul>
     <div class="empty" id="thisWeekEmpty" style="display:none;">Nothing unpaid due in the next 7 days.</div>
-    </div>
   </div>
 
-  <div class="card" data-card="runway">
-    <h2><span class="drag-handle" title="Drag to move">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('runway')"><span id="chev-runway">&#9662;</span> The runway</span></h2>
-    <div id="body-runway">
+  <div class="card">
+    <h2>The runway</h2>
+
     <div id="chartHolder"></div>
     <div class="legend">
-      <span class="dot" style="background:var(--ink-soft)"></span>
-      <span class="dot" style="background:var(--sage)"></span>
-      <span class="dot" style="background:var(--brick)"></span>
-      <span class="dot" style="background:var(--amber)"></span>
-    </div>
+      <span><span class="dot" style="background:var(--ink-soft)"></span> today's cash on hand (flat reference)</span>
+      <span><span class="dot" style="background:var(--sage)"></span> safe — fixed items only</span>
+      <span><span class="dot" style="background:var(--brick)"></span> full exposure — everything</span>
+      <span><span class="dot" style="background:var(--amber)"></span> fixed item due</span>
+      <span><span class="dot" style="background:var(--teal)"></span> at some point (movable)</span>
     </div>
   </div>
 
-  <div class="card" data-card="vault">
-    <h2><span class="drag-handle" title="Drag to move">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('vault')"><span id="chev-vault">&#9662;</span> Vault</span></h2>
-    <div id="body-vault">
+  <div class="card">
+    <h2>Vault</h2>
     <ul class="items" id="wishList"></ul>
     <div class="add-form">
       <div class="row">
@@ -272,204 +184,17 @@
         <button onclick="addWishItem()">Drop in vault</button>
       </div>
     </div>
-    </div>
   </div>
 
-  <div class="card" data-card="sheet">
-    <h2><span class="drag-handle" title="Drag to move">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('sheet')"><span id="chev-sheet">&#9662;</span> Spreadsheet sandbox</span></h2>
-    <div id="body-sheet">
-      <div id="sheetSetup">
-        <p class="card-note">Paste the <strong>embed</strong> link for a Google Sheet — in Sheets: File &rarr; Share &rarr; Publish to web &rarr; Embed tab &rarr; copy that URL (not the regular share/edit link).</p>
-        <div class="row">
-          <input type="text" id="sheetUrlInput" placeholder="https://docs.google.com/spreadsheets/d/e/.../pubhtml?...">
-          <button onclick="saveSheetUrl()">Save</button>
-        </div>
-      </div>
-      <div id="sheetFrameWrap" style="display:none;">
-        <iframe id="sheetFrame" style="width:120%; height:2020px; border:1px solid var(--hairline); border-radius:8px; background:#fff;" loading="lazy"></iframe>
-        <div class="row" style="margin-top:8px;">
-          <button class="subtle mini" onclick="editSheetUrl()">Change sheet</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-    </div>
-    <div class="col-secondary" id="colSecondary">
-      <div class="secondary-hint" id="secondaryHint">Drag a card's <strong>&#8942;&#8942;</strong> handle here to start a second column</div>
-
-  <div class="card" data-card="toxic">
-    <h2><span class="drag-handle" title="Drag to move">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('toxic')"><span id="chev-toxic">&#9662;</span> Toxic debt</span></h2>
-    <div id="body-toxic">
-    <p class="card-note">Tracked separately on purpose — this total never touches cash on hand or the runway chart.</p>
-    <ul class="items" id="toxicList"></ul>
-    <div class="row" style="margin-top:12px; align-items:center;">
-      <div style="flex:1; font-family:'IBM Plex Mono',monospace; font-size:15px;">Total: <strong id="toxicTotal" style="color:var(--brick)">$0</strong></div>
-    </div>
-    <div class="add-form">
-      <div class="row">
-        <div class="field"><label>What</label><input type="text" id="txName"></div>
-        <div class="field" style="max-width:120px;"><label>Amount</label><input type="number" id="txAmt" placeholder="0"></div>
-        <button onclick="addToxicDebt()">Add</button>
-      </div>
-    </div>
-    </div>
-  </div>
-
-    </div>
-  </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
 <script>
 const STORAGE_KEY = 'runway-state-v3';
 const todayStr = new Date().toISOString().slice(0,10);
 
-let state = { balance:0, incomes:[], items:[], scratch:[], toxicDebts:[], recurring:[], recurringIncomes:[], ui:{collapsed:{}, layout:null}, sheetEmbedUrl:'' };
-const CARD_IDS = ['tally','stand','income','subscriptions','utilities','ledger','thisweek','runway','vault','sheet','toxic'];
+let state = { balance:0, incomes:[], items:[], scratch:[], ui:{tallyCollapsed:false} };
 
 function uid(){ return Math.random().toString(36).slice(2,9); }
-function pad2(n){ return String(n).padStart(2,'0'); }
-function monthDateStr(y, m0, day){
-  const lastDay = new Date(y, m0+1, 0).getDate();
-  const d = Math.min(Math.max(1, day||1), lastDay);
-  return `${y}-${pad2(m0+1)}-${pad2(d)}`;
-}
-const RECURRING_MONTHS_AHEAD = 6;
-const RECURRING_KINDS = ['subscription','utility','recurring'];
-// Legacy entries predate the subscription/utility/recurring split. Infer a kind for those
-// ONLY — anything already carrying a valid kind must be left exactly as the user set it.
-function migrateItemTiers(){
-  if(!Array.isArray(state.items)) { state.items = []; return; }
-  state.items.forEach(it=>{
-    if(it.tier !== 'wish' && it.tier !== 'fixed'){
-      it.tier = 'fixed';
-      if(!it.date) it.date = it.windowEnd || todayStr;
-    }
-    it.windowStart = null; it.windowEnd = null;
-  });
-}
-function migrateRecurringKinds(){
-  if(!Array.isArray(state.recurring)) { state.recurring = []; return; }
-  state.recurring.forEach(sub=>{
-    if(!RECURRING_KINDS.includes(sub.kind)){
-      sub.kind = sub.card ? 'subscription' : 'recurring';
-    }
-  });
-}
-// An annual subscription lands once a year, so we generate only its next renewal —
-// dated from the stored renewal month/day, rolled to next year if it already passed.
-function nextAnnualDate(renewalDate){
-  if(!renewalDate) return null;
-  const parts = String(renewalDate).split('-');
-  if(parts.length<3) return null;
-  const m0 = parseInt(parts[1],10)-1, day = parseInt(parts[2],10);
-  if(isNaN(m0) || isNaN(day)) return null;
-  const thisYear = new Date().getFullYear();
-  let cand = monthDateStr(thisYear, m0, day);
-  if(cand < todayStr) cand = monthDateStr(thisYear+1, m0, day);
-  return cand;
-}
-// A monthly figure for any cycle, so annual and monthly costs can be compared directly.
-function monthlyEquivalent(sub){
-  const amt = Number(sub.amount)||0;
-  return sub.cycle==='annual' ? amt/12 : amt;
-}
-
-function generateRecurringItems(){
-  if(!Array.isArray(state.recurring)) state.recurring = [];
-  const today = new Date();
-  const startY = today.getFullYear(), startM = today.getMonth();
-  let changed = false;
-  state.recurring.forEach(sub=>{
-    if(sub.cycle==='annual'){
-      const dateStr = nextAnnualDate(sub.renewalDate);
-      if(!dateStr) return;
-      const monthKey = dateStr.slice(0,7);
-      const skipped = Array.isArray(sub.skipMonths) && sub.skipMonths.includes(monthKey);
-      const exists = state.items.some(it=>it.recurringId===sub.id && it.recurringMonth===monthKey);
-      if(!exists && !skipped){
-        state.items.push({
-          id: uid(), name: sub.name, tier:'fixed', amount: Number(sub.amount)||0,
-          date: dateStr, windowStart:null, windowEnd:null,
-          paid:false, addedDate: todayStr, timesReconsidered:0,
-          recurringId: sub.id, recurringMonth: monthKey
-        });
-        changed = true;
-      }
-      return;
-    }
-    for(let i=0; i<RECURRING_MONTHS_AHEAD; i++){
-      const y = startY + Math.floor((startM+i)/12);
-      const m = (startM+i)%12;
-      const monthKey = `${y}-${pad2(m+1)}`;
-      const skipped = Array.isArray(sub.skipMonths) && sub.skipMonths.includes(monthKey);
-      const exists = state.items.some(it=>it.recurringId===sub.id && it.recurringMonth===monthKey);
-      if(!exists && !skipped){
-        state.items.push({
-          id: uid(), name: sub.name, tier:'fixed', amount: Number(sub.amount)||0,
-          date: monthDateStr(y,m,sub.dayOfMonth), windowStart:null, windowEnd:null,
-          paid:false, addedDate: todayStr, timesReconsidered:0,
-          recurringId: sub.id, recurringMonth: monthKey
-        });
-        changed = true;
-      }
-    }
-  });
-  return changed;
-}
-// Drops future, unpaid, machine-generated items for a subscription so it can be regenerated
-// with fresh values. Past and already-paid items are left alone as history.
-// Same template-and-generate approach as outflows, but spawning income entries.
-function generateRecurringIncomes(){
-  if(!Array.isArray(state.recurringIncomes)) state.recurringIncomes = [];
-  const today = new Date();
-  const startY = today.getFullYear(), startM = today.getMonth();
-  let changed = false;
-  state.recurringIncomes.forEach(tpl=>{
-    for(let i=0; i<RECURRING_MONTHS_AHEAD; i++){
-      const y = startY + Math.floor((startM+i)/12);
-      const m = (startM+i)%12;
-      const monthKey = `${y}-${pad2(m+1)}`;
-      const skipped = Array.isArray(tpl.skipMonths) && tpl.skipMonths.includes(monthKey);
-      const exists = state.incomes.some(inc=>inc.recurringId===tpl.id && inc.recurringMonth===monthKey);
-      if(!exists && !skipped){
-        state.incomes.push({
-          id: uid(), label: tpl.label, amount: Number(tpl.amount)||0,
-          date: monthDateStr(y,m,tpl.dayOfMonth),
-          recurringId: tpl.id, recurringMonth: monthKey
-        });
-        changed = true;
-      }
-    }
-  });
-  return changed;
-}
-
-function clearFutureUnpaidForRecurring(subId, includeOverridden){
-  const nowMonthKey = todayStr.slice(0,7);
-  state.items = state.items.filter(it => !(
-    it.recurringId===subId && !it.paid && it.recurringMonth >= nowMonthKey &&
-    (includeOverridden || !it.amountOverridden)
-  ));
-}
-
-function normalizeLayout(){
-  if(!state.ui) state.ui = {};
-  if(!state.ui.layout || typeof state.ui.layout!=='object'){
-    state.ui.layout = { primary: CARD_IDS.slice(), secondary: [] };
-    return;
-  }
-  let primary = Array.isArray(state.ui.layout.primary) ? state.ui.layout.primary.filter(id=>CARD_IDS.includes(id)) : [];
-  let secondary = Array.isArray(state.ui.layout.secondary) ? state.ui.layout.secondary.filter(id=>CARD_IDS.includes(id)) : [];
-  const known = new Set([...primary, ...secondary]);
-  CARD_IDS.forEach(id=>{
-    if(!known.has(id)){
-      if(id==='sheet' || id==='toxic') secondary.push(id); else primary.push(id);
-    }
-  });
-  state.ui.layout = { primary, secondary };
-}
 
 function seedDefaults(){
   const inWeek = new Date(); inWeek.setDate(inWeek.getDate()+7);
@@ -479,11 +204,7 @@ function seedDefaults(){
       { id: uid(), label: "Fin aid disbursement (adjust date)", amount: 0, date: '2026-08-15' }
     ],
     scratch: Array.from({length:8}, ()=>({label:'', amount:0})),
-    toxicDebts: [],
-    recurring: [],
-    recurringIncomes: [],
-    ui: { collapsed:{}, layout:{ primary: CARD_IDS.filter(id=>id!=='sheet' && id!=='toxic'), secondary: ['sheet','toxic'] } },
-    sheetEmbedUrl: '',
+    ui: { tallyCollapsed:false },
     items: [
       { id: uid(), name:"Kids' summer camp balance", tier:'fixed', amount:0,
         date: inWeek.toISOString().slice(0,10), windowStart:null, windowEnd:null, paid:false, addedDate: todayStr, timesReconsidered:0 }
@@ -493,9 +214,9 @@ function seedDefaults(){
 
 async function loadState(){
   try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw){
-      state = JSON.parse(raw);
+    const res = await window.storage.get(STORAGE_KEY, false);
+    if(res && res.value){
+      state = JSON.parse(res.value);
       if(!Array.isArray(state.scratch) || state.scratch.length!==8 || !('label' in (state.scratch[0]||{}))){
         const old = Array.isArray(state.scratch) ? state.scratch : [];
         const migrated = [];
@@ -505,19 +226,7 @@ async function loadState(){
         }
         state.scratch = migrated;
       }
-      if(!Array.isArray(state.toxicDebts)) state.toxicDebts = [];
-      if(!Array.isArray(state.recurring)) state.recurring = [];
-      if(!Array.isArray(state.recurringIncomes)) state.recurringIncomes = [];
-      migrateRecurringKinds();
-      migrateItemTiers();
-      if(!state.ui) state.ui = { collapsed:{} };
-      if(!state.ui.collapsed) state.ui.collapsed = {};
-      if(state.ui.tallyCollapsed && !('tally' in state.ui.collapsed)){
-        state.ui.collapsed.tally = state.ui.tallyCollapsed;
-      }
-      delete state.ui.tallyCollapsed;
-      if(typeof state.sheetEmbedUrl !== 'string') state.sheetEmbedUrl = '';
-      normalizeLayout();
+      if(!state.ui) state.ui = { tallyCollapsed:false };
       return;
     }
   }catch(e){ /* fresh start */ }
@@ -528,7 +237,7 @@ async function loadState(){
 let saveTimer=null;
 async function saveState(){
   try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    await window.storage.set(STORAGE_KEY, JSON.stringify(state), false);
     const badge=document.getElementById('saveBadge');
     badge.classList.add('show');
     clearTimeout(saveTimer);
@@ -544,14 +253,14 @@ function urgencyTag(dateStr){
   if(d <= 10) return {cls:'soon', label: d+'d'};
   return {cls:'later', label: d+'d'};
 }
-function tierColor(t){ return t==='wish' ? 'var(--plum)' : 'var(--amber)'; }
+function tierColor(t){ return t==='fixed' ? 'var(--amber)' : t==='atsomepoint' ? 'var(--teal)' : 'var(--plum)'; }
 function nextIncomeDate(){
   const upcoming = state.incomes.filter(i=>i.date>=todayStr).sort((a,b)=>new Date(a.date)-new Date(b.date));
   return upcoming.length ? upcoming[0].date : null;
 }
 function buildSeries(deductionMode){
-  // deductionMode: 'none' (flat reference at today's cash on hand, nothing added or subtracted)
-  // or 'all' (every unpaid committed item subtracts on its date, income adds)
+  // deductionMode: 'none' (flat reference at today's cash on hand, nothing added or subtracted),
+  // 'fixed' (only Fixed items subtract, income adds), 'all' (Fixed + At-some-point subtract, income adds)
   const A = Number(state.balance)||0;
   const committed = state.items.filter(o=>o.tier!=='wish' && !o.paid && o.date);
   const allDates = [todayStr, ...committed.map(o=>o.date), ...state.incomes.map(i=>i.date)];
@@ -565,6 +274,7 @@ function buildSeries(deductionMode){
     if(deductionMode!=='none'){
       committed.forEach(o=>{
         if(o.date!==dateStr) return;
+        if(deductionMode==='fixed' && o.tier!=='fixed') return;
         running -= Number(o.amount)||0;
       });
       state.incomes.forEach(i=>{ if(i.date===dateStr) running += Number(i.amount)||0; });
@@ -574,89 +284,27 @@ function buildSeries(deductionMode){
   return points;
 }
 
-function findFirstNegative(series){
-  const hit = series.find(p=>p.balance<0);
-  return hit ? { date: hit.dateStr, val: hit.balance } : null;
-}
-
 function computeBalances(){
   const A = Number(state.balance)||0;
   const baseline = buildSeries('none');
+  const safe = buildSeries('fixed');
   const full = buildSeries('all');
   const nid = nextIncomeDate();
-  // Short range = low point before the next money arrives; long range = low point overall.
-  // With every committed item treated alike, these differ by time window, not by tier.
-  let nearWindow = nid ? full.filter(p=>p.dateStr<=nid) : full;
-  if(nearWindow.length===0) nearWindow = full;
-  const B = Math.min(...nearWindow.map(p=>p.balance));
+  let safeWindow = nid ? safe.filter(p=>p.dateStr<=nid) : safe;
+  if(safeWindow.length===0) safeWindow = safe;
+  const B = Math.min(...safeWindow.map(p=>p.balance));
   const C = Math.min(...full.map(p=>p.balance));
-  const bFirstNeg = findFirstNegative(nearWindow);
-  const cFirstNeg = findFirstNegative(full);
-  return { A, B, C, baseline, full, bFirstNeg, cFirstNeg };
+  return { A, B, C, baseline, safe, full };
 }
 
-function updateSecondaryHint(){
-  const hint = document.getElementById('secondaryHint');
-  const col = document.getElementById('colSecondary');
-  if(!hint || !col) return;
-  const hasCards = col.querySelector('.card') !== null;
-  hint.style.display = hasCards ? 'none' : 'flex';
+function applyTallyCollapse(){
+  document.getElementById('tallyBody').style.display = state.ui.tallyCollapsed ? 'none' : 'block';
+  document.getElementById('tallyChevron').innerHTML = state.ui.tallyCollapsed ? '&#9656;' : '&#9662;';
 }
-
-function applyLayout(){
-  normalizeLayout();
-  const colP = document.getElementById('colPrimary');
-  const colS = document.getElementById('colSecondary');
-  const hint = document.getElementById('secondaryHint');
-  state.ui.layout.primary.forEach(id=>{
-    const el = document.querySelector(`.card[data-card="${id}"]`);
-    if(el) colP.appendChild(el);
-  });
-  state.ui.layout.secondary.forEach(id=>{
-    const el = document.querySelector(`.card[data-card="${id}"]`);
-    if(el) colS.insertBefore(el, hint);
-  });
-  updateSecondaryHint();
-}
-
-function saveLayoutFromDOM(){
-  const colP = document.getElementById('colPrimary');
-  const colS = document.getElementById('colSecondary');
-  const primary = [...colP.querySelectorAll('.card[data-card]')].map(el=>el.getAttribute('data-card'));
-  const secondary = [...colS.querySelectorAll('.card[data-card]')].map(el=>el.getAttribute('data-card'));
-  state.ui.layout = { primary, secondary };
-  updateSecondaryHint();
+function toggleTally(){
+  state.ui.tallyCollapsed = !state.ui.tallyCollapsed;
   saveState();
-}
-
-function initSortable(){
-  if(typeof Sortable === 'undefined') return;
-  const opts = {
-    group: 'runway-cards',
-    handle: '.drag-handle',
-    animation: 150,
-    onEnd: saveLayoutFromDOM
-  };
-  Sortable.create(document.getElementById('colPrimary'), opts);
-  Sortable.create(document.getElementById('colSecondary'), opts);
-}
-
-function applyCardCollapse(id){
-  const body = document.getElementById('body-'+id);
-  const chev = document.getElementById('chev-'+id);
-  if(!body || !chev) return;
-  const collapsed = !!(state.ui.collapsed && state.ui.collapsed[id]);
-  body.style.display = collapsed ? 'none' : 'block';
-  chev.innerHTML = collapsed ? '&#9656;' : '&#9662;';
-}
-function applyAllCardCollapse(){
-  CARD_IDS.forEach(applyCardCollapse);
-}
-function toggleCard(id){
-  if(!state.ui.collapsed) state.ui.collapsed = {};
-  state.ui.collapsed[id] = !state.ui.collapsed[id];
-  saveState();
-  applyCardCollapse(id);
+  applyTallyCollapse();
 }
 
 function exportBackup(){
@@ -680,22 +328,8 @@ function importBackup(file){
       }
       state = parsed;
       if(!state.scratch || state.scratch.length!==8) state.scratch = Array.from({length:8}, ()=>({label:'', amount:0}));
-      if(!state.ui) state.ui = { collapsed:{} };
-      if(!state.ui.collapsed) state.ui.collapsed = {};
-      if(state.ui.tallyCollapsed && !('tally' in state.ui.collapsed)){
-        state.ui.collapsed.tally = state.ui.tallyCollapsed;
-      }
-      delete state.ui.tallyCollapsed;
-      if(typeof state.sheetEmbedUrl !== 'string') state.sheetEmbedUrl = '';
-      if(!Array.isArray(state.recurring)) state.recurring = [];
-      if(!Array.isArray(state.recurringIncomes)) state.recurringIncomes = [];
-      migrateRecurringKinds();
-      migrateItemTiers();
-      normalizeLayout();
-      generateRecurringItems();
-      generateRecurringIncomes();
+      if(!state.ui) state.ui = { tallyCollapsed:false };
       await saveState();
-      applyLayout();
       render();
       alert('Restored.');
     }catch(err){
@@ -706,70 +340,20 @@ function importBackup(file){
   document.getElementById('importFile').value = '';
 }
 
-function addToxicDebt(){
-  const name = document.getElementById('txName').value.trim();
-  const amt = parseFloat(document.getElementById('txAmt').value)||0;
-  if(!name) return;
-  state.toxicDebts.push({ id:uid(), name, amount:amt });
-  document.getElementById('txName').value=''; document.getElementById('txAmt').value='';
-  saveState(); render();
-}
-function updateToxicDebt(id, field, value){
-  const it = state.toxicDebts.find(i=>i.id===id); if(!it) return;
-  it[field] = field==='amount' ? (parseFloat(value)||0) : value;
-  saveState(); render();
-}
-function removeToxicDebt(id){ state.toxicDebts = state.toxicDebts.filter(i=>i.id!==id); saveState(); render(); }
-function renderToxicDebt(){
-  const ul = document.getElementById('toxicList');
-  ul.innerHTML = '';
-  if(state.toxicDebts.length===0){ ul.innerHTML='<div class="empty">Nothing tracked here.</div>'; }
-  state.toxicDebts.forEach(it=>{
-    const li = document.createElement('li');
-    li.innerHTML = `
-      <span class="dot" style="background:var(--brick)"></span>
-      <input type="text" class="lname lname-input" value="${it.name}" onchange="updateToxicDebt('${it.id}','name',this.value)">
-      <input type="number" class="amt-input" value="${it.amount}" style="color:var(--brick)" onchange="updateToxicDebt('${it.id}','amount',this.value)">
-      <button class="danger-ghost" onclick="removeToxicDebt('${it.id}')">remove</button>`;
-    ul.appendChild(li);
-  });
-  const total = state.toxicDebts.reduce((s,r)=> s + (Number(r.amount)||0), 0);
-  document.getElementById('toxicTotal').textContent = '$'+fmt(total);
-}
-
 function render(){
-  const {A,B,C,baseline,full,bFirstNeg,cFirstNeg} = computeBalances();
+  const {A,B,C,baseline,safe,full} = computeBalances();
   document.getElementById('balanceInput').value = state.balance;
   document.getElementById('balA').textContent = '$'+fmt(A);
   document.getElementById('balB').textContent = '$'+fmt(B);
   document.getElementById('balC').textContent = (C<0?'-$':'$')+fmt(Math.abs(C));
 
-  const negB = document.getElementById('negAlertB');
-  if(bFirstNeg){
-    negB.style.display = 'block';
-    negB.textContent = `Goes negative ${bFirstNeg.date} — down to -$${fmt(Math.abs(bFirstNeg.val))}`;
-  } else {
-    negB.style.display = 'none';
-  }
-  const negC = document.getElementById('negAlertC');
-  if(cFirstNeg){
-    negC.style.display = 'block';
-    negC.textContent = `underwater: ${cFirstNeg.date} -$${fmt(Math.abs(cFirstNeg.val))}`;
-  } else {
-    negC.style.display = 'none';
-  }
-
   renderIncome();
   renderScratch();
-  applyAllCardCollapse();
-  renderSubscriptions();
-  renderUtilities();
+  applyTallyCollapse();
   renderLedger();
   renderThisWeek();
   renderWish();
-  renderToxicDebt();
-  renderSheetCard();
-  drawChart(baseline, full);
+  drawChart(baseline, safe, full);
 }
 
 function renderIncome(){
@@ -782,7 +366,6 @@ function renderIncome(){
       <input type="text" class="lname lname-input" value="${inc.label}" onchange="updateIncome('${inc.id}','label',this.value)">
       <input type="date" class="date-input" value="${inc.date}" onchange="updateIncome('${inc.id}','date',this.value)">
       <input type="number" class="amt-input" value="${inc.amount}" style="color:var(--sage)" onchange="updateIncome('${inc.id}','amount',this.value)">
-      ${inc.recurringId ? '<span class="tag recurring" title="Auto-generated monthly">&#8635; monthly</span>' : ''}
       <button class="danger-ghost" onclick="removeIncome('${inc.id}')">remove</button>`;
     incUl.appendChild(li);
   });
@@ -802,29 +385,37 @@ function renderLedger(){
   sorted.forEach(it=>{
     const li = document.createElement('li');
     if(it.paid) li.classList.add('paid');
-    li.classList.add('ledger-row');
-    const recurring = it.recurringId ? state.recurring.find(sub=>sub.id===it.recurringId) : null;
-    if(!it.paid && recurring){
-      li.classList.add(recurring.cycle==='annual' ? 'tag-annual' : recurring.kind==='utility' ? 'tag-utility' : 'tag-recurring');
-    }
+    const tag = it.date ? urgencyTag(it.date) : null;
 
     if(it.paid){
       li.innerHTML = `
         <input type="checkbox" checked onchange="togglePaid('${it.id}')">
         <span class="dot" style="background:${tierColor(it.tier)}"></span>
         <span class="lname">${it.name}</span>
-        ${it.recurringId ? recurringBadge(it.recurringId) : ''}
         <span class="wish-meta">${it.date||''}</span>
         <span class="amt-input" style="text-align:right; display:inline-block;">$${fmt(it.amount)}</span>`;
     } else {
+      let dateField;
+      if(it.tier==='fixed'){
+        dateField = `<input type="date" class="date-input" value="${it.date||''}" onchange="updateItem('${it.id}','date',this.value)">`;
+      } else {
+        dateField = `
+          <span class="wish-meta">by</span>
+          <input type="date" class="date-input" style="width:110px" value="${it.windowEnd||''}" onchange="updateWindowEnd('${it.id}', this.value)">
+          <input type="date" class="date-input" style="width:110px" value="${it.date||''}" min="${it.windowStart||todayStr}" max="${it.windowEnd||''}" title="planned day" onchange="updateItem('${it.id}','date',this.value)">`;
+      }
       li.innerHTML = `
         <input type="checkbox" onchange="togglePaid('${it.id}')">
         <span class="dot" style="background:${tierColor(it.tier)}"></span>
         <input type="text" class="lname lname-input" value="${it.name}" onchange="updateItem('${it.id}','name',this.value)">
-        <input type="date" class="date-input" value="${it.date||''}" onchange="updateItem('${it.id}','date',this.value)">
-        ${it.recurringId ? recurringBadge(it.recurringId) : ''}
+        <select class="tier-select" onchange="changeTier('${it.id}', this.value)">
+          <option value="fixed" ${it.tier==='fixed'?'selected':''}>Fixed &amp; immovable</option>
+          <option value="atsomepoint" ${it.tier==='atsomepoint'?'selected':''}>At some point</option>
+          <option value="wish">I wish</option>
+        </select>
+        ${dateField}
+        ${tag ? `<span class="tag ${tag.cls}">${tag.label}</span>` : ''}
         <input type="number" class="amt-input" value="${it.amount}" onchange="updateItem('${it.id}','amount',this.value)">
-        <button class="mini subtle" title="Move to Vault" onclick="changeTier('${it.id}','wish')">vault</button>
         <button class="danger-ghost" onclick="removeItem('${it.id}')">remove</button>`;
     }
     ul.appendChild(li);
@@ -861,43 +452,17 @@ function renderWish(){
     li.innerHTML = `
       <span class="dot" style="background:${tierColor('wish')}"></span>
       <input type="text" class="lname lname-input" value="${it.name}" onchange="updateItem('${it.id}','name',this.value)">
-      <button class="mini subtle" title="Move to Money going out" onclick="changeTier('${it.id}','fixed')">commit &#8594;</button>
+      <select class="tier-select" onchange="changeTier('${it.id}', this.value)">
+        <option value="wish" selected>I wish</option>
+        <option value="fixed">Fixed &amp; immovable</option>
+        <option value="atsomepoint">At some point</option>
+      </select>
       <input type="number" class="amt-input" value="${it.amount}" onchange="updateItem('${it.id}','amount',this.value)">
       ${it.timesReconsidered>0 ? `<span class="wish-meta">passed ${it.timesReconsidered}x</span>` : ''}
       <button class="mini subtle" onclick="notYet('${it.id}')">Not yet</button>
       <button class="danger-ghost" onclick="removeItem('${it.id}')">Dismiss</button>`;
     ul.appendChild(li);
   });
-}
-
-function renderSheetCard(){
-  const setup = document.getElementById('sheetSetup');
-  const frameWrap = document.getElementById('sheetFrameWrap');
-  const frame = document.getElementById('sheetFrame');
-  if(!setup || !frameWrap || !frame) return;
-  if(state.sheetEmbedUrl){
-    setup.style.display = 'none';
-    frameWrap.style.display = 'block';
-    if(frame.getAttribute('src') !== state.sheetEmbedUrl) frame.setAttribute('src', state.sheetEmbedUrl);
-  } else {
-    setup.style.display = 'block';
-    frameWrap.style.display = 'none';
-    frame.removeAttribute('src');
-  }
-}
-function saveSheetUrl(){
-  const input = document.getElementById('sheetUrlInput');
-  const val = (input.value || '').trim();
-  if(!val) return;
-  state.sheetEmbedUrl = val;
-  saveState();
-  renderSheetCard();
-}
-function editSheetUrl(){
-  document.getElementById('sheetUrlInput').value = state.sheetEmbedUrl || '';
-  state.sheetEmbedUrl = '';
-  saveState();
-  renderSheetCard();
 }
 
 function renderScratch(){
@@ -931,22 +496,27 @@ function useScratchAsBalance(){
 function updateItem(id, field, value){
   const it = state.items.find(i=>i.id===id); if(!it) return;
   it[field] = field==='amount' ? (parseFloat(value)||0) : value;
-  // A hand-corrected amount on a generated row (e.g. the real electric bill) is real data.
-  // Mark it so re-editing the template estimate doesn't wipe it out.
-  if(field==='amount' && it.recurringId) it.amountOverridden = true;
+  saveState(); render();
+}
+function updateWindowEnd(id, value){
+  const it = state.items.find(i=>i.id===id); if(!it) return;
+  it.windowEnd = value;
+  if(!it.windowStart) it.windowStart = todayStr;
+  if(!it.date || it.date > value) it.date = value;
   saveState(); render();
 }
 function changeTier(id, newTier){
   const it = state.items.find(i=>i.id===id); if(!it) return;
-  // Two states remain: committed (stored as 'fixed' so existing filters keep working)
-  // and vaulted ('wish').
+  it.tier = newTier;
   if(newTier==='wish'){
-    it.tier = 'wish';
     it.date = null; it.windowStart=null; it.windowEnd=null; it.paid=false;
-  } else {
-    it.tier = 'fixed';
+  } else if(newTier==='fixed'){
     if(!it.date) it.date = todayStr;
     it.windowStart=null; it.windowEnd=null;
+  } else if(newTier==='atsomepoint'){
+    if(!it.windowStart) it.windowStart = todayStr;
+    if(!it.windowEnd){ const d=new Date(); d.setDate(d.getDate()+14); it.windowEnd = d.toISOString().slice(0,10); }
+    if(!it.date || it.date<it.windowStart || it.date>it.windowEnd) it.date = it.windowEnd;
   }
   saveState(); render();
 }
@@ -957,265 +527,45 @@ function togglePaid(id){
   else { state.balance = (Number(state.balance)||0) + amt; it.paid = false; }
   saveState(); render();
 }
-function removeItem(id){
-  const it = state.items.find(i=>i.id===id);
-  // Removing a generated row has to be remembered, or the engine just recreates it
-  // on the next load. Record the month as skipped for that template.
-  if(it && it.recurringId && it.recurringMonth){
-    const sub = state.recurring.find(s=>s.id===it.recurringId);
-    if(sub){
-      if(!Array.isArray(sub.skipMonths)) sub.skipMonths = [];
-      if(!sub.skipMonths.includes(it.recurringMonth)) sub.skipMonths.push(it.recurringMonth);
-    }
-  }
-  state.items = state.items.filter(i=>i.id!==id);
-  saveState(); render();
-}
-function removeIncome(id){
-  const inc = state.incomes.find(i=>i.id===id);
-  // Same as the outflow side: a removed month has to be remembered or it regenerates.
-  if(inc && inc.recurringId && inc.recurringMonth){
-    const tpl = state.recurringIncomes.find(t=>t.id===inc.recurringId);
-    if(tpl){
-      if(!Array.isArray(tpl.skipMonths)) tpl.skipMonths = [];
-      if(!tpl.skipMonths.includes(inc.recurringMonth)) tpl.skipMonths.push(inc.recurringMonth);
-    }
-  }
-  state.incomes = state.incomes.filter(i=>i.id!==id);
-  saveState(); render();
-}
+function removeItem(id){ state.items = state.items.filter(i=>i.id!==id); saveState(); render(); }
+function removeIncome(id){ state.incomes = state.incomes.filter(i=>i.id!==id); saveState(); render(); }
 function notYet(id){
   const it = state.items.find(i=>i.id===id);
   if(it){ it.timesReconsidered = (it.timesReconsidered||0)+1; saveState(); render(); }
 }
 
-function toggleSubCycleUI(){
-  const annual = document.getElementById('subCycle').value==='annual';
-  document.getElementById('subDayWrap').style.display = annual ? 'none' : 'flex';
-  document.getElementById('subRenewalWrap').style.display = annual ? 'flex' : 'none';
-}
-function addSubscription(){
-  const name = document.getElementById('subName').value.trim();
-  const amt = parseFloat(document.getElementById('subAmt').value)||0;
-  const cycle = document.getElementById('subCycle').value==='annual' ? 'annual' : 'monthly';
-  let day = parseInt(document.getElementById('subDay').value, 10);
-  if(!day || day<1) day = 1; if(day>31) day = 31;
-  const renewal = document.getElementById('subRenewal').value;
-  const card = document.getElementById('subCard').value.trim();
-  if(!name) return;
-  const sub = { id:uid(), name, amount:amt, dayOfMonth:day, card: card||null, kind:'subscription', cycle };
-  if(cycle==='annual') sub.renewalDate = renewal || todayStr;
-  state.recurring.push(sub);
-  document.getElementById('subName').value=''; document.getElementById('subAmt').value='';
-  document.getElementById('subDay').value=''; document.getElementById('subCard').value='';
-  document.getElementById('subRenewal').value=''; document.getElementById('subCycle').value='monthly';
-  toggleSubCycleUI();
-  generateRecurringItems();
-  saveState(); render();
-}
-function updateSubscription(id, field, value){
-  const sub = state.recurring.find(s=>s.id===id); if(!sub) return;
-  if(field==='amount') sub.amount = parseFloat(value)||0;
-  else if(field==='dayOfMonth'){ let d=parseInt(value,10); if(!d||d<1) d=1; if(d>31) d=31; sub.dayOfMonth = d; }
-  else if(field==='card') sub.card = value.trim()||null;
-  else if(field==='cycle'){
-    sub.cycle = value==='annual' ? 'annual' : 'monthly';
-    // Switching cycle invalidates every generated month, including hand-corrected ones —
-    // twelve monthly rows and one annual lump are not the same schedule.
-    if(sub.cycle==='annual' && !sub.renewalDate){
-      sub.renewalDate = monthDateStr(new Date().getFullYear(), new Date().getMonth(), sub.dayOfMonth||1);
-    }
-    sub.skipMonths = [];
-    clearFutureUnpaidForRecurring(id, true);
-    generateRecurringItems();
-    saveState(); render();
-    return;
-  }
-  else if(field==='renewalDate'){
-    sub.renewalDate = value || null;
-    sub.skipMonths = [];
-    clearFutureUnpaidForRecurring(id, true);
-    generateRecurringItems();
-    saveState(); render();
-    return;
-  }
-  else sub[field] = value;
-  clearFutureUnpaidForRecurring(id);
-  generateRecurringItems();
-  saveState(); render();
-}
-function removeSubscription(id){
-  state.recurring = state.recurring.filter(s=>s.id!==id);
-  clearFutureUnpaidForRecurring(id, true);
-  saveState(); render();
-}
-function addUtility(){
-  const name = document.getElementById('utName').value.trim();
-  const amt = parseFloat(document.getElementById('utAmt').value)||0;
-  let day = parseInt(document.getElementById('utDay').value, 10);
-  if(!day || day<1) day = 1; if(day>31) day = 31;
-  const provider = document.getElementById('utProvider').value.trim();
-  if(!name) return;
-  state.recurring.push({ id:uid(), name, amount:amt, dayOfMonth:day, card: provider||null, kind:'utility' });
-  document.getElementById('utName').value=''; document.getElementById('utAmt').value='';
-  document.getElementById('utDay').value=''; document.getElementById('utProvider').value='';
-  generateRecurringItems();
-  saveState(); render();
-}
-function renderUtilities(){
-  const ul = document.getElementById('utilityList');
-  if(!ul) return;
-  ul.innerHTML = '';
-  const utils = Array.isArray(state.recurring) ? state.recurring.filter(s=>s.kind==='utility') : [];
-  if(utils.length===0){
-    ul.innerHTML = '<div class="empty">No utilities tracked yet.</div>';
-    document.getElementById('utilityTotal').textContent = '$0';
-    return;
-  }
-  [...utils].sort((a,b)=> a.dayOfMonth - b.dayOfMonth).forEach(u=>{
-    const li = document.createElement('li');
-    li.innerHTML = `
-      <span class="dot" style="background:var(--amber)"></span>
-      <input type="text" class="lname lname-input" value="${u.name}" onchange="updateSubscription('${u.id}','name',this.value)">
-      <input type="number" class="amt-input" value="${u.amount}" onchange="updateSubscription('${u.id}','amount',this.value)">
-      <span class="wish-meta">day</span>
-      <input type="number" class="amt-input" style="width:56px" min="1" max="31" value="${u.dayOfMonth}" onchange="updateSubscription('${u.id}','dayOfMonth',this.value)">
-      <input type="text" class="lname-input" style="min-width:110px; flex:0 1 130px;" placeholder="provider" value="${u.card||''}" onchange="updateSubscription('${u.id}','card',this.value)">
-      ${kindSelect(u)}
-      <button class="danger-ghost" onclick="removeSubscription('${u.id}')">remove</button>`;
-    ul.appendChild(li);
-  });
-  const total = utils.reduce((s,u)=> s + (Number(u.amount)||0), 0);
-  document.getElementById('utilityTotal').textContent = '$'+fmt(total);
-}
-
-function recurringBadge(recurringId){
-  const sub = Array.isArray(state.recurring) ? state.recurring.find(s=>s.id===recurringId) : null;
-  if(sub && sub.cycle==='annual') return '<span class="tag annual" title="Annual renewal — one lump sum per year">&#8635; annual</span>';
-  if(sub && sub.kind==='utility') return '<span class="tag utility" title="Auto-generated utility — correct the amount when the real bill lands">&#8635; utility</span>';
-  return '<span class="tag recurring" title="Auto-generated monthly">&#8635; monthly</span>';
-}
-
-function kindSelect(sub){
-  const opt = (v,label)=> `<option value="${v}" ${sub.kind===v?'selected':''}>${label}</option>`;
-  return `<select class="tier-select" style="width:104px" title="Which pane this lives in" onchange="changeRecurringKind('${sub.id}', this.value)">
-    ${opt('subscription','Subscription')}${opt('utility','Utility')}${opt('recurring','Other monthly')}
-  </select>`;
-}
-function changeRecurringKind(id, kind){
-  const sub = state.recurring.find(s=>s.id===id); if(!sub) return;
-  if(!RECURRING_KINDS.includes(kind)) return;
-  sub.kind = kind;
-  saveState(); render();
-}
-
-function renderSubscriptions(){
-  const ul = document.getElementById('subscriptionList');
-  ul.innerHTML = '';
-  const subs = Array.isArray(state.recurring) ? state.recurring.filter(s=>s.kind==='subscription') : [];
-  const totalEl = document.getElementById('subTotals');
-  if(subs.length===0){
-    ul.innerHTML = '<div class="empty">No subscriptions tracked yet.</div>';
-    if(totalEl) totalEl.innerHTML = '';
-    return;
-  }
-  const annualFirst = [...subs].sort((a,b)=>{
-    if((a.cycle==='annual') !== (b.cycle==='annual')) return a.cycle==='annual' ? -1 : 1;
-    return (a.dayOfMonth||0) - (b.dayOfMonth||0);
-  });
-  annualFirst.forEach(sub=>{
-    const isAnnual = sub.cycle==='annual';
-    const li = document.createElement('li');
-    const timingField = isAnnual
-      ? `<span class="wish-meta">renews</span>
-         <input type="date" class="date-input" style="width:130px" value="${nextAnnualDate(sub.renewalDate)||''}" onchange="updateSubscription('${sub.id}','renewalDate',this.value)">`
-      : `<span class="wish-meta">day</span>
-         <input type="number" class="amt-input" style="width:56px" min="1" max="31" value="${sub.dayOfMonth}" onchange="updateSubscription('${sub.id}','dayOfMonth',this.value)">`;
-    li.innerHTML = `
-      <span class="dot" style="background:${isAnnual ? 'var(--plum)' : 'var(--teal)'}"></span>
-      <input type="text" class="lname lname-input" value="${sub.name}" onchange="updateSubscription('${sub.id}','name',this.value)">
-      <input type="number" class="amt-input" value="${sub.amount}" onchange="updateSubscription('${sub.id}','amount',this.value)">
-      <select class="tier-select" style="width:88px" title="Billing cycle" onchange="updateSubscription('${sub.id}','cycle',this.value)">
-        <option value="monthly" ${!isAnnual?'selected':''}>Monthly</option>
-        <option value="annual" ${isAnnual?'selected':''}>Annual</option>
-      </select>
-      ${timingField}
-      ${isAnnual ? `<span class="tag recurring" title="What this costs per month if you could pay monthly">&#8776; $${fmt(monthlyEquivalent(sub))}/mo</span>` : ''}
-      <input type="text" class="lname-input" style="min-width:100px; flex:0 1 120px;" placeholder="card" value="${sub.card||''}" onchange="updateSubscription('${sub.id}','card',this.value)">
-      ${kindSelect(sub)}
-      <button class="danger-ghost" onclick="removeSubscription('${sub.id}')">remove</button>`;
-    ul.appendChild(li);
-  });
-  if(totalEl){
-    const monthlySubs = subs.filter(s=>s.cycle!=='annual');
-    const annualSubs = subs.filter(s=>s.cycle==='annual');
-    const monthlyRun = monthlySubs.reduce((s,x)=> s + (Number(x.amount)||0), 0);
-    const annualLump = annualSubs.reduce((s,x)=> s + (Number(x.amount)||0), 0);
-    const combinedPerMonth = subs.reduce((s,x)=> s + monthlyEquivalent(x), 0);
-    totalEl.innerHTML = `Monthly billed: <strong>$${fmt(monthlyRun)}</strong>
-      &nbsp;·&nbsp; Annual lump sums: <strong>$${fmt(annualLump)}</strong>
-      &nbsp;·&nbsp; True cost per month: <strong>$${fmt(combinedPerMonth)}</strong>`;
-  }
-}
-
-function toggleObRecurringUI(){
-  const on = document.getElementById('obRecurring').checked;
-  document.getElementById('obRecurringDayWrap').style.display = on ? 'flex' : 'none';
-  document.getElementById('obDateWrap').style.display = on ? 'none' : 'flex';
-}
-
 function toggleObDateUI(){
-  document.getElementById('obDateWrap').style.display =
-    document.getElementById('obRecurring').checked ? 'none' : 'flex';
+  const tier = document.getElementById('obTier').value;
+  document.getElementById('obDateWrap').style.display = tier==='fixed' ? 'flex' : 'none';
+  document.getElementById('obWinStartWrap').style.display = tier==='atsomepoint' ? 'flex' : 'none';
+  document.getElementById('obWinEndWrap').style.display = tier==='atsomepoint' ? 'flex' : 'none';
 }
 function addLedgerItem(){
   const name = document.getElementById('obName').value.trim();
   const amt = parseFloat(document.getElementById('obAmt').value)||0;
-  const isRecurring = document.getElementById('obRecurring').checked;
+  const tier = document.getElementById('obTier').value;
   if(!name) return;
-
-  if(isRecurring){
-    let day = parseInt(document.getElementById('obRecurringDay').value, 10);
-    if(!day || day<1) day = 1; if(day>31) day = 31;
-    state.recurring.push({ id:uid(), name, amount:amt, dayOfMonth:day, card:null, kind:'recurring' });
-    generateRecurringItems();
+  let item = { id:uid(), name, tier, amount:amt, paid:false, addedDate:todayStr, timesReconsidered:0,
+    date:null, windowStart:null, windowEnd:null };
+  if(tier==='fixed'){
+    item.date = document.getElementById('obDate').value || todayStr;
   } else {
-    state.items.push({ id:uid(), name, tier:'fixed', amount:amt, paid:false,
-      addedDate:todayStr, timesReconsidered:0,
-      date: document.getElementById('obDate').value || todayStr,
-      windowStart:null, windowEnd:null });
+    item.windowStart = document.getElementById('obWinStart').value || todayStr;
+    item.windowEnd = document.getElementById('obWinEnd').value || todayStr;
+    item.date = item.windowEnd;
   }
-
+  state.items.push(item);
   document.getElementById('obName').value=''; document.getElementById('obAmt').value='';
-  document.getElementById('obDate').value='';
-  document.getElementById('obRecurringDay').value=''; document.getElementById('obRecurring').checked=false;
-  toggleObRecurringUI();
+  document.getElementById('obDate').value=''; document.getElementById('obWinStart').value=''; document.getElementById('obWinEnd').value='';
   saveState(); render();
-}
-function toggleIncRecurringUI(){
-  const on = document.getElementById('incRecurring').checked;
-  document.getElementById('incDateWrap').style.display = on ? 'none' : 'flex';
-  document.getElementById('incRecurringDayWrap').style.display = on ? 'flex' : 'none';
 }
 function addIncome(){
   const label = document.getElementById('incName').value.trim();
   const amt = parseFloat(document.getElementById('incAmt').value)||0;
-  const isRecurring = document.getElementById('incRecurring').checked;
+  const date = document.getElementById('incDate').value || todayStr;
   if(!label) return;
-
-  if(isRecurring){
-    let day = parseInt(document.getElementById('incRecurringDay').value, 10);
-    if(!day || day<1) day = 1; if(day>31) day = 31;
-    state.recurringIncomes.push({ id:uid(), label, amount:amt, dayOfMonth:day });
-    generateRecurringIncomes();
-  } else {
-    const date = document.getElementById('incDate').value || todayStr;
-    state.incomes.push({id:uid(), label, amount:amt, date});
-  }
-
+  state.incomes.push({id:uid(), label, amount:amt, date});
   document.getElementById('incName').value=''; document.getElementById('incAmt').value=''; document.getElementById('incDate').value='';
-  document.getElementById('incRecurringDay').value=''; document.getElementById('incRecurring').checked=false;
-  toggleIncRecurringUI();
   saveState(); render();
 }
 function addWishItem(){
@@ -1233,15 +583,14 @@ document.getElementById('balanceInput').addEventListener('change', (e)=>{
   saveState(); render();
 });
 
-function drawChart(baseline, full){
+function drawChart(baseline, safe, full){
   const holder = document.getElementById('chartHolder');
-  const dipsNegative = full.some(p=>p.balance<0);
   const committed = state.items.filter(o=>o.tier!=='wish' && !o.paid && o.date);
   const points = full; // full has the widest date range, use it as the shared x-axis
 
   const W = 920, H = 240, padL=54, padR=16, padT=16, padB=30;
   const chartW = W-padL-padR, chartH = H-padT-padB;
-  const allVals = [...baseline, ...full].map(p=>p.balance);
+  const allVals = [...baseline, ...safe, ...full].map(p=>p.balance);
   const maxB = Math.max(...allVals, Number(state.balance)||0, 50);
   const minB = Math.min(...allVals, 0);
   const range = (maxB-minB)||1;
@@ -1254,10 +603,11 @@ function drawChart(baseline, full){
     return series.map((p,i)=> (i===0?'M':'L') + x(i).toFixed(1) + ',' + y(p.balance).toFixed(1)).join(' ');
   }
   const baselinePath = pathFor(baseline);
+  const safePath = pathFor(safe);
   const fullPath = pathFor(full);
 
   let belowPath = 'M' + x(0) + ',' + zeroY + ' ';
-  full.forEach((p,i)=> belowPath += 'L'+x(i).toFixed(1)+','+y(Math.min(p.balance,0)).toFixed(1)+' ');
+  full.forEach((p,i)=> belowPath += 'L'+x(i).toFixed(1)+','+y(p.balance).toFixed(1)+' ');
   belowPath += 'L'+x(full.length-1)+','+zeroY+' Z';
 
   let markers = '';
@@ -1265,7 +615,16 @@ function drawChart(baseline, full){
     const idx = full.findIndex(p=>p.dateStr===o.date);
     if(idx<0) return;
     const cx = x(idx), cy = y(full[idx].balance);
-    markers += `<circle cx="${cx}" cy="${cy}" r="4.5" fill="var(--amber)" stroke="#fff" stroke-width="1.5"><title>${o.name}: $${fmt(o.amount)} due ${o.date}</title></circle>`;
+    if(o.tier==='atsomepoint'){
+      const sIdx = full.findIndex(p=>p.dateStr===o.windowStart);
+      const eIdx = full.findIndex(p=>p.dateStr===o.windowEnd);
+      if(sIdx>=0 && eIdx>=0){
+        markers += `<line x1="${x(sIdx)}" y1="${padT+6}" x2="${x(eIdx)}" y2="${padT+6}" stroke="var(--teal)" stroke-width="1.5" stroke-dasharray="3,3"/>`;
+      }
+      markers += `<rect x="${(cx-4.5).toFixed(1)}" y="${(cy-4.5).toFixed(1)}" width="9" height="9" transform="rotate(45 ${cx.toFixed(1)} ${cy.toFixed(1)})" fill="var(--teal)" stroke="#fff" stroke-width="1.5"><title>${o.name}: $${fmt(o.amount)}, between ${o.windowStart} and ${o.windowEnd}</title></rect>`;
+    } else {
+      markers += `<circle cx="${cx}" cy="${cy}" r="4.5" fill="var(--amber)" stroke="#fff" stroke-width="1.5"><title>${o.name}: $${fmt(o.amount)} due ${o.date}</title></circle>`;
+    }
   });
   state.incomes.forEach(inc=>{
     const idx = full.findIndex(p=>p.dateStr===inc.date);
@@ -1274,53 +633,23 @@ function drawChart(baseline, full){
     }
   });
 
-  // Group points into calendar-month bands so we can shade alternating months
-  // and label the x-axis by month instead of three arbitrary dates.
-  const dayW = chartW/(points.length-1);
-  const monthBands = [];
-  {
-    let startIdx = 0;
-    let curMonth = points[0].dateStr.slice(0,7);
-    for(let i=1;i<points.length;i++){
-      const m = points[i].dateStr.slice(0,7);
-      if(m !== curMonth){
-        monthBands.push({startIdx, endIdx:i-1, month:curMonth});
-        startIdx = i; curMonth = m;
-      }
-    }
-    monthBands.push({startIdx, endIdx:points.length-1, month:curMonth});
-  }
-
-  let monthBg = '', monthDividers = '', monthLabels = '';
-  monthBands.forEach((b,i)=>{
-    const bandXStart = i===0 ? padL : (x(b.startIdx) - dayW/2);
-    const bandXEnd = i===monthBands.length-1 ? (padL+chartW) : (x(b.endIdx) + dayW/2);
-    const bandW = bandXEnd - bandXStart;
-    if(i % 2 === 1){
-      monthBg += `<rect x="${bandXStart.toFixed(1)}" y="${padT}" width="${bandW.toFixed(1)}" height="${chartH}" fill="var(--ink-soft)" opacity="0.07"/>`;
-    }
-    if(i>0){
-      monthDividers += `<line x1="${bandXStart.toFixed(1)}" y1="${padT}" x2="${bandXStart.toFixed(1)}" y2="${padT+chartH}" stroke="var(--ink-soft)" stroke-width="1" stroke-dasharray="2,3" opacity="0.4"/>`;
-    }
-    if(bandW > 26){
-      const d = new Date(b.month+'-01T00:00:00');
-      const monthLabel = d.toLocaleDateString('en-US',{month:'short'}) + (i===0 || d.getMonth()===0 ? " '"+String(d.getFullYear()).slice(2) : '');
-      monthLabels += `<text x="${((bandXStart+bandXEnd)/2).toFixed(1)}" y="${H-8}" font-size="11" fill="var(--ink-soft)" text-anchor="middle">${monthLabel}</text>`;
-    }
-  });
+  const labelIdxs = [0, Math.floor((points.length-1)/2), points.length-1];
+  let labels = labelIdxs.map(i=>{
+    const p = points[i];
+    return `<text x="${x(i)}" y="${H-8}" font-size="11" fill="var(--ink-soft)" text-anchor="middle">${p.dateStr.slice(5)}</text>`;
+  }).join('');
 
   holder.innerHTML = `
   <svg viewBox="0 0 ${W} ${H}" id="runwaySvg" style="width:100%; height:auto; cursor:crosshair;">
-    ${monthBg}
-    <line x1="${padL}" y1="${zeroY}" x2="${W-padR}" y2="${zeroY}" stroke="${dipsNegative?'var(--brick)':'var(--hairline)'}" stroke-width="${dipsNegative?1.5:1}"/>
+    <line x1="${padL}" y1="${zeroY}" x2="${W-padR}" y2="${zeroY}" stroke="var(--hairline)" stroke-width="1"/>
     <text x="${padL-8}" y="${zeroY+4}" font-size="11" fill="var(--ink-soft)" text-anchor="end">$0</text>
     <text x="${padL-8}" y="${padT+8}" font-size="11" fill="var(--ink-soft)" text-anchor="end">$${fmt(maxB)}</text>
-    <path d="${belowPath}" fill="var(--brick)" opacity="0.28" stroke="none"/>
-    ${monthDividers}
+    <path d="${belowPath}" fill="var(--brick-soft)" stroke="none"/>
     <path d="${baselinePath}" fill="none" stroke="var(--ink-soft)" stroke-width="1.75" stroke-dasharray="5,4"/>
+    <path d="${safePath}" fill="none" stroke="var(--sage)" stroke-width="2.25"/>
     <path d="${fullPath}" fill="none" stroke="var(--brick)" stroke-width="2.25"/>
     ${markers}
-    ${monthLabels}
+    ${labels}
     <g id="hoverLayer"></g>
     <rect x="${padL}" y="${padT}" width="${chartW}" height="${chartH}" fill="transparent" id="hoverCatcher"/>
   </svg>
@@ -1335,35 +664,28 @@ function drawChart(baseline, full){
     const rect = svgEl.getBoundingClientRect();
     const scale = W / rect.width;
     const svgX = (evt.clientX - rect.left) * scale;
-    const svgY = (evt.clientY - rect.top) * scale;
     let idx = Math.round(((svgX - padL) / chartW) * (points.length - 1));
     idx = Math.max(0, Math.min(points.length - 1, idx));
 
     const gx = x(idx);
-    const byBase = baseline[idx].balance, byFull = full[idx].balance;
-    const dateStr = points[idx].dateStr;
+    const byBase = baseline[idx].balance, bySafe = safe[idx].balance, byFull = full[idx].balance;
 
     hoverLayer.innerHTML = `
       <line x1="${gx}" y1="${padT}" x2="${gx}" y2="${padT+chartH}" stroke="var(--ink)" stroke-width="1" stroke-dasharray="2,2" opacity="0.35"/>
       <circle cx="${gx}" cy="${y(byBase)}" r="4" fill="var(--ink-soft)" stroke="#fff" stroke-width="1.5"/>
+      <circle cx="${gx}" cy="${y(bySafe)}" r="4" fill="var(--sage)" stroke="#fff" stroke-width="1.5"/>
       <circle cx="${gx}" cy="${y(byFull)}" r="4" fill="var(--brick)" stroke="#fff" stroke-width="1.5"/>`;
 
-    // Show only the value of whichever line the cursor is actually closest to.
-    const candidates = [byBase, byFull];
-    let nearest = candidates[0], bestDist = Infinity;
-    candidates.forEach(v=>{
-      const d = Math.abs(svgY - y(v));
-      if(d < bestDist){ bestDist = d; nearest = v; }
-    });
-
-    tooltip.innerHTML = `<div class="tt-date">${dateStr}</div>${nearest<0 ? '-$' : '$'}${fmt(Math.abs(nearest))}`;
+    tooltip.innerHTML = `
+      <div class="tt-date">${points[idx].dateStr}</div>
+      <div class="tt-row"><span style="color:#B7BAA9;">today's cash:</span><span>$${fmt(byBase)}</span></div>
+      <div class="tt-row"><span style="color:#8FB08C;">safe:</span><span>$${fmt(bySafe)}</span></div>
+      <div class="tt-row"><span style="color:#D08A78;">full exposure:</span><span>${byFull<0?'-$'+fmt(Math.abs(byFull)):'$'+fmt(byFull)}</span></div>`;
     tooltip.style.opacity = '1';
     const holderRect = holder.getBoundingClientRect();
-    const ttWidth = tooltip.offsetWidth || 80;
     let left = (evt.clientX - holderRect.left) + 14;
     let top = (evt.clientY - holderRect.top) - 10;
-    if(left + ttWidth > holderRect.width) left -= (ttWidth + 28);
-    if(left < 0) left = 4;
+    if(left + 150 > holderRect.width) left -= 170;
     tooltip.style.left = left + 'px';
     tooltip.style.top = top + 'px';
   }
@@ -1377,15 +699,7 @@ function drawChart(baseline, full){
 
 (async function init(){
   await loadState();
-  applyLayout();
-  initSortable();
   toggleObDateUI();
-  toggleObRecurringUI();
-  toggleIncRecurringUI();
-  toggleSubCycleUI();
-  const gen = generateRecurringItems();
-  const genInc = generateRecurringIncomes();
-  if(gen || genInc) await saveState();
   render();
 })();
 </script>
