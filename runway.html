@@ -73,6 +73,7 @@
   .tag.annual{background:rgba(250, 240, 225, 0.96); color:#D9CBE8;}
   .tier-select{width:118px; font-size:12px;}
   .add-form{margin-top:14px; padding-top:14px; border-top:1px dashed var(--hairline);}
+  .add-form-top{margin-bottom:14px; padding-bottom:14px; border-bottom:1px dashed var(--hairline);}
   .empty{color:var(--ink-soft); font-size:13px; padding:14px 0;}
   .save-badge{position:fixed; top:16px; right:20px; font-size:12px; color:var(--ink-soft); font-family:'IBM Plex Mono',monospace; opacity:0; transition:opacity .3s;}
   .save-badge.show{opacity:1;}
@@ -222,9 +223,7 @@
   <div class="card" data-card="ledger">
     <h2><span class="drag-handle" title="Drag to move">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('ledger')"><span id="chev-ledger">&#9662;</span> Money going out</span></h2>
     <div id="body-ledger">
-    
-    <ul class="items" id="ledgerList"></ul>
-    <div class="add-form">
+    <div class="add-form-top">
       <div class="row">
         <div class="field"><label>What</label><input type="text" id="obName"></div>
         <div class="field" style="max-width:110px;"><label>Amount</label><input type="number" id="obAmt" placeholder="0"></div>
@@ -239,6 +238,7 @@
         <button onclick="addLedgerItem()">Add</button>
       </div>
     </div>
+    <ul class="items" id="ledgerList"></ul>
     </div>
   </div>
 
