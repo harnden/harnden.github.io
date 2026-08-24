@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Docket</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap');
+  html, body, #root { min-height: 100%; }
+  body { margin: 0; background: #14181B; }
+  .docket-root { font-family: 'IBM Plex Sans', ui-sans-serif, system-ui; }
+  .font-display { font-family: 'Fraunces', ui-serif, serif; }
+  .font-mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+  .docket-root *:focus-visible { outline: 2px solid #D98E3F; outline-offset: 2px; }
+  .task-card { transition: transform 150ms ease, box-shadow 150ms ease; }
+  .task-card:hover { transform: translateY(-2px); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useMemo, useRef } = React;
+
+/* ---------- tiny inline icon set (no external icon library needed) ---------- */
+function IconBase({ size = 16, children }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      {children}
+    </svg>
+  );
+}
+const XIcon = ({ size }) => (
+  <IconBase size={size}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></IconBase>
+);
+const Clock = ({ size }) => (
+  <IconBase size={size}><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></IconBase>
+);
+const Plus = ({ size }) => (
+  <IconBase size={size}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></IconBase>
+);
+const ChevronDown = ({ size }) => <IconBase size={size}><polyline points="6 9 12 15 18 9" /></IconBase>;
+const ChevronUp = ({ size }) => <IconBase size={size}><polyline points="18 15 12 9 6 15" /></IconBase>;
+const Trash2 = ({ size }) => (
+  <IconBase size={size}>
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+    <path d="M10 11v6" /><path d="M14 11v6" />
+    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+  </IconBase>
+);
+const PencilIcon = ({ size }) => (
+  <IconBase size={size}>
+    <path d="M12 20h9" />
+    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
+  </IconBase>
+);
+
+/* ---------- data + logic ---------- */
+const COLORS = {
+  ink: '#14181B',
+  inkPanel: '#1B2023',
+  inkPanelBorder: '#2C3336',
+  paper: '#FAF7F0',
+  paperDim: '#F0ECE1',
+  textInk: '#211F1A',
+  textOnDark: '#EDE8DA',
+  textMuted: '#93999B',
+  textMutedOnPaper: '#7A756A',
+  amber: '#D98E3F',
+  rust: '#B5473A',
+  moss: '#5C7A5E',
+  stone: '#767169',
+  call: '#4B7BA6',
+  schedule: '#6B5FA6',
+};
+
+const AREAS = [
+  { key: 'work', label: 'Work', color: '#2E294E', text: '#FAF7F0' },
+  { key: 'school', label: 'School', color: '#541388', text: '#FAF7F0' },
+  { key: 'family', label: 'Family', color: '#D90368', text: '#FAF7F0' },
+  { key: 'personal', label: 'Personal', color: '#F1E9DA', text: '#211F1A' },
+  { key: 'home', label: 'Home', color: '#FFD400', text: '#211F1A' },
+];
+
+const DREAD = {
+  low: { emoji: '😊', label: 'Fine', score: 0 },
+  medium: { emoji: '😐', label: 'Meh', score: 1 },
+  high: { emoji: '😬', label: 'Dreading it', score: 2 },
+};
+
+const QUADRANTS = [
+  { key: 'doNow', label: 'Do Now', sub: 'Urgent and important', accent: COLORS.rust, empty: 'Nothing on fire. Enjoy it.' },
+  { key: 'schedule', label: 'Schedule', sub: 'Important, not urgent', accent: COLORS.moss, empty: "This is where important-but-not-urgent things live. Nothing here yet." },
+  { key: 'quick', label: 'Quick Wins', sub: 'Urgent, not important', accent: COLORS.amber, empty: 'No quick wins queued.' },
+  { key: 'someday', label: 'Someday', sub: 'Neither urgent nor important', accent: COLORS.stone, empty: "Someday is empty. That's fine too." },
+];
+
+const DAY_MS = 1000 * 60 * 60 * 24;
+const STORAGE_KEY = 'docket-tasks';
+
+function quadrantOf(task) {
+  if (task.important && task.urgent) return 'doNow';
+  if (task.important && !task.urgent) return 'schedule';
+  if (!task.important && task.urgent) return 'quick';
+  return 'someday';
+}
+
+function agingBonus(createdAt) {
+  const days = (Date.now() - createdAt) / DAY_MS;
+  return Math.min(days * 0.15, 3);
+}
+
+const AREA_WEIGHT = 1.5;
+
+function score(task) {
+  return DREAD[task.dread].score * 2 + task.pushCount * 3 + agingBonus(task.createdAt) + (task.areas.length - 1) * AREA_WEIGHT;
+}
+
+function avoidScore(task) {
+  return (
+    (task.important ? 2 : 0) +
+    (task.urgent ? 1 : 0) +
+    DREAD[task.dread].score * 3 +
+    task.pushCount * 2 +
+    (task.areas.length - 1) * AREA_WEIGHT
+  );
+}
+
+function areaOf(key) {
+  return AREAS.find((a) => a.key === key) || AREAS[0];
+}
+
+function hexLuminance(hex) {
+  const c = hex.replace('#', '');
+  const r = parseInt(c.substring(0, 2), 16) / 255;
+  const g = parseInt(c.substring(2, 4), 16) / 255;
+  const b = parseInt(c.substring(4, 6), 16) / 255;
+  return 0.299 * r + 0.587 * g + 0.114 * b;
+}
+
+function textColorForAreas(areaObjs) {
+  if (!areaObjs.length) return '#211F1A';
+  const avg = areaObjs.reduce((sum, a) => sum + hexLuminance(a.color), 0) / areaObjs.length;
+  return avg > 0.55 ? '#211F1A' : '#FAF7F0';
+}
+
+function backgroundForAreas(areaObjs) {
+  if (areaObjs.length <= 1) return (areaObjs[0] || AREAS[0]).color;
+  const step = 100 / areaObjs.length;
+  const stops = areaObjs.map((a, i) => `${a.color} ${i * step}%, ${a.color} ${(i + 1) * step}%`).join(', ');
+  return `linear-gradient(135deg, ${stops})`;
+}
+
+function loadTasks() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return null;
+}
+
+function saveTasks(tasks) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+  } catch (e) {}
+}
+
+function normalizeTask(t, idx) {
+  let areas = Array.isArray(t.areas) ? t.areas.filter((k) => AREAS.some((a) => a.key === k)) : [];
+  if (areas.length === 0 && t.area && AREAS.some((a) => a.key === t.area)) areas = [t.area];
+  if (areas.length === 0) areas = ['work'];
+  return {
+    id: t.id || `${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 6)}`,
+    title: String(t.title || 'Untitled'),
+    areas,
+    urgent: !!t.urgent,
+    important: t.important === undefined ? true : !!t.important,
+    dread: DREAD[t.dread] ? t.dread : 'medium',
+    isCall: !!t.isCall,
+    callContact: t.callContact || '',
+    scheduledDate: t.scheduledDate || null,
+    scheduledTime: t.scheduledTime || null,
+    pushCount: Number(t.pushCount) || 0,
+    completed: !!t.completed,
+    createdAt: Number(t.createdAt) || Date.now(),
+    snoozedDay: t.snoozedDay || null,
+  };
+}
+
+function toISODate(d) {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function formatTime12(t) {
+  const [h, m] = t.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = ((h + 11) % 12) + 1;
+  return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+}
+
+/* ---------- app ---------- */
+function Docket() {
+  const [tasks, setTasks] = useState([]);
+  const [loaded, setLoaded] = useState(false);
+  const [today] = useState(() => new Date().toDateString());
+  const [todayISO] = useState(() => toISODate(new Date()));
+  const [tomorrowISO] = useState(() => toISODate(new Date(Date.now() + DAY_MS)));
+  const [filterAreas, setFilterAreas] = useState(new Set());
+  const [viewMode, setViewMode] = useState('columns');
+  const [showDone, setShowDone] = useState(false);
+  const [showFormDetails, setShowFormDetails] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editDraft, setEditDraft] = useState(null);
+  const [pendingImport, setPendingImport] = useState(null);
+  const [importError, setImportError] = useState(null);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const fileInputRef = useRef(null);
+  const [form, setForm] = useState({ title: '', areas: ['work'], urgent: false, important: true, dread: 'medium', isCall: false, callContact: '', scheduled: false, scheduledDate: '', scheduledTime: '' });
+
+  useEffect(() => {
+    const stored = loadTasks();
+    setTasks((stored || []).map((t, i) => normalizeTask(t, i)));
+    setLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (!loaded) return;
+    saveTasks(tasks);
+  }, [tasks, loaded]);
+
+  const isSnoozedToday = (task) => task.snoozedDay === today;
+
+  const addTask = () => {
+    if (!form.title.trim()) return;
+    const t = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      title: form.title.trim(),
+      areas: form.areas,
+      urgent: form.urgent,
+      important: form.important,
+      dread: form.dread,
+      isCall: form.isCall,
+      callContact: form.isCall ? form.callContact.trim() : '',
+      scheduledDate: form.scheduled && form.scheduledDate ? form.scheduledDate : null,
+      scheduledTime: form.scheduled && form.scheduledDate && form.scheduledTime ? form.scheduledTime : null,
+      pushCount: 0,
+      completed: false,
+      createdAt: Date.now(),
+      snoozedDay: null,
+    };
+    setTasks((prev) => [...prev, t]);
+    setForm({ title: '', areas: ['work'], urgent: false, important: true, dread: 'medium', isCall: false, callContact: '', scheduled: false, scheduledDate: '', scheduledTime: '' });
+  };
+
+  const toggleFormArea = (key) =>
+    setForm((f) => {
+      const has = f.areas.includes(key);
+      if (has && f.areas.length === 1) return f;
+      return { ...f, areas: has ? f.areas.filter((k) => k !== key) : [...f.areas, key] };
+    });
+
+  const toggleComplete = (id) =>
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)));
+
+  const deleteTask = (id) => setTasks((prev) => prev.filter((t) => t.id !== id));
+
+  const pushTask = (id) =>
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, pushCount: t.pushCount + 1, snoozedDay: today } : t))
+    );
+
+  const startEdit = (task) => {
+    setEditingId(task.id);
+    setEditDraft({
+      title: task.title,
+      areas: [...task.areas],
+      urgent: task.urgent,
+      important: task.important,
+      dread: task.dread,
+      isCall: task.isCall,
+      callContact: task.callContact || '',
+      scheduled: !!task.scheduledDate,
+      scheduledDate: task.scheduledDate || '',
+      scheduledTime: task.scheduledTime || '',
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditDraft(null);
+  };
+
+  const saveEdit = () => {
+    if (!editDraft || !editDraft.title.trim()) return;
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === editingId
+          ? {
+              ...t,
+              title: editDraft.title.trim(),
+              areas: editDraft.areas,
+              urgent: editDraft.urgent,
+              important: editDraft.important,
+              dread: editDraft.dread,
+              isCall: editDraft.isCall,
+              callContact: editDraft.isCall ? editDraft.callContact.trim() : '',
+              scheduledDate: editDraft.scheduled && editDraft.scheduledDate ? editDraft.scheduledDate : null,
+              scheduledTime: editDraft.scheduled && editDraft.scheduledDate && editDraft.scheduledTime ? editDraft.scheduledTime : null,
+            }
+          : t
+      )
+    );
+    setEditingId(null);
+    setEditDraft(null);
+  };
+
+  const toggleAreaFilter = (key) =>
+    setFilterAreas((prev) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+
+  const exportBackup = () => {
+    const blob = new Blob([JSON.stringify(tasks, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `docket-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const triggerImport = () => {
+    setImportError(null);
+    fileInputRef.current && fileInputRef.current.click();
+  };
+
+  const handleFileSelected = (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        if (!Array.isArray(parsed)) throw new Error('not an array');
+        setPendingImport(parsed.map((t, idx) => normalizeTask(t, idx)));
+        setImportError(null);
+      } catch (err) {
+        setImportError("That file doesn't look like a Docket backup.");
+      }
+    };
+    reader.onerror = () => setImportError('Could not read that file.');
+    reader.readAsText(file);
+  };
+
+  const confirmImport = () => {
+    setTasks(pendingImport);
+    setPendingImport(null);
+  };
+
+  const cancelImport = () => setPendingImport(null);
+
+  const clearAll = () => {
+    setTasks([]);
+    setConfirmClear(false);
+  };
+
+  const visibleTasks = useMemo(() => {
+    if (filterAreas.size === 0) return tasks;
+    return tasks.filter((t) => t.areas.some((k) => filterAreas.has(k)));
+  }, [tasks, filterAreas]);
+
+  const activeTasks = visibleTasks.filter((t) => !t.completed);
+  const completedTasks = visibleTasks.filter((t) => t.completed);
+
+  const byQuadrant = useMemo(() => {
+    const map = { doNow: [], schedule: [], quick: [], someday: [] };
+    activeTasks.forEach((t) => map[quadrantOf(t)].push(t));
+    Object.keys(map).forEach((k) => {
+      const fresh = map[k].filter((t) => !isSnoozedToday(t)).sort((a, b) => score(b) - score(a));
+      const snoozed = map[k]
+        .filter((t) => isSnoozedToday(t))
+        .sort((a, b) => b.pushCount - a.pushCount || score(b) - score(a));
+      map[k] = [...fresh, ...snoozed];
+    });
+    return map;
+  }, [activeTasks, today]);
+
+  const allTasksList = useMemo(
+    () => [...byQuadrant.doNow, ...byQuadrant.schedule, ...byQuadrant.quick, ...byQuadrant.someday],
+    [byQuadrant]
+  );
+
+  const agendaTasks = useMemo(() => {
+    return activeTasks
+      .filter((t) => t.scheduledDate && t.scheduledDate >= todayISO)
+      .sort((a, b) => {
+        if (a.scheduledDate !== b.scheduledDate) return a.scheduledDate < b.scheduledDate ? -1 : 1;
+        if (!a.scheduledTime && !b.scheduledTime) return 0;
+        if (!a.scheduledTime) return -1;
+        if (!b.scheduledTime) return 1;
+        return a.scheduledTime < b.scheduledTime ? -1 : 1;
+      });
+  }, [activeTasks, todayISO]);
+
+  const agendaGroups = useMemo(() => {
+    const groups = [];
+    let lastDate = null;
+    agendaTasks.forEach((t) => {
+      if (t.scheduledDate !== lastDate) {
+        groups.push({ date: t.scheduledDate, items: [] });
+        lastDate = t.scheduledDate;
+      }
+      groups[groups.length - 1].items.push(t);
+    });
+    return groups;
+  }, [agendaTasks]);
+
+  const dateLabel = (dateStr) => {
+    if (dateStr === todayISO) return 'Today';
+    if (dateStr === tomorrowISO) return 'Tomorrow';
+    return new Date(`${dateStr}T00:00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  };
+
+  const pick = useMemo(() => {
+    const candidates = activeTasks.filter((t) => !isSnoozedToday(t));
+    if (candidates.length === 0) return null;
+    return [...candidates].sort((a, b) => avoidScore(b) - avoidScore(a) || a.createdAt - b.createdAt)[0];
+  }, [activeTasks, today]);
+
+  const emptyBoardMessage = () => {
+    if (tasks.length === 0) return "The board's empty. Add something below to get started.";
+    if (activeTasks.length === 0) return 'Nothing left today. Nicely done.';
+    return "Everything's been pushed to tomorrow. Nicely dodged — or add something new below.";
+  };
+
+  return (
+    <div style={{ background: COLORS.ink, minHeight: '100%', color: COLORS.textOnDark }} className="w-full">
+      <div className="docket-root max-w-6xl mx-auto px-4 sm:px-6 py-8">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-8 flex-wrap gap-3">
+          <div>
+            <h1 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight" style={{ color: COLORS.textOnDark }}>
+              Docket
+            </h1>
+            <p className="text-sm mt-1" style={{ color: COLORS.textMuted }}>
+              {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={exportBackup}
+              className="text-xs px-3 py-2 rounded-md border"
+              style={{ borderColor: COLORS.inkPanelBorder, color: COLORS.textMuted }}
+            >
+              Export backup
+            </button>
+            <button
+              onClick={triggerImport}
+              className="text-xs px-3 py-2 rounded-md border"
+              style={{ borderColor: COLORS.inkPanelBorder, color: COLORS.textMuted }}
+            >
+              Import backup
+            </button>
+            <button
+              onClick={() => setConfirmClear(true)}
+              className="text-xs px-3 py-2 rounded-md border"
+              style={{ borderColor: COLORS.inkPanelBorder, color: COLORS.textMuted }}
+            >
+              Clear board
+            </button>
+            <input type="file" accept="application/json" ref={fileInputRef} onChange={handleFileSelected} style={{ display: 'none' }} />
+          </div>
+        </div>
+
+        {pendingImport && (
+          <div
+            className="rounded-md p-4 mb-8 text-sm flex items-center justify-between gap-4 flex-wrap"
+            style={{ background: COLORS.inkPanel, border: `1px solid ${COLORS.call}`, color: COLORS.textOnDark }}
+          >
+            <span>
+              Replace your {tasks.length} current task{tasks.length === 1 ? '' : 's'} with {pendingImport.length} from
+              the backup file?
+            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              <button onClick={confirmImport} className="text-xs px-3 py-1.5 rounded-md font-medium" style={{ background: COLORS.moss, color: COLORS.paper }}>
+                Replace
+              </button>
+              <button onClick={cancelImport} className="text-xs px-3 py-1.5 rounded-md" style={{ color: COLORS.textMuted }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {importError && (
+          <div
+            className="rounded-md p-3 mb-8 text-sm flex items-center justify-between gap-4"
+            style={{ background: COLORS.inkPanel, border: `1px solid ${COLORS.rust}`, color: COLORS.textOnDark }}
+          >
+            <span>{importError}</span>
+            <button onClick={() => setImportError(null)} className="text-xs underline shrink-0" style={{ color: COLORS.textMuted }}>
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        {confirmClear && (
+          <div
+            className="rounded-md p-4 mb-8 text-sm flex items-center justify-between gap-4 flex-wrap"
+            style={{ background: COLORS.inkPanel, border: `1px solid ${COLORS.rust}`, color: COLORS.textOnDark }}
+          >
+            <span>
+              Clear all {tasks.length} task{tasks.length === 1 ? '' : 's'}? This can't be undone unless you've
+              exported a backup.
+            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              <button onClick={clearAll} className="text-xs px-3 py-1.5 rounded-md font-medium" style={{ background: COLORS.rust, color: COLORS.paper }}>
+                Clear everything
+              </button>
+              <button onClick={() => setConfirmClear(false)} className="text-xs px-3 py-1.5 rounded-md" style={{ color: COLORS.textMuted }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Big input */}
+        <div
+          className="rounded-md p-5 sm:p-6 mb-8 shadow-md"
+          style={{ background: COLORS.paper, color: COLORS.textInk }}
+        >
+          <label
+            className="block text-xs uppercase tracking-wide font-semibold mb-2"
+            style={{ color: COLORS.textMutedOnPaper }}
+          >
+           To Do
+          </label>
+          <input
+            value={form.title}
+            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+            onKeyDown={(e) => e.key === 'Enter' && addTask()}
+            aria-label="Task title"
+            className="w-full font-display text-lg sm:text-xl px-4 py-3 rounded-md mb-4 border"
+            style={{ background: COLORS.paperDim, color: COLORS.textInk, borderColor: '#E3DCC9' }}
+          />
+          <div className="mb-3">
+            <PriorityGrid
+              urgent={form.urgent}
+              important={form.important}
+              onChange={(u, i) => setForm((f) => ({ ...f, urgent: u, important: i }))}
+            />
+          </div>
+          <div className="mb-3">
+            <button
+              onClick={() => setShowFormDetails((s) => !s)}
+              className="text-xs underline"
+              style={{ color: COLORS.textMutedOnPaper }}
+            >
+              {showFormDetails ? 'Hide details' : '+ Add details (area, mood, call)'}
+            </button>
+          </div>
+          {showFormDetails && (
+            <div className="flex items-center gap-3 flex-wrap mb-3 pt-2" style={{ borderTop: '1px solid #E3DCC9' }}>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {AREAS.map((a) => {
+                  const active = form.areas.includes(a.key);
+                  return (
+                    <button
+                      key={a.key}
+                      onClick={() => toggleFormArea(a.key)}
+                      className="text-xs px-2.5 py-1.5 rounded-md border font-medium"
+                      style={
+                        active
+                          ? { background: a.color, borderColor: a.color, color: a.text }
+                          : { borderColor: '#E3DCC9', color: COLORS.textMutedOnPaper }
+                      }
+                    >
+                      {a.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex items-center gap-1">
+                {Object.entries(DREAD).map(([key, d]) => (
+                  <button
+                    key={key}
+                    onClick={() => setForm((f) => ({ ...f, dread: key }))}
+                    aria-label={d.label}
+                    title={d.label}
+                    className="text-lg w-8 h-8 rounded-full flex items-center justify-center"
+                    style={{
+                      background: form.dread === key ? COLORS.paperDim : 'transparent',
+                      border: form.dread === key ? `2px solid ${COLORS.rust}` : `1px solid #E3DCC9`,
+                    }}
+                  >
+                    {d.emoji}
+                  </button>
+                ))}
+              </div>
+              <ToggleChip
+                active={form.isCall}
+                onClick={() => setForm((f) => ({ ...f, isCall: !f.isCall }))}
+                color={COLORS.call}
+                label="📞 Add to call list"
+              />
+              {form.isCall && (
+                <input
+                  value={form.callContact}
+                  onChange={(e) => setForm((f) => ({ ...f, callContact: e.target.value }))}
+                  onKeyDown={(e) => e.key === 'Enter' && addTask()}
+                  aria-label="Call contact name or number"
+                  className="w-full text-sm px-3 py-2 rounded-md border"
+                  style={{ background: COLORS.paperDim, color: COLORS.textInk, borderColor: COLORS.call }}
+                />
+              )}
+              <ToggleChip
+                active={form.scheduled}
+                onClick={() => setForm((f) => ({ ...f, scheduled: !f.scheduled }))}
+                color={COLORS.schedule}
+                label="📅 Schedule"
+              />
+              {form.scheduled && (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="date"
+                    value={form.scheduledDate}
+                    onChange={(e) => setForm((f) => ({ ...f, scheduledDate: e.target.value }))}
+                    aria-label="Scheduled date"
+                    className="text-sm px-2 py-1.5 rounded-md border"
+                    style={{ background: COLORS.paperDim, color: COLORS.textInk, borderColor: COLORS.schedule }}
+                  />
+                  <input
+                    type="time"
+                    value={form.scheduledTime}
+                    onChange={(e) => setForm((f) => ({ ...f, scheduledTime: e.target.value }))}
+                    aria-label="Scheduled time (optional, leave blank for all-day)"
+                    className="text-sm px-2 py-1.5 rounded-md border"
+                    style={{ background: COLORS.paperDim, color: COLORS.textInk, borderColor: COLORS.schedule }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+          <button
+            onClick={addTask}
+            disabled={!form.title.trim()}
+            className="text-sm px-5 py-2.5 rounded-md font-semibold disabled:opacity-40 mt-1"
+            style={{ background: COLORS.moss, color: COLORS.paper }}
+          >
+            Pin it
+          </button>
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
+          <div className="flex-1 min-w-0 w-full">
+        <div className="mb-8">
+          {pick ? (
+            <div
+              className="task-card rounded-md p-5 sm:p-6 shadow-lg relative"
+              style={{ background: backgroundForAreas(pick.areas.map(areaOf)), color: textColorForAreas(pick.areas.map(areaOf)) }}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="font-display text-xl sm:text-2xl font-semibold">{pick.title}</h2>
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    {pick.areas.map((k) => (
+                      <AreaChip key={k} area={areaOf(k)} />
+                    ))}
+                    <span className="text-lg" title={DREAD[pick.dread].label}>
+                      {DREAD[pick.dread].emoji}
+                    </span>
+                    {pick.pushCount > 0 && <PushBadge count={pick.pushCount} />}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2 shrink-0">
+                  <label
+                    className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-md font-medium cursor-pointer"
+                    style={{ background: COLORS.moss, color: COLORS.paper }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={false}
+                      onChange={() => toggleComplete(pick.id)}
+                      aria-label="Mark done"
+                      className="w-4 h-4"
+                      style={{ accentColor: COLORS.paper }}
+                    />
+                    Done
+                  </label>
+                  <button
+                    onClick={() => pushTask(pick.id)}
+                    className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md border opacity-90"
+                    style={{ borderColor: textColorForAreas(pick.areas.map(areaOf)), color: textColorForAreas(pick.areas.map(areaOf)) }}
+                  >
+                    <Clock size={15} /> Not today
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div
+              className="rounded-md p-5 text-sm"
+              style={{ background: COLORS.inkPanel, border: `1px dashed ${COLORS.inkPanelBorder}`, color: COLORS.textMuted }}
+            >
+              {emptyBoardMessage()}
+            </div>
+          )}
+        </div>
+
+        {/* Filters */}
+        <div className="flex items-center justify-between gap-4 mb-3 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            {AREAS.map((a) => (
+              <button
+                key={a.key}
+                onClick={() => toggleAreaFilter(a.key)}
+                className="text-xs px-2.5 py-1 rounded-full border font-medium"
+                style={
+                  filterAreas.has(a.key)
+                    ? { background: a.color, borderColor: a.color, color: a.text }
+                    : { borderColor: COLORS.inkPanelBorder, color: COLORS.textMuted }
+                }
+              >
+                {a.label}
+              </button>
+            ))}
+            {filterAreas.size > 0 && (
+              <button onClick={() => setFilterAreas(new Set())} className="text-xs underline" style={{ color: COLORS.textMuted }}>
+                Clear filters
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-1 rounded-md p-0.5" style={{ background: COLORS.inkPanel, border: `1px solid ${COLORS.inkPanelBorder}` }}>
+            <button
+              onClick={() => setViewMode('columns')}
+              className="text-xs px-2.5 py-1 rounded font-medium"
+              style={viewMode === 'columns' ? { background: COLORS.moss, color: COLORS.paper } : { color: COLORS.textMuted }}
+            >
+              Columns
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className="text-xs px-2.5 py-1 rounded font-medium"
+              style={viewMode === 'list' ? { background: COLORS.moss, color: COLORS.paper } : { color: COLORS.textMuted }}
+            >
+              List
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4 flex-wrap mb-5">
+          {QUADRANTS.map((q) => (
+            <div key={q.key} className="flex items-center gap-1.5" title={q.sub}>
+              <span className="w-2 h-2 rounded-full shrink-0" style={{ background: q.accent }} />
+              <span className="text-xs" style={{ color: COLORS.textMuted }}>
+                {q.label}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Board */}
+        {viewMode === 'columns' ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-8">
+            {QUADRANTS.map((q) => (
+              <div
+                key={q.key}
+                className="rounded-md p-4"
+                style={{ background: COLORS.inkPanel, border: `1px solid ${COLORS.inkPanelBorder}`, borderTop: `3px solid ${q.accent}` }}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: q.accent }} title={`${q.label} — ${q.sub}`} />
+                  <span className="font-mono text-xs" style={{ color: COLORS.textMuted }}>
+                    {byQuadrant[q.key].length}
+                  </span>
+                </div>
+                {byQuadrant[q.key].length === 0 ? (
+                  <p className="text-sm py-4" style={{ color: COLORS.textMuted }}>
+                    {q.empty}
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {byQuadrant[q.key].map((t) => (
+                      <TaskCard
+                        key={t.id}
+                        task={t}
+                        snoozed={isSnoozedToday(t)}
+                        isEditing={editingId === t.id}
+                        editDraft={editDraft}
+                        setEditDraft={setEditDraft}
+                        onEditStart={() => startEdit(t)}
+                        onEditSave={saveEdit}
+                        onEditCancel={cancelEdit}
+                        onComplete={() => toggleComplete(t.id)}
+                        onPush={() => pushTask(t.id)}
+                        onDelete={() => deleteTask(t.id)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-md p-4 mb-8" style={{ background: COLORS.inkPanel, border: `1px solid ${COLORS.inkPanelBorder}` }}>
+            {allTasksList.length === 0 ? (
+              <p className="text-sm py-4" style={{ color: COLORS.textMuted }}>
+                Nothing here. Add something above to get started.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {allTasksList.map((t) => (
+                  <TaskCard
+                    key={t.id}
+                    task={t}
+                    snoozed={isSnoozedToday(t)}
+                    isEditing={editingId === t.id}
+                    editDraft={editDraft}
+                    setEditDraft={setEditDraft}
+                    onEditStart={() => startEdit(t)}
+                    onEditSave={saveEdit}
+                    onEditCancel={cancelEdit}
+                    onComplete={() => toggleComplete(t.id)}
+                    onPush={() => pushTask(t.id)}
+                    onDelete={() => deleteTask(t.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Completed */}
+        {completedTasks.length > 0 && (
+          <div className="rounded-md p-4" style={{ background: COLORS.inkPanel, border: `1px solid ${COLORS.inkPanelBorder}` }}>
+            <button onClick={() => setShowDone((s) => !s)} className="flex items-center gap-2 text-sm w-full" style={{ color: COLORS.textMuted }}>
+              {showDone ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+              {completedTasks.length} done today
+            </button>
+            {showDone && (
+              <div className="mt-3 space-y-2">
+                {completedTasks.map((t) => (
+                  <div key={t.id} className="flex items-center justify-between text-sm">
+                    <span className="line-through opacity-60" style={{ color: COLORS.textOnDark }}>
+                      {t.title}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => toggleComplete(t.id)} className="text-xs underline" style={{ color: COLORS.textMuted }}>
+                        Undo
+                      </button>
+                      <button onClick={() => deleteTask(t.id)} aria-label="Delete task" style={{ color: COLORS.textMuted }}>
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+          </div>
+
+          <aside className="w-full lg:w-72 shrink-0">
+            <div
+              className="rounded-md p-4 lg:sticky lg:top-6"
+              style={{ background: COLORS.inkPanel, border: `1px solid ${COLORS.inkPanelBorder}`, borderTop: `3px solid ${COLORS.schedule}` }}
+            >
+              <div className="flex items-baseline justify-between mb-3">
+                <h3 className="font-display text-lg font-semibold" style={{ color: COLORS.textOnDark }}>
+                  Agenda
+                </h3>
+                <span className="font-mono text-xs" style={{ color: COLORS.textMuted }}>
+                  {agendaTasks.length}
+                </span>
+              </div>
+              {agendaGroups.length === 0 ? (
+                <p className="text-sm py-2" style={{ color: COLORS.textMuted }}>
+                  Nothing scheduled.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {agendaGroups.map((g) => (
+                    <div key={g.date}>
+                      <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: COLORS.textMuted }}>
+                        {dateLabel(g.date)}
+                      </p>
+                      <div className="space-y-3">
+                        {g.items.map((t) => (
+                          <AgendaCard
+                            key={t.id}
+                            task={t}
+                            snoozed={isSnoozedToday(t)}
+                            isEditing={editingId === t.id}
+                            editDraft={editDraft}
+                            setEditDraft={setEditDraft}
+                            onEditStart={() => startEdit(t)}
+                            onEditSave={saveEdit}
+                            onEditCancel={cancelEdit}
+                            onComplete={() => toggleComplete(t.id)}
+                            onPush={() => pushTask(t.id)}
+                            onDelete={() => deleteTask(t.id)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AreaChip({ area }) {
+  const overlay = area.text === '#211F1A' ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.22)';
+  return (
+    <span
+      className="text-xs px-2 py-0.5 rounded-full font-medium"
+      style={{ background: overlay, color: area.text }}
+    >
+      {area.label}
+    </span>
+  );
+}
+
+function PushBadge({ count }) {
+  const intense = count >= 3;
+  return (
+    <span
+      className="font-mono text-[11px] px-1.5 py-0.5 rounded-sm font-semibold"
+      style={{
+        background: intense ? '#B5473A' : '#B5473A22',
+        color: intense ? '#FAF7F0' : '#B5473A',
+      }}
+    >
+      pushed ×{count}
+    </span>
+  );
+}
+
+function ToggleChip({ active, onClick, color, label }) {
+  return (
+    <button
+      onClick={onClick}
+      className="text-xs px-2.5 py-1.5 rounded-md border font-medium"
+      style={active ? { background: color, borderColor: color, color: '#14181B' } : { borderColor: '#2C3336', color: '#93999B' }}
+    >
+      {label}
+    </button>
+  );
+}
+
+/* Urgent/important quadrant picker. All four cells use the same highlight
+   color when selected — the color tells you "this one's picked", not which
+   quadrant it is. */
+function PriorityGrid({ urgent, important, onChange, ink }) {
+  const inkColor = ink || COLORS.textMutedOnPaper;
+  const borderColor = ink ? `${ink}55` : '#E3DCC9';
+  const cellStyle = (selected) => ({
+    background: selected ? COLORS.moss : 'transparent',
+    color: selected ? COLORS.paper : inkColor,
+    border: `1px solid ${selected ? COLORS.moss : borderColor}`,
+  });
+  const headStyle = { color: inkColor };
+  return (
+    <div className="inline-grid gap-1" style={{ gridTemplateColumns: '82px 84px 84px' }}>
+      <div />
+      <div className="text-[10px] text-center font-semibold uppercase tracking-wide pb-0.5 self-end" style={headStyle}>
+        Sooner
+      </div>
+      <div className="text-[10px] text-center font-semibold uppercase tracking-wide pb-0.5 self-end" style={headStyle}>
+        Later
+      </div>
+
+      <div className="text-[10px] font-semibold uppercase tracking-wide flex items-center" style={headStyle}>
+        Important
+      </div>
+      <button onClick={() => onChange(true, true)} className="text-xs rounded-md py-2.5 font-medium" style={cellStyle(important && urgent)}>
+        Do Now
+      </button>
+      <button onClick={() => onChange(false, true)} className="text-xs rounded-md py-2.5 font-medium" style={cellStyle(important && !urgent)}>
+        Schedule
+      </button>
+
+      <div className="text-[10px] font-semibold uppercase tracking-wide flex items-center leading-tight" style={headStyle}>
+        Not important
+      </div>
+      <button onClick={() => onChange(true, false)} className="text-xs rounded-md py-2.5 font-medium" style={cellStyle(!important && urgent)}>
+        Quick
+      </button>
+      <button onClick={() => onChange(false, false)} className="text-xs rounded-md py-2.5 font-medium" style={cellStyle(!important && !urgent)}>
+        Someday
+      </button>
+    </div>
+  );
+}
+
+function EditForm({ draft, setDraft, onSave, onCancel, ink }) {
+  return (
+    <div className="space-y-2">
+      <input
+        autoFocus
+        value={draft.title}
+        onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
+        onKeyDown={(e) => e.key === 'Enter' && onSave()}
+        className="w-full text-sm px-2 py-1.5 rounded-md border"
+        style={{ background: '#F0ECE1', color: '#211F1A', borderColor: '#E3DCC9' }}
+      />
+      <PriorityGrid
+        urgent={draft.urgent}
+        important={draft.important}
+        onChange={(u, i) => setDraft((d) => ({ ...d, urgent: u, important: i }))}
+        ink={ink}
+      />
+      <div className="flex items-center gap-2 flex-wrap">
+        {AREAS.map((a) => {
+          const active = draft.areas.includes(a.key);
+          return (
+            <button
+              key={a.key}
+              onClick={() =>
+                setDraft((d) => {
+                  const has = d.areas.includes(a.key);
+                  if (has && d.areas.length === 1) return d;
+                  return { ...d, areas: has ? d.areas.filter((k) => k !== a.key) : [...d.areas, a.key] };
+                })
+              }
+              className="text-xs px-2 py-1 rounded-md border font-medium"
+              style={active ? { background: a.color, borderColor: a.color, color: a.text } : { borderColor: ink ? `${ink}55` : '#E3DCC9', color: ink || '#7A756A' }}
+            >
+              {a.label}
+            </button>
+          );
+        })}
+        <div className="flex items-center gap-1">
+          {Object.entries(DREAD).map(([key, dd]) => (
+            <button
+              key={key}
+              onClick={() => setDraft((d) => ({ ...d, dread: key }))}
+              title={dd.label}
+              className="text-base w-6 h-6 rounded-full flex items-center justify-center"
+              style={{
+                background: draft.dread === key ? '#F0ECE1' : 'transparent',
+                border: draft.dread === key ? '2px solid #B5473A' : '1px solid #E3DCC9',
+              }}
+            >
+              {dd.emoji}
+            </button>
+          ))}
+        </div>
+        <ToggleChip active={draft.isCall} onClick={() => setDraft((d) => ({ ...d, isCall: !d.isCall }))} color="#4B7BA6" label="📞 Call" />
+        <ToggleChip active={draft.scheduled} onClick={() => setDraft((d) => ({ ...d, scheduled: !d.scheduled }))} color="#6B5FA6" label="📅 Schedule" />
+      </div>
+      {draft.isCall && (
+        <input
+          value={draft.callContact}
+          onChange={(e) => setDraft((d) => ({ ...d, callContact: e.target.value }))}
+          className="w-full text-xs px-2 py-1.5 rounded-md border"
+          style={{ background: '#F0ECE1', color: '#211F1A', borderColor: '#4B7BA6' }}
+        />
+      )}
+      {draft.scheduled && (
+        <div className="flex items-center gap-2">
+          <input
+            type="date"
+            value={draft.scheduledDate}
+            onChange={(e) => setDraft((d) => ({ ...d, scheduledDate: e.target.value }))}
+            aria-label="Scheduled date"
+            className="text-xs px-2 py-1.5 rounded-md border"
+            style={{ background: '#F0ECE1', color: '#211F1A', borderColor: '#6B5FA6' }}
+          />
+          <input
+            type="time"
+            value={draft.scheduledTime}
+            onChange={(e) => setDraft((d) => ({ ...d, scheduledTime: e.target.value }))}
+            aria-label="Scheduled time (optional, leave blank for all-day)"
+            className="text-xs px-2 py-1.5 rounded-md border"
+            style={{ background: '#F0ECE1', color: '#211F1A', borderColor: '#6B5FA6' }}
+          />
+        </div>
+      )}
+      <div className="flex items-center gap-2 pt-1">
+        <button onClick={onSave} className="text-xs px-3 py-1 rounded-md font-medium" style={{ background: '#5C7A5E', color: '#FAF7F0' }}>
+          Save
+        </button>
+        <button onClick={onCancel} className="text-xs px-3 py-1 rounded-md" style={{ color: ink || '#7A756A' }}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function AgendaCard({ task, snoozed, isEditing, editDraft, setEditDraft, onEditStart, onEditSave, onEditCancel, onComplete, onPush, onDelete }) {
+  const areaObjs = task.areas.map(areaOf);
+  const cardBg = backgroundForAreas(areaObjs);
+  const cardText = textColorForAreas(areaObjs);
+  const contact = (task.callContact || '').trim();
+  const digits = contact.replace(/[^0-9+]/g, '');
+  const isPhoneish = digits.replace(/[^0-9]/g, '').length >= 3;
+
+  if (isEditing) {
+    const editAreaObjs = editDraft.areas.map(areaOf);
+    const editBg = backgroundForAreas(editAreaObjs);
+    const editText = textColorForAreas(editAreaObjs);
+    return (
+      <div className="rounded-md p-3 shadow-sm" style={{ background: editBg, color: editText }}>
+        <EditForm draft={editDraft} setDraft={setEditDraft} onSave={onEditSave} onCancel={onEditCancel} ink={editText} />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="rounded-md p-3 shadow-sm"
+      style={{ background: cardBg, color: cardText, opacity: snoozed ? 0.55 : 1 }}
+    >
+      <div className="flex items-start gap-2">
+        <input
+          type="checkbox"
+          checked={false}
+          onChange={onComplete}
+          aria-label="Mark done"
+          title="Mark done"
+          className="mt-0.5 w-3.5 h-3.5 shrink-0"
+          style={{ accentColor: cardText }}
+        />
+        <p onClick={onEditStart} className="text-sm font-medium leading-snug flex-1 cursor-pointer" style={{ color: cardText }}>
+          {task.title}
+        </p>
+        <button onClick={onEditStart} aria-label="Edit task" title="Edit" className="shrink-0 opacity-80" style={{ color: cardText }}>
+          <PencilIcon size={13} />
+        </button>
+        {!snoozed && (
+          <button onClick={onPush} aria-label="Push to tomorrow" title="Not today" className="shrink-0 opacity-80" style={{ color: cardText }}>
+            <Clock size={13} />
+          </button>
+        )}
+        <button onClick={onDelete} aria-label="Delete task" title="Delete" className="shrink-0 opacity-80" style={{ color: cardText }}>
+          <XIcon size={13} />
+        </button>
+      </div>
+      <p className="font-mono text-xs mt-1 pl-5 opacity-90" style={{ color: cardText }}>
+        {task.scheduledTime ? formatTime12(task.scheduledTime) : 'All day'}
+      </p>
+      {contact && (
+        isPhoneish ? (
+          <a href={`tel:${digits}`} className="font-mono text-xs block mt-1 pl-5 underline" style={{ color: cardText }}>
+            📞 {contact}
+          </a>
+        ) : (
+          <p className="font-mono text-xs mt-1 pl-5 opacity-80" style={{ color: cardText }}>
+            📞 {contact}
+          </p>
+        )
+      )}
+      <div className="flex items-center gap-2 mt-2 flex-wrap pl-5">
+        {task.areas.map((k) => (
+          <AreaChip key={k} area={areaOf(k)} />
+        ))}
+        <span className="text-sm" title={DREAD[task.dread].label}>
+          {DREAD[task.dread].emoji}
+        </span>
+        {task.pushCount > 0 && <PushBadge count={task.pushCount} />}
+        {snoozed && (
+          <span className="text-xs italic opacity-80" style={{ color: cardText }}>
+            back tomorrow
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TaskCard({ task, snoozed, isEditing, editDraft, setEditDraft, onEditStart, onEditSave, onEditCancel, onComplete, onPush, onDelete }) {
+  const areaObjs = task.areas.map(areaOf);
+  const cardBg = backgroundForAreas(areaObjs);
+  const cardText = textColorForAreas(areaObjs);
+  const quadrant = QUADRANTS.find((q) => q.key === quadrantOf(task));
+
+  if (isEditing) {
+    const editAreaObjs = editDraft.areas.map(areaOf);
+    const editBg = backgroundForAreas(editAreaObjs);
+    const editText = textColorForAreas(editAreaObjs);
+    return (
+      <div
+        className="task-card rounded-md p-3.5 shadow-md relative"
+        style={{ background: editBg, color: editText }}
+      >
+        <EditForm draft={editDraft} setDraft={setEditDraft} onSave={onEditSave} onCancel={onEditCancel} ink={editText} />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="task-card rounded-md p-3.5 shadow-md relative"
+      style={{
+        background: cardBg,
+        color: cardText,
+        opacity: snoozed ? 0.55 : 1,
+      }}
+    >
+      <div className="flex items-start gap-2.5">
+        <input
+          type="checkbox"
+          checked={false}
+          onChange={onComplete}
+          aria-label="Mark done"
+          title="Mark done"
+          className="mt-0.5 w-4 h-4 shrink-0"
+          style={{ accentColor: cardText }}
+        />
+        <p onClick={onEditStart} className="text-sm font-medium leading-snug flex-1 cursor-pointer" style={{ color: cardText }}>
+          {task.title}
+        </p>
+        <button onClick={onEditStart} aria-label="Edit task" title="Edit" className="shrink-0 opacity-80" style={{ color: cardText }}>
+          <PencilIcon size={14} />
+        </button>
+        {!snoozed && (
+          <button onClick={onPush} aria-label="Push to tomorrow" title="Not today — push to tomorrow" className="shrink-0 opacity-80" style={{ color: cardText }}>
+            <Clock size={14} />
+          </button>
+        )}
+        <button onClick={onDelete} aria-label="Delete task" title="Delete" className="shrink-0 opacity-80" style={{ color: cardText }}>
+          <XIcon size={14} />
+        </button>
+      </div>
+      <div className="flex items-center gap-2 mt-2 flex-wrap pl-6">
+        <span
+          className="w-2 h-2 rounded-full shrink-0"
+          style={{ background: quadrant.accent, boxShadow: `0 0 0 1px ${cardText === '#211F1A' ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.6)'}` }}
+          title={`${quadrant.label} — ${quadrant.sub}`}
+        />
+        {task.areas.map((k) => (
+          <AreaChip key={k} area={areaOf(k)} />
+        ))}
+        <span className="text-sm" title={DREAD[task.dread].label}>
+          {DREAD[task.dread].emoji}
+        </span>
+        {task.isCall && <span title="Phone call">📞</span>}
+        {task.scheduledDate && (
+          <span
+            title={`Scheduled: ${new Date(`${task.scheduledDate}T00:00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}${task.scheduledTime ? ' at ' + formatTime12(task.scheduledTime) : ''}`}
+          >
+            📅
+          </span>
+        )}
+        {task.pushCount > 0 && <PushBadge count={task.pushCount} />}
+        {snoozed && (
+          <span className="text-xs italic opacity-80" style={{ color: cardText }}>
+            back tomorrow
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<Docket />);
+</script>
+</body>
+</html>
