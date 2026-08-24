@@ -21,8 +21,8 @@
   .col-secondary{flex:0 0 auto; display:grid; grid-template-columns:minmax(300px,1fr); gap:18px; align-content:start; min-width:300px;}
   .secondary-hint{width:300px; min-height:120px; border:1.5px dashed var(--hairline); border-radius:10px; padding:20px;
     color:var(--ink-soft); font-size:13px; display:flex; align-items:center; justify-content:center; text-align:center;}
-  .drag-handle{cursor:grab; color:var(--ink-soft); font-size:15px; letter-spacing:1px; padding:0 3px; user-select:none; line-height:1;}
-  .drag-handle:active{cursor:grabbing;}
+  .drag-handle, .row-drag-handle{cursor:grab; color:var(--ink-soft); font-size:15px; letter-spacing:1px; padding:0 3px; user-select:none; line-height:1;}
+  .drag-handle:active, .row-drag-handle:active{cursor:grabbing;}
   .card.sortable-ghost{opacity:0.35;}
   .card.sortable-chosen{box-shadow:0 0 0 2px var(--teal);}
   h1{font-family:'Fraunces',serif; font-weight:600; font-size:40px; margin:0 0 2px; letter-spacing:-0.01em;}
@@ -56,6 +56,8 @@
   #ledgerList .tag-recurring{background:rgba(124,106,142,0.90); border-left:4px solid var(--plum);}
   #ledgerList .tag-utility{background:rgba(8, 124, 128, 0.88); border-left:4px solid var(--brick);}
   #ledgerList .tag-annual{background:rgba(124,106,142,0.92); border-left:4px solid #D9CBE8;}
+  #ledgerList li.sortable-ghost{opacity:0.35;}
+  #ledgerList li.sortable-chosen{box-shadow:0 0 0 2px var(--teal);}
   li.paid{opacity:0.6;}
   li.paid .lname{text-decoration:line-through;}
   .lname{min-width:130px; flex:1 1 130px;}
@@ -325,7 +327,7 @@
 const STORAGE_KEY = 'runway-state-v3';
 const todayStr = new Date().toISOString().slice(0,10);
 
-let state = { balance:0, incomes:[], items:[], scratch:[], toxicDebts:[], recurring:[], recurringIncomes:[], ui:{collapsed:{}, layout:null}, sheetEmbedUrl:'' };
+let state = { balance:0, incomes:[], items:[], scratch:[], toxicDebts:[], recurring:[], recurringIncomes:[], ledgerOrder:[], ui:{collapsed:{}, layout:null}, sheetEmbedUrl:'' };
 const CARD_IDS = ['tally','stand','income','subscriptions','utilities','ledger','thisweek','runway','vault','sheet','toxic'];
 
 function uid(){ return Math.random().toString(36).slice(2,9); }
@@ -482,6 +484,7 @@ function seedDefaults(){
     toxicDebts: [],
     recurring: [],
     recurringIncomes: [],
+    ledgerOrder: [],
     ui: { collapsed:{}, layout:{ primary: CARD_IDS.filter(id=>id!=='sheet' && id!=='toxic'), secondary: ['sheet','toxic'] } },
     sheetEmbedUrl: '',
     items: [
@@ -508,6 +511,7 @@ async function loadState(){
       if(!Array.isArray(state.toxicDebts)) state.toxicDebts = [];
       if(!Array.isArray(state.recurring)) state.recurring = [];
       if(!Array.isArray(state.recurringIncomes)) state.recurringIncomes = [];
+      if(!Array.isArray(state.ledgerOrder)) state.ledgerOrder = [];
       migrateRecurringKinds();
       migrateItemTiers();
       if(!state.ui) state.ui = { collapsed:{} };
@@ -689,6 +693,7 @@ function importBackup(file){
       if(typeof state.sheetEmbedUrl !== 'string') state.sheetEmbedUrl = '';
       if(!Array.isArray(state.recurring)) state.recurring = [];
       if(!Array.isArray(state.recurringIncomes)) state.recurringIncomes = [];
+      if(!Array.isArray(state.ledgerOrder)) state.ledgerOrder = [];
       migrateRecurringKinds();
       migrateItemTiers();
       normalizeLayout();
@@ -793,23 +798,74 @@ function updateIncome(id, field, value){
   saveState(); render();
 }
 
+// Display order for the ledger: items you've dragged keep the position you put them in
+// (state.ledgerOrder, saved by saveLedgerOrderFromDOM). Anything not yet in that list — a
+// brand-new item, or a freshly generated recurring instance — gets slotted in by date,
+// relative to whatever's currently on screen. Nothing here mutates state; a drag is the
+// only thing that persists a new order.
+function getLedgerDisplayOrder(){
+  const ledgerItems = state.items.filter(i=>i.tier!=='wish');
+  const byId = {};
+  ledgerItems.forEach(it=> byId[it.id]=it);
+  const dateSorted = [...ledgerItems].sort((a,b)=> new Date(a.date||'9999')-new Date(b.date||'9999'));
+
+  const persisted = Array.isArray(state.ledgerOrder) ? state.ledgerOrder : [];
+  let ordered = persisted.filter(id=> byId[id]);
+  const placed = new Set(ordered);
+
+  dateSorted.forEach(it=>{
+    if(placed.has(it.id)) return;
+    let insertAt = ordered.length;
+    for(let i=0;i<ordered.length;i++){
+      const other = byId[ordered[i]];
+      if(new Date(other.date||'9999') >= new Date(it.date||'9999')){ insertAt = i; break; }
+    }
+    ordered.splice(insertAt, 0, it.id);
+    placed.add(it.id);
+  });
+
+  return ordered.map(id=>byId[id]);
+}
+
+function saveLedgerOrderFromDOM(){
+  const ul = document.getElementById('ledgerList');
+  if(!ul) return;
+  const ids = [...ul.querySelectorAll('li[data-item-id]')].map(li=>li.dataset.itemId);
+  if(!ids.length) return;
+  state.ledgerOrder = ids;
+  saveState();
+}
+
+function initLedgerSortable(){
+  if(typeof Sortable === 'undefined') return;
+  const el = document.getElementById('ledgerList');
+  if(!el) return;
+  Sortable.create(el, {
+    handle: '.row-drag-handle',
+    animation: 150,
+    onEnd: saveLedgerOrderFromDOM
+  });
+}
+
 function renderLedger(){
   const ul = document.getElementById('ledgerList');
   ul.innerHTML = '';
-  const ledgerItems = state.items.filter(i=>i.tier!=='wish');
-  const sorted = [...ledgerItems].sort((a,b)=> new Date(a.date||'9999')-new Date(b.date||'9999'));
-  if(sorted.length===0){ ul.innerHTML='<div class="empty">Nothing committed yet.</div>'; return; }
-  sorted.forEach(it=>{
+  const ordered = getLedgerDisplayOrder();
+  if(ordered.length===0){ ul.innerHTML='<div class="empty">Nothing committed yet.</div>'; return; }
+  ordered.forEach(it=>{
     const li = document.createElement('li');
     if(it.paid) li.classList.add('paid');
     li.classList.add('ledger-row');
+    li.dataset.itemId = it.id;
     const recurring = it.recurringId ? state.recurring.find(sub=>sub.id===it.recurringId) : null;
     if(!it.paid && recurring){
       li.classList.add(recurring.cycle==='annual' ? 'tag-annual' : recurring.kind==='utility' ? 'tag-utility' : 'tag-recurring');
     }
+    const handle = '<span class="row-drag-handle" title="Drag to reorder">&#8942;&#8942;</span>';
 
     if(it.paid){
       li.innerHTML = `
+        ${handle}
         <input type="checkbox" checked onchange="togglePaid('${it.id}')">
         <span class="dot" style="background:${tierColor(it.tier)}"></span>
         <span class="lname">${it.name}</span>
@@ -818,6 +874,7 @@ function renderLedger(){
         <span class="amt-input" style="text-align:right; display:inline-block;">$${fmt(it.amount)}</span>`;
     } else {
       li.innerHTML = `
+        ${handle}
         <input type="checkbox" onchange="togglePaid('${it.id}')">
         <span class="dot" style="background:${tierColor(it.tier)}"></span>
         <input type="text" class="lname lname-input" value="${it.name}" onchange="updateItem('${it.id}','name',this.value)">
@@ -969,6 +1026,7 @@ function removeItem(id){
     }
   }
   state.items = state.items.filter(i=>i.id!==id);
+  if(Array.isArray(state.ledgerOrder)) state.ledgerOrder = state.ledgerOrder.filter(x=>x!==id);
   saveState(); render();
 }
 function removeIncome(id){
@@ -1379,6 +1437,7 @@ function drawChart(baseline, full){
   await loadState();
   applyLayout();
   initSortable();
+  initLedgerSortable();
   toggleObDateUI();
   toggleObRecurringUI();
   toggleIncRecurringUI();
