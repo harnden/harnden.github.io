@@ -102,22 +102,12 @@ const COLORS = {
   mstc: '#A6753D',
 };
 
-const AREAS = [
+const CATEGORIES = [
   { key: 'work', label: 'Work', color: '#2E294E', text: '#FAF7F0', accent: '#3F8C82' },
   { key: 'personal', label: 'Personal', color: '#F1E9DA', text: '#211F1A', accent: '#B75D8C' },
+  { key: 'jhu', label: 'JHU', color: '#2F6F9E', text: '#FAF7F0', accent: COLORS.jhu },
+  { key: 'mstc', label: 'MSTC', color: '#A6753D', text: '#FAF7F0', accent: COLORS.mstc },
 ];
-
-const COURSES = [
-  { key: 'jhu', label: 'JHU', sub: 'JHU homework — its own silo, outside the priority board', accent: COLORS.jhu },
-  { key: 'mstc', label: 'MSTC', sub: 'MSTC homework — its own silo, outside the priority board', accent: COLORS.mstc },
-];
-
-/* Board columns: Work and Personal (movable, order saved in localStorage)
-   plus the two homework silos, JHU and MSTC, always fixed on the right and
-   never reorderable. Columns are driven by category (area), not urgency —
-   urgent/important is still tracked per task for sorting, it just no
-   longer decides which column a task lands in. Every column can be
-   collapsed independently. */
 
 const DAY_MS = 1000 * 60 * 60 * 24;
 const STORAGE_KEY = 'docket-tasks';
@@ -127,14 +117,12 @@ function agingBonus(createdAt) {
   return Math.min(days * 0.15, 3);
 }
 
-const AREA_WEIGHT = 1.5;
-
 function score(task) {
-  return task.pushCount * 3 + agingBonus(task.createdAt) + (task.areas.length - 1) * AREA_WEIGHT;
+  return task.pushCount * 3 + agingBonus(task.createdAt);
 }
 
-function areaOf(key) {
-  return AREAS.find((a) => a.key === key) || AREAS[0];
+function categoryOf(key) {
+  return CATEGORIES.find((c) => c.key === key) || CATEGORIES[0];
 }
 
 function hexLuminance(hex) {
@@ -205,8 +193,7 @@ function saveBoardUI(ui) {
   } catch (e) {}
 }
 
-/* ---------- task drag-to-reorder (same idea as the column drag-handle above,
-   and ported from Runway's ledger row dragging) ---------- */
+/* ---------- task drag-to-reorder ---------- */
 const TASK_ORDER_KEY = 'docket-task-order';
 const TASK_ORDER_LIST_KEY = 'docket-task-order-list';
 const TASK_ORDER_HOMEWORK_LIST_KEY = 'docket-task-order-homework-list';
@@ -225,10 +212,6 @@ function saveOrderMap(key, value) {
   } catch (e) {}
 }
 
-// Tasks are otherwise auto-sorted by score(), which drifts over time (aging, pushes).
-// Dragging a task records an explicit position; anything not yet touched by a drag
-// keeps falling back to its natural score-sorted rank, slotted in right next to
-// wherever its nearest natural neighbor already landed.
 function mergeManualOrder(persistedIds, naturalOrderTasks) {
   const byId = {};
   const rankById = {};
@@ -256,22 +239,19 @@ function mergeManualOrder(persistedIds, naturalOrderTasks) {
 }
 
 function normalizeTask(t, idx) {
-  let areas = Array.isArray(t.areas) ? t.areas.filter((k) => AREAS.some((a) => a.key === k)) : [];
-  if (areas.length === 0 && t.area && AREAS.some((a) => a.key === t.area)) areas = [t.area];
-  if (areas.length === 0) areas = ['work'];
+  let category = t.category || 'work';
+  if (!CATEGORIES.some((c) => c.key === category)) category = 'work';
   return {
     id: t.id || `${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 6)}`,
     title: String(t.title || 'Untitled'),
-    areas,
-    urgent: t.urgent === true || t.urgent === false ? t.urgent : null,
-    important: t.important === true || t.important === false ? t.important : null,
+    category,
     phone: t.phone || (t.contactMethod === 'phone' ? t.contactValue : '') || (t.isCall ? t.callContact : '') || '',
     email: t.email || (t.contactMethod === 'email' ? t.contactValue : '') || '',
-    course: COURSES.some((c) => c.key === t.course) ? t.course : null,
     pushCount: Number(t.pushCount) || 0,
     completed: !!t.completed,
     createdAt: Number(t.createdAt) || Date.now(),
     snoozedDay: t.snoozedDay || null,
+    scheduledDate: t.scheduledDate || null,
   };
 }
 
@@ -283,7 +263,7 @@ function Docket() {
   const [journalDraft, setJournalDraft] = useState('');
   const [loaded, setLoaded] = useState(false);
   const [today] = useState(() => new Date().toDateString());
-  const [filterAreas, setFilterAreas] = useState(new Set());
+  const [filterCategory, setFilterCategory] = useState(null);
   const [viewMode, setViewMode] = useState('columns');
   const [showDone, setShowDone] = useState(false);
   const [showFormDetails, setShowFormDetails] = useState(false);
@@ -296,14 +276,12 @@ function Docket() {
   const columnSortRef = useRef(null);
   const taskListRefs = useRef({});
   const listSortRef = useRef(null);
-  const [form, setForm] = useState({ title: '', areas: ['work'], urgent: null, important: null, phone: '', email: '', course: null });
+  const [form, setForm] = useState({ title: '', category: 'work', phone: '', email: '', scheduledDate: null });
   const [columnOrder, setColumnOrder] = useState(() => {
     const saved = loadBoardUI().order;
-    return Array.isArray(saved) && saved.length ? saved : AREAS.map((a) => a.key);
+    return Array.isArray(saved) && saved.length ? saved : CATEGORIES.map((c) => c.key);
   });
   const [collapsedCols, setCollapsedCols] = useState(() => loadBoardUI().collapsed || {});
-  // Manual drag order for tasks: per-column (Columns view), one flat list for the
-  // main tasks (List view), and one for the combined homework list (List view).
   const [taskOrder, setTaskOrder] = useState({});
   const [taskOrderList, setTaskOrderList] = useState([]);
   const [taskOrderHomeworkList, setTaskOrderHomeworkList] = useState([]);
@@ -365,12 +343,9 @@ function Docket() {
     return () => sortable.destroy();
   }, [viewMode]);
 
-  // One Sortable instance per column's task list, so tasks can be dragged up/down
-  // within their column. Re-created when columns collapse/expand (their list
-  // container mounts/unmounts) or when switching in and out of Columns view.
   useEffect(() => {
     if (viewMode !== 'columns' || typeof Sortable === 'undefined') return;
-    const keys = [...AREAS.map((a) => a.key), ...COURSES.map((c) => c.key)];
+    const keys = CATEGORIES.map((c) => c.key);
     const instances = keys
       .map((key) => {
         const el = taskListRefs.current[key];
@@ -388,8 +363,6 @@ function Docket() {
     return () => instances.forEach((inst) => inst.destroy());
   }, [viewMode, collapsedCols]);
 
-  // Same idea for List view, which splits into two columns: the main task list
-  // and a combined homework list (JHU + MSTC) — each with its own flat, independent order.
   useEffect(() => {
     if (viewMode !== 'list' || typeof Sortable === 'undefined') return;
     const instances = [];
@@ -431,19 +404,17 @@ function Docket() {
     const t = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       title: form.title.trim(),
-      areas: form.areas,
-      urgent: form.urgent,
-      important: form.important,
+      category: form.category,
       phone: form.phone.trim(),
       email: form.email.trim(),
-      course: form.course,
       pushCount: 0,
       completed: false,
       createdAt: Date.now(),
       snoozedDay: null,
+      scheduledDate: form.scheduledDate,
     };
     setTasks((prev) => [...prev, t]);
-    setForm({ title: '', areas: ['work'], urgent: null, important: null, phone: '', email: '', course: null });
+    setForm({ title: '', category: 'work', phone: '', email: '', scheduledDate: null });
   };
 
   const addJournalEntry = () => {
@@ -462,13 +433,6 @@ function Docket() {
 
   const deleteJournalEntry = (id) => setJournalEntries((prev) => prev.filter((e) => e.id !== id));
 
-  const toggleFormArea = (key) =>
-    setForm((f) => {
-      const has = f.areas.includes(key);
-      if (has && f.areas.length === 1) return f;
-      return { ...f, areas: has ? f.areas.filter((k) => k !== key) : [...f.areas, key] };
-    });
-
   const toggleComplete = (id) =>
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)));
 
@@ -483,12 +447,10 @@ function Docket() {
     setEditingId(task.id);
     setEditDraft({
       title: task.title,
-      areas: [...task.areas],
-      urgent: task.urgent,
-      important: task.important,
+      category: task.category,
       phone: task.phone || '',
       email: task.email || '',
-      course: task.course || null,
+      scheduledDate: task.scheduledDate || null,
     });
   };
 
@@ -505,12 +467,10 @@ function Docket() {
           ? {
               ...t,
               title: editDraft.title.trim(),
-              areas: editDraft.areas,
-              urgent: editDraft.urgent,
-              important: editDraft.important,
+              category: editDraft.category,
               phone: editDraft.phone.trim(),
               email: editDraft.email.trim(),
-              course: editDraft.course || null,
+              scheduledDate: editDraft.scheduledDate,
             }
           : t
       )
@@ -518,13 +478,6 @@ function Docket() {
     setEditingId(null);
     setEditDraft(null);
   };
-
-  const toggleAreaFilter = (key) =>
-    setFilterAreas((prev) => {
-      const next = new Set(prev);
-      next.has(key) ? next.delete(key) : next.add(key);
-      return next;
-    });
 
   const exportBackup = () => {
     const blob = new Blob([JSON.stringify(tasks, null, 2)], { type: 'application/json' });
@@ -575,16 +528,13 @@ function Docket() {
   };
 
   const visibleTasks = useMemo(() => {
-    if (filterAreas.size === 0) return tasks;
-    return tasks.filter((t) => t.areas.some((k) => filterAreas.has(k)));
-  }, [tasks, filterAreas]);
+    if (!filterCategory) return tasks;
+    return tasks.filter((t) => t.category === filterCategory);
+  }, [tasks, filterCategory]);
 
   const activeTasks = visibleTasks.filter((t) => !t.completed);
   const completedTasks = visibleTasks.filter((t) => t.completed);
 
-  // Aggregated across every task regardless of the area filter, so the call
-  // list and mail list in the "add details" panel always show the full
-  // backlog of who still needs to be reached.
   const callList = useMemo(
     () => tasks.filter((t) => !t.completed && t.phone && t.phone.trim()),
     [tasks]
@@ -602,77 +552,47 @@ function Docket() {
     return [...fresh, ...snoozed];
   };
 
-  const naturalByArea = useMemo(() => {
+  const naturalByCategory = useMemo(() => {
     const map = {};
-    AREAS.forEach((a) => {
-      map[a.key] = [];
+    CATEGORIES.forEach((c) => {
+      map[c.key] = [];
     });
-    activeTasks
-      .filter((t) => !t.course)
-      .forEach((t) => {
-        const key = AREAS.some((a) => a.key === t.areas[0]) ? t.areas[0] : AREAS[0].key;
-        map[key].push(t);
-      });
+    activeTasks.forEach((t) => {
+      const key = t.category || 'work';
+      if (map[key]) map[key].push(t);
+    });
     Object.keys(map).forEach((k) => {
       map[k] = naturalSort(map[k]);
     });
     return map;
-  }, [activeTasks, today]);
+  }, [activeTasks]);
 
-  const naturalByCourse = useMemo(() => {
-    const map = { jhu: [], mstc: [] };
-    activeTasks.filter((t) => t.course && map[t.course]).forEach((t) => map[t.course].push(t));
-    Object.keys(map).forEach((k) => {
-      map[k] = naturalSort(map[k]);
-    });
-    return map;
-  }, [activeTasks, today]);
-
-  const byArea = useMemo(() => {
+  const byCategory = useMemo(() => {
     const map = {};
-    Object.keys(naturalByArea).forEach((k) => {
-      map[k] = mergeManualOrder(taskOrder[k], naturalByArea[k]);
+    Object.keys(naturalByCategory).forEach((k) => {
+      map[k] = mergeManualOrder(taskOrder[k], naturalByCategory[k]);
     });
     return map;
-  }, [naturalByArea, taskOrder]);
+  }, [naturalByCategory, taskOrder]);
 
-  const byCourse = useMemo(() => {
-    const map = {};
-    Object.keys(naturalByCourse).forEach((k) => {
-      map[k] = mergeManualOrder(taskOrder[k], naturalByCourse[k]);
-    });
-    return map;
-  }, [naturalByCourse, taskOrder]);
-
-  const naturalAllTasksList = useMemo(() => AREAS.flatMap((a) => naturalByArea[a.key]), [naturalByArea]);
+  const naturalAllTasksList = useMemo(() => CATEGORIES.flatMap((c) => naturalByCategory[c.key]), [naturalByCategory]);
 
   const allTasksList = useMemo(
     () => mergeManualOrder(taskOrderList, naturalAllTasksList),
     [taskOrderList, naturalAllTasksList]
   );
 
-  // List view's second column: JHU + MSTC combined into one homework list.
-  const naturalHomeworkList = useMemo(
-    () => COURSES.flatMap((c) => naturalByCourse[c.key]),
-    [naturalByCourse]
-  );
-
-  const homeworkList = useMemo(
-    () => mergeManualOrder(taskOrderHomeworkList, naturalHomeworkList),
-    [taskOrderHomeworkList, naturalHomeworkList]
-  );
-
-  const orderedAreas = columnOrder
-    .map((key) => AREAS.find((a) => a.key === key))
+  const orderedCategories = columnOrder
+    .map((key) => CATEGORIES.find((c) => c.key === key))
     .filter(Boolean)
-    .concat(AREAS.filter((a) => !columnOrder.includes(a.key)));
+    .concat(CATEGORIES.filter((c) => !columnOrder.includes(c.key)));
 
-  // Newest journal entry first — otherwise unsorted, unfiltered, unrelated to tasks.
   const journalByNewest = [...journalEntries].sort((a, b) => b.createdAt - a.createdAt);
 
   const renderColumn = (col, isDraggable) => {
-    const list = col.kind === 'course' ? byCourse[col.key] : byArea[col.key];
+    const list = byCategory[col.key];
     const collapsed = !!collapsedCols[col.key];
+    const isHomework = col.key === 'jhu' || col.key === 'mstc';
     return (
       <div
         key={col.key}
@@ -682,7 +602,7 @@ function Docket() {
           background: COLORS.inkPanel,
           border: `1px solid ${COLORS.inkPanelBorder}`,
           borderTop: `3px solid ${col.accent}`,
-          borderLeft: col.key === 'jhu' ? `1px dashed ${COLORS.inkPanelBorder}` : undefined,
+          borderLeft: isHomework ? `1px dashed ${COLORS.inkPanelBorder}` : undefined,
         }}
       >
         <div className="flex items-center justify-between mb-3">
@@ -695,7 +615,7 @@ function Docket() {
             <button
               onClick={() => toggleColumnCollapse(col.key)}
               aria-label={collapsed ? `Expand ${col.label}` : `Collapse ${col.label}`}
-              title={`${col.label} — ${col.sub}`}
+              title={col.label}
               className="flex items-center gap-1.5"
               style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
             >
@@ -745,13 +665,6 @@ function Docket() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <a
-              href="runway.html"
-              className="text-xs px-3 py-2 rounded-md border no-underline"
-              style={{ borderColor: COLORS.inkPanelBorder, color: COLORS.textMuted }}
-            >
-              Runway
-            </a>
             <button
               onClick={exportBackup}
               className="text-xs px-3 py-2 rounded-md border"
@@ -804,7 +717,7 @@ function Docket() {
           >
             <span>{importError}</span>
             <button onClick={() => setImportError(null)} className="text-xs underline shrink-0" style={{ color: COLORS.textMuted }}>
-              Dixsmiss
+              Dismiss
             </button>
           </div>
         )}
@@ -861,7 +774,7 @@ function Docket() {
                 value={journalDraft}
                 onChange={(e) => setJournalDraft(e.target.value)}
                 aria-label="Journal entry"
-                                rows={5}
+                rows={5}
                 className="w-full text-base px-4 py-3 rounded-md mb-4 border"
                 style={{ background: COLORS.paperDim, color: COLORS.textInk, borderColor: '#E3DCC9', fontFamily: 'inherit', resize: 'vertical' }}
               />
@@ -884,21 +797,14 @@ function Docket() {
                 className="w-full font-display text-lg sm:text-xl px-4 py-3 rounded-md mb-4 border"
                 style={{ background: COLORS.paperDim, color: COLORS.textInk, borderColor: '#E3DCC9' }}
               />
-              <div className="mb-3">
-                <PriorityGrid
-                  urgent={form.urgent}
-                  important={form.important}
-                  onChange={(u, i) => setForm((f) => ({ ...f, urgent: u, important: i }))}
-                />
-              </div>
               <div className="mb-3 flex items-center gap-2 flex-wrap">
-                {COURSES.map((c) => (
+                {CATEGORIES.map((c) => (
                   <ToggleChip
                     key={c.key}
-                    active={form.course === c.key}
-                    onClick={() => setForm((f) => ({ ...f, course: f.course === c.key ? null : c.key }))}
-                    color={c.accent}
-                    label={`${c.label} Homework`}
+                    active={form.category === c.key}
+                    onClick={() => setForm((f) => ({ ...f, category: c.key }))}
+                    color={c.color}
+                    label={c.label}
                   />
                 ))}
               </div>
@@ -908,29 +814,21 @@ function Docket() {
                   className="text-xs underline"
                   style={{ color: COLORS.textMutedOnPaper }}
                 >
-                  {showFormDetails ? 'Hide details' : '+ Add details (area, contact)'}
+                  {showFormDetails ? 'Hide details' : '+ Add details (contact)'}
                 </button>
               </div>
               {showFormDetails && (
                 <div className="space-y-3 mb-3 pt-3" style={{ borderTop: '1px solid #E3DCC9' }}>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {AREAS.map((a) => {
-                      const active = form.areas.includes(a.key);
-                      return (
-                        <button
-                          key={a.key}
-                          onClick={() => toggleFormArea(a.key)}
-                          className="text-xs px-2.5 py-1.5 rounded-md border font-medium"
-                          style={
-                            active
-                              ? { background: a.color, borderColor: a.color, color: a.text }
-                              : { borderColor: '#E3DCC9', color: COLORS.textMutedOnPaper }
-                          }
-                        >
-                          {a.label}
-                        </button>
-                      );
-                    })}
+                  <div className="flex items-center gap-2">
+                    <Clock size={14} />
+                    <input
+                      type="date"
+                      value={form.scheduledDate || ''}
+                      onChange={(e) => setForm((f) => ({ ...f, scheduledDate: e.target.value || null }))}
+                      aria-label="Scheduled date"
+                      className="flex-1 text-sm px-3 py-2 rounded-md border"
+                      style={{ background: COLORS.paperDim, color: COLORS.textInk, borderColor: '#E3DCC9' }}
+                    />
                   </div>
                   <div className="flex items-center gap-2">
                     <PhoneIcon size={14} />
@@ -979,23 +877,23 @@ function Docket() {
         {/* Filters */}
         <div className="flex items-center justify-between gap-4 mb-3 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
-            {AREAS.map((a) => (
+            {CATEGORIES.map((c) => (
               <button
-                key={a.key}
-                onClick={() => toggleAreaFilter(a.key)}
+                key={c.key}
+                onClick={() => setFilterCategory(filterCategory === c.key ? null : c.key)}
                 className="text-xs px-2.5 py-1 rounded-full border font-medium"
                 style={
-                  filterAreas.has(a.key)
-                    ? { background: a.color, borderColor: a.color, color: a.text }
+                  filterCategory === c.key
+                    ? { background: c.color, borderColor: c.color, color: c.text }
                     : { borderColor: COLORS.inkPanelBorder, color: COLORS.textMuted }
                 }
               >
-                {a.label}
+                {c.label}
               </button>
             ))}
-            {filterAreas.size > 0 && (
-              <button onClick={() => setFilterAreas(new Set())} className="text-xs underline" style={{ color: COLORS.textMuted }}>
-                Clear filters
+            {filterCategory && (
+              <button onClick={() => setFilterCategory(null)} className="text-xs underline" style={{ color: COLORS.textMuted }}>
+                Clear filter
               </button>
             )}
           </div>
@@ -1018,16 +916,8 @@ function Docket() {
         </div>
 
         <div className="flex items-center gap-4 flex-wrap mb-5">
-          {AREAS.map((a) => (
-            <div key={a.key} className="flex items-center gap-1.5" title={`${a.label} column`}>
-              <span className="w-2 h-2 rounded-full shrink-0" style={{ background: a.accent }} />
-              <span className="text-xs" style={{ color: COLORS.textMuted }}>
-                {a.label}
-              </span>
-            </div>
-          ))}
-          {COURSES.map((c) => (
-            <div key={c.key} className="flex items-center gap-1.5" title={c.sub}>
+          {CATEGORIES.map((c) => (
+            <div key={c.key} className="flex items-center gap-1.5" title={`${c.label} category`}>
               <span className="w-2 h-2 rounded-full shrink-0" style={{ background: c.accent }} />
               <span className="text-xs" style={{ color: COLORS.textMuted }}>
                 {c.label}
@@ -1036,16 +926,12 @@ function Docket() {
           ))}
         </div>
 
-        {/* Board: four columns in one row — Work and Personal (movable, by
-            category, not urgency), then JHU and MSTC fixed on the right.
-            Homework columns keep their spot regardless of what happens to
-            Work/Personal next to them. */}
+        {/* Board: four columns for Work, Personal, JHU, MSTC */}
         {viewMode === 'columns' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
             <div className="contents" ref={columnSortRef}>
-              {orderedAreas.map((a) => renderColumn({ ...a, kind: 'area' }, true))}
+              {orderedCategories.map((c) => renderColumn(c, true))}
             </div>
-            {COURSES.map((c) => renderColumn({ ...c, kind: 'course' }, false))}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-8">
@@ -1060,37 +946,6 @@ function Docket() {
               </div>
               <div className="space-y-3" ref={listSortRef}>
                 {allTasksList.map((t) => (
-                  <TaskCard
-                    key={t.id}
-                    task={t}
-                    snoozed={isSnoozedToday(t)}
-                    isEditing={editingId === t.id}
-                    editDraft={editDraft}
-                    setEditDraft={setEditDraft}
-                    onEditStart={() => startEdit(t)}
-                    onEditSave={saveEdit}
-                    onEditCancel={cancelEdit}
-                    onComplete={() => toggleComplete(t.id)}
-                    onPush={() => pushTask(t.id)}
-                    onDelete={() => deleteTask(t.id)}
-                  />
-                ))}
-              </div>
-            </div>
-            <div
-              className="rounded-md p-4"
-              style={{ background: COLORS.inkPanel, border: `1px solid ${COLORS.inkPanelBorder}`, borderLeft: `1px dashed ${COLORS.inkPanelBorder}` }}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: COLORS.textMuted }}>
-                  Homework
-                </span>
-                <span className="font-mono text-xs" style={{ color: COLORS.textMuted }}>
-                  {homeworkList.length}
-                </span>
-              </div>
-              <div className="space-y-3" ref={homeworkListSortRef}>
-                {homeworkList.map((t) => (
                   <TaskCard
                     key={t.id}
                     task={t}
@@ -1140,9 +995,7 @@ function Docket() {
           </div>
         )}
 
-        {/* Journal: plain-text entries, collapsed by default, easy to ignore.
-            Deliberately kept out of the board/scoring logic entirely — these
-            aren't tasks, just dated notes. */}
+        {/* Journal */}
         {journalByNewest.length > 0 && (
           <div className="mt-8">
             <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: COLORS.textMuted }}>
@@ -1162,18 +1015,6 @@ function Docket() {
         )}
       </div>
     </div>
-  );
-}
-
-function AreaChip({ area, onColor }) {
-  const overlay = onColor === '#211F1A' ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.22)';
-  return (
-    <span
-      className="text-xs px-2 py-0.5 rounded-full font-medium"
-      style={{ background: overlay, color: onColor }}
-    >
-      {area.label}
-    </span>
   );
 }
 
@@ -1204,9 +1045,6 @@ function ToggleChip({ active, onClick, color, label }) {
   );
 }
 
-/* Aggregated call/mail list: every not-yet-done task that has a phone or
-   email on file, so the ordinarily-empty space next to those fields shows
-   the running backlog of calls or emails still owed. */
 function ContactListPanel({ title, Icon, items, field, hrefPrefix }) {
   return (
     <div className="rounded-md p-3" style={{ background: COLORS.paperDim, border: '1px solid #E3DCC9' }}>
@@ -1239,46 +1077,6 @@ function ContactListPanel({ title, Icon, items, field, hrefPrefix }) {
   );
 }
 
-/* Priority picker: four checkboxes in a row, left to right. Checking one
-   unchecks the rest; checking an already-checked one clears it, leaving all
-   four unchecked (urgent/important both null — no priority set). */
-function PriorityGrid({ urgent, important, onChange, ink }) {
-  const inkColor = ink || COLORS.textMutedOnPaper;
-  const borderColor = ink ? `${ink}55` : '#E3DCC9';
-  const options = [
-    { key: 'comeOn', label: 'Come on', urgent: true, important: true, accent: COLORS.rust },
-    { key: 'letsGo', label: "Let's go", urgent: false, important: true, accent: COLORS.moss },
-    { key: 'tooEasy', label: 'Too easy', urgent: true, important: false, accent: COLORS.amber },
-    { key: 'quitLoafing', label: 'Quit loafing', urgent: false, important: false, accent: COLORS.stone },
-  ];
-  return (
-    <div className="flex items-center gap-2 flex-wrap">
-      {options.map((o) => {
-        const selected = o.urgent === urgent && o.important === important;
-        return (
-          <label
-            key={o.key}
-            className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-2 rounded-md border cursor-pointer select-none"
-            style={{
-              background: selected ? o.accent : 'transparent',
-              color: selected ? COLORS.paper : inkColor,
-              borderColor: selected ? o.accent : borderColor,
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={selected}
-              onChange={() => onChange(selected ? null : o.urgent, selected ? null : o.important)}
-              style={{ accentColor: o.accent }}
-            />
-            {o.label}
-          </label>
-        );
-      })}
-    </div>
-  );
-}
-
 function EditForm({ draft, setDraft, onSave, onCancel, ink }) {
   return (
     <div className="space-y-2">
@@ -1290,43 +1088,31 @@ function EditForm({ draft, setDraft, onSave, onCancel, ink }) {
         className="w-full text-sm px-2 py-1.5 rounded-md border"
         style={{ background: '#F0ECE1', color: '#211F1A', borderColor: '#E3DCC9' }}
       />
-      <PriorityGrid
-        urgent={draft.urgent}
-        important={draft.important}
-        onChange={(u, i) => setDraft((d) => ({ ...d, urgent: u, important: i }))}
-        ink={ink}
-      />
       <div className="flex items-center gap-2 flex-wrap">
-        {COURSES.map((c) => (
-          <ToggleChip
-            key={c.key}
-            active={draft.course === c.key}
-            onClick={() => setDraft((d) => ({ ...d, course: d.course === c.key ? null : c.key }))}
-            color={c.accent}
-            label={c.label}
-          />
-        ))}
-      </div>
-      <div className="flex items-center gap-2 flex-wrap">
-        {AREAS.map((a) => {
-          const active = draft.areas.includes(a.key);
+        {CATEGORIES.map((c) => {
+          const active = draft.category === c.key;
           return (
             <button
-              key={a.key}
-              onClick={() =>
-                setDraft((d) => {
-                  const has = d.areas.includes(a.key);
-                  if (has && d.areas.length === 1) return d;
-                  return { ...d, areas: has ? d.areas.filter((k) => k !== a.key) : [...d.areas, a.key] };
-                })
-              }
+              key={c.key}
+              onClick={() => setDraft((d) => ({ ...d, category: c.key }))}
               className="text-xs px-2 py-1 rounded-md border font-medium"
-              style={active ? { background: a.color, borderColor: a.color, color: a.text } : { borderColor: ink ? `${ink}55` : '#E3DCC9', color: ink || '#7A756A' }}
+              style={active ? { background: c.color, borderColor: c.color, color: c.text } : { borderColor: ink ? `${ink}55` : '#E3DCC9', color: ink || '#7A756A' }}
             >
-              {a.label}
+              {c.label}
             </button>
           );
         })}
+      </div>
+      <div className="flex items-center gap-2">
+        <Clock size={13} />
+        <input
+          type="date"
+          value={draft.scheduledDate || ''}
+          onChange={(e) => setDraft((d) => ({ ...d, scheduledDate: e.target.value || null }))}
+          aria-label="Scheduled date"
+          className="flex-1 text-xs px-2 py-1.5 rounded-md border"
+          style={{ background: '#F0ECE1', color: '#211F1A', borderColor: '#E3DCC9' }}
+        />
       </div>
       <div className="flex items-center gap-2">
         <PhoneIcon size={13} />
@@ -1363,20 +1149,14 @@ function EditForm({ draft, setDraft, onSave, onCancel, ink }) {
 }
 
 function TaskCard({ task, snoozed, isEditing, editDraft, setEditDraft, onEditStart, onEditSave, onEditCancel, onComplete, onPush, onDelete }) {
-  const primaryArea = areaOf(task.areas[0]);
-  const quadrant = task.course
-    ? COURSES.find((c) => c.key === task.course)
-    : { label: primaryArea.label, sub: `${primaryArea.label} column`, accent: primaryArea.accent };
-  const cardBg = quadrant.accent;
+  const category = categoryOf(task.category);
+  const cardBg = category.accent;
   const cardText = textColorForHex(cardBg);
 
   if (isEditing) {
-    const editPrimaryArea = areaOf(editDraft.areas[0]);
-    const editAccent = editDraft.course
-      ? (COURSES.find((c) => c.key === editDraft.course) || {}).accent || editPrimaryArea.accent
-      : editPrimaryArea.accent;
-    const editBg = editAccent;
-    const editText = textColorForHex(editAccent);
+    const editCategory = categoryOf(editDraft.category);
+    const editBg = editCategory.accent;
+    const editText = textColorForHex(editBg);
     return (
       <div
         data-task-id={task.id}
@@ -1409,7 +1189,7 @@ function TaskCard({ task, snoozed, isEditing, editDraft, setEditDraft, onEditSta
         </span>
         <input
           type="checkbox"
-          checked={false}
+          checked={task.completed}
           onChange={onComplete}
           aria-label="Mark done"
           title="Mark done"
@@ -1434,12 +1214,9 @@ function TaskCard({ task, snoozed, isEditing, editDraft, setEditDraft, onEditSta
       <div className="flex items-center gap-2 mt-2 flex-wrap pl-6">
         <span
           className="w-2 h-2 rounded-full shrink-0"
-          style={{ background: quadrant.accent, boxShadow: `0 0 0 1px ${cardText === '#211F1A' ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.6)'}` }}
-          title={`${quadrant.label} — ${quadrant.sub}`}
+          style={{ background: category.accent, boxShadow: `0 0 0 1px ${cardText === '#211F1A' ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.6)'}` }}
+          title={`${category.label}`}
         />
-        {task.areas.map((k) => (
-          <AreaChip key={k} area={areaOf(k)} onColor={cardText} />
-        ))}
         {task.phone && (
           <a
             href={`tel:${task.phone.replace(/[^0-9+]/g, '')}`}
@@ -1473,9 +1250,6 @@ function TaskCard({ task, snoozed, isEditing, editDraft, setEditDraft, onEditSta
   );
 }
 
-/* Journal entry: plain, quiet, collapsed by default. Its own local state
-   (collapsed / editing / draft) rather than anything in Docket()'s state,
-   since nothing about a journal entry needs to be known outside its own box. */
 function JournalEntryBox({ entry, onSave, onDelete }) {
   const [collapsed, setCollapsed] = useState(true);
   const [editing, setEditing] = useState(false);
