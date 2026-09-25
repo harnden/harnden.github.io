@@ -28,6 +28,8 @@
   h1{font-family:'Fraunces',serif; font-weight:600; font-size:40px; margin:0 0 2px; letter-spacing:-0.01em;}
   .sub{color:var(--ink-soft); font-size:14px; margin-bottom:28px;}
   .card{background:var(--panel); border:1px solid var(--hairline); border-radius:10px; padding:20px 22px; margin-bottom:18px;}
+  .card[data-card="utilities"] {  background: #3f6367; /* choose your color */}
+  .card[data-card="subscriptions"] { background: #7c6a8e; /* choose your color */}
   .card h2{font-family:'Fraunces',serif; font-weight:600; font-size:17px; margin:0 0 4px; display:flex; align-items:center; gap:8px;}
   .card-note{font-size:12px; color:var(--ink-soft); margin:0 0 14px;}
   .row{display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;}
@@ -58,6 +60,13 @@
   #ledgerList .tag-annual{background:rgba(124,106,142,0.92); border-left:4px solid #D9CBE8;}
   #ledgerList li.sortable-ghost{opacity:0.35;}
   #ledgerList li.sortable-chosen{box-shadow:0 0 0 2px var(--teal);}
+  /* Vault card: shopping list (active) + vault (inactive), both drag-sortable and linked */
+  .list-head{display:flex; justify-content:space-between; align-items:baseline; margin:14px 0 2px; font-size:12px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft);}
+  .list-head:first-child{margin-top:6px;}
+  .list-total{font-family:'Fraunces',serif; font-size:18px; letter-spacing:0; text-transform:none; color:var(--ink);}
+  #shopList, #wishList{min-height:28px;}
+  #shopList li.sortable-ghost, #wishList li.sortable-ghost{opacity:0.35;}
+  #shopList li.sortable-chosen, #wishList li.sortable-chosen{box-shadow:0 0 0 2px var(--teal);}
   li.paid{opacity:0.6;}
   li.paid .lname{text-decoration:line-through;}
   .lname{min-width:130px; flex:1 1 130px;}
@@ -85,6 +94,13 @@
   .tally-slot input[type=text]{flex:1.4; min-width:0;}
   .tally-slot input[type=number]{flex:1; min-width:0;}
   #chartHolder{position:relative;}
+  .chart-scroll{overflow-x:auto; overflow-y:hidden;}
+  .zoom-row{display:flex; align-items:center; gap:10px; margin-bottom:8px; font-size:12px; color:var(--ink-soft);}
+  .zoom-row input[type=range]{flex:1; padding:0; border:none; background:transparent; accent-color:var(--teal); cursor:pointer;}
+  .zoom-row #zoomLabel{font-family:'IBM Plex Mono',monospace; min-width:92px; text-align:right;}
+  .zoom-row button{padding:6px 10px; font-size:12px;}
+  .chart-tooltip .tt-alert{margin-top:6px; padding-top:6px; border-top:1px solid rgba(0,0,0,0.15); color:#9b2c2c; font-weight:600;}
+  .chart-tooltip .tt-under{margin-top:6px; padding-top:6px; border-top:1px solid rgba(0,0,0,0.15); color:#9b2c2c;}
   .neg-alert{margin-top:7px; font-weight:600; font-size:12.5px; font-family:'IBM Plex Mono',monospace; color:#fff; background:#48284a; padding:5px 8px; border-radius:4px; line-height:1.4;}
   .chart-tooltip{
     position:absolute; pointer-events:none; background:var(--ink); color:#070707;
@@ -97,6 +113,7 @@
   .chart-tooltip .tt-row span:first-child{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:150px;}
   .chart-tooltip .tt-detail{margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,0.18);}
   .chart-tooltip .tt-empty{color:#4a5a05; font-style:italic; margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,0.18);}
+  .app-version{text-align:center; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft); opacity:0.6; padding:24px 0 16px;}
 </style>
 </head>
 <body>
@@ -253,6 +270,12 @@
   <div class="card" data-card="runway">
     <h2><span class="drag-handle" title="Drag to move">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('runway')"><span id="chev-runway">&#9662;</span> The runway</span></h2>
     <div id="body-runway">
+    <div class="zoom-row">
+      <span>Zoom</span>
+      <input type="range" id="runwayZoom" min="0" max="100" value="0" oninput="onRunwayZoom(this.value)">
+      <span id="zoomLabel">All</span>
+      <button type="button" id="jumpShortfall" onclick="jumpToShortfall()" style="display:none;">Jump to shortfall</button>
+    </div>
     <div id="chartHolder"></div>
     <div class="legend">
       <span class="dot" style="background:var(--ink-soft)"></span>
@@ -266,12 +289,16 @@
   <div class="card" data-card="vault">
     <h2><span class="drag-handle" title="Drag to move">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('vault')"><span id="chev-vault">&#9662;</span> Vault</span></h2>
     <div id="body-vault">
+    <div class="list-head"><span>Shopping list</span><span class="list-total" id="shopTotal">$0</span></div>
+    <ul class="items" id="shopList"></ul>
+    <div class="list-head"><span>Vault</span></div>
     <ul class="items" id="wishList"></ul>
     <div class="add-form">
       <div class="row">
         <div class="field"><label>What's on your mind</label><input type="text" id="vName"></div>
         <div class="field" style="max-width:120px;"><label>Rough cost</label><input type="number" id="vAmt" placeholder="0"></div>
-        <button onclick="addWishItem()">Drop in vault</button>
+        <button onclick="addWishItem('shop')">Add to list</button>
+        <button onclick="addWishItem('wish')">Drop in vault</button>
       </div>
     </div>
     </div>
@@ -322,12 +349,15 @@
   </div>
 </div>
 
+<footer class="app-version" id="appVersion"></footer>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
 <script>
+const APP_VERSION = '2026.09.25.2';
 const STORAGE_KEY = 'runway-state-v3';
 const todayStr = new Date().toISOString().slice(0,10);
 
-let state = { balance:0, incomes:[], items:[], scratch:[], toxicDebts:[], recurring:[], recurringIncomes:[], ledgerOrder:[], ui:{collapsed:{}, layout:null}, sheetEmbedUrl:'' };
+let state = { balance:0, incomes:[], items:[], scratch:[], toxicDebts:[], recurring:[], recurringIncomes:[], ledgerOrder:[], shopOrder:[], vaultOrder:[], ui:{collapsed:{}, layout:null}, sheetEmbedUrl:'' };
 const CARD_IDS = ['tally','stand','income','subscriptions','utilities','ledger','thisweek','runway','vault','sheet','toxic'];
 
 function uid(){ return Math.random().toString(36).slice(2,9); }
@@ -344,7 +374,7 @@ const RECURRING_KINDS = ['subscription','utility','recurring'];
 function migrateItemTiers(){
   if(!Array.isArray(state.items)) { state.items = []; return; }
   state.items.forEach(it=>{
-    if(it.tier !== 'wish' && it.tier !== 'fixed'){
+    if(!['wish','shop','fixed'].includes(it.tier)){
       it.tier = 'fixed';
       if(!it.date) it.date = it.windowEnd || todayStr;
     }
@@ -485,6 +515,8 @@ function seedDefaults(){
     recurring: [],
     recurringIncomes: [],
     ledgerOrder: [],
+    shopOrder: [],
+    vaultOrder: [],
     ui: { collapsed:{}, layout:{ primary: CARD_IDS.filter(id=>id!=='sheet' && id!=='toxic'), secondary: ['sheet','toxic'] } },
     sheetEmbedUrl: '',
     items: [
@@ -512,6 +544,8 @@ async function loadState(){
       if(!Array.isArray(state.recurring)) state.recurring = [];
       if(!Array.isArray(state.recurringIncomes)) state.recurringIncomes = [];
       if(!Array.isArray(state.ledgerOrder)) state.ledgerOrder = [];
+      if(!Array.isArray(state.shopOrder)) state.shopOrder = [];
+      if(!Array.isArray(state.vaultOrder)) state.vaultOrder = [];
       migrateRecurringKinds();
       migrateItemTiers();
       if(!state.ui) state.ui = { collapsed:{} };
@@ -548,7 +582,7 @@ function urgencyTag(dateStr){
   if(d <= 10) return {cls:'soon', label: d+'d'};
   return {cls:'later', label: d+'d'};
 }
-function tierColor(t){ return t==='wish' ? 'var(--plum)' : 'var(--amber)'; }
+function tierColor(t){ return t==='wish' ? 'var(--plum)' : t==='shop' ? 'var(--teal)' : 'var(--amber)'; }
 function nextIncomeDate(){
   const upcoming = state.incomes.filter(i=>i.date>=todayStr).sort((a,b)=>new Date(a.date)-new Date(b.date));
   return upcoming.length ? upcoming[0].date : null;
@@ -557,7 +591,7 @@ function buildSeries(deductionMode){
   // deductionMode: 'none' (flat reference at today's cash on hand, nothing added or subtracted)
   // or 'all' (every unpaid committed item subtracts on its date, income adds)
   const A = Number(state.balance)||0;
-  const committed = state.items.filter(o=>o.tier!=='wish' && !o.paid && o.date);
+  const committed = state.items.filter(o=>o.tier==='fixed' && !o.paid && o.date);
   const allDates = [todayStr, ...committed.map(o=>o.date), ...state.incomes.map(i=>i.date)];
   let endDate = allDates.reduce((max,d)=> new Date(d)>new Date(max)?d:max, todayStr);
   let totalDays = Math.max(daysBetween(todayStr, endDate), 14) + 2;
@@ -694,6 +728,8 @@ function importBackup(file){
       if(!Array.isArray(state.recurring)) state.recurring = [];
       if(!Array.isArray(state.recurringIncomes)) state.recurringIncomes = [];
       if(!Array.isArray(state.ledgerOrder)) state.ledgerOrder = [];
+      if(!Array.isArray(state.shopOrder)) state.shopOrder = [];
+      if(!Array.isArray(state.vaultOrder)) state.vaultOrder = [];
       migrateRecurringKinds();
       migrateItemTiers();
       normalizeLayout();
@@ -804,7 +840,7 @@ function updateIncome(id, field, value){
 // relative to whatever's currently on screen. Nothing here mutates state; a drag is the
 // only thing that persists a new order.
 function getLedgerDisplayOrder(){
-  const ledgerItems = state.items.filter(i=>i.tier!=='wish');
+  const ledgerItems = state.items.filter(i=>i.tier==='fixed');
   const byId = {};
   ledgerItems.forEach(it=> byId[it.id]=it);
   const dateSorted = [...ledgerItems].sort((a,b)=> new Date(a.date||'9999')-new Date(b.date||'9999'));
@@ -892,7 +928,7 @@ function renderThisWeek(){
   const ul = document.getElementById('thisWeekList');
   const empty = document.getElementById('thisWeekEmpty');
   ul.innerHTML = '';
-  const items = state.items.filter(o=> o.tier!=='wish' && !o.paid && o.date &&
+  const items = state.items.filter(o=> o.tier==='fixed' && !o.paid && o.date &&
     daysBetween(todayStr,o.date) <= 7 && daysBetween(todayStr,o.date) >= -1)
     .sort((a,b)=> new Date(a.date)-new Date(b.date));
   empty.style.display = items.length===0 ? 'block' : 'none';
@@ -908,22 +944,90 @@ function renderThisWeek(){
   });
 }
 
+// Shopping list + vault ordering: dragged positions persist (shopOrder / vaultOrder);
+// anything not yet placed is appended at the bottom. Nothing here mutates state.
+function getListOrder(items, persisted){
+  const byId = {};
+  items.forEach(it=> byId[it.id]=it);
+  const ordered = (Array.isArray(persisted) ? persisted : []).filter(id=> byId[id]);
+  const placed = new Set(ordered);
+  items.forEach(it=>{ if(!placed.has(it.id)) ordered.push(it.id); });
+  return ordered.map(id=>byId[id]);
+}
+
 function renderWish(){
+  const handle = '<span class="row-drag-handle" title="Drag to reorder, or drag between lists">&#8942;&#8942;</span>';
+
+  // Shopping list (active)
+  const shopUl = document.getElementById('shopList');
+  shopUl.innerHTML = '';
+  const shopItems = getListOrder(state.items.filter(i=>i.tier==='shop'), state.shopOrder);
+  const shopTotal = shopItems.reduce((s,it)=> s + (Number(it.amount)||0), 0);
+  document.getElementById('shopTotal').textContent = '$'+fmt(shopTotal);
+  if(shopItems.length===0) shopUl.innerHTML = '<div class="empty">Shopping list is empty.</div>';
+  shopItems.forEach(it=>{
+    const li = document.createElement('li');
+    li.dataset.itemId = it.id;
+    li.innerHTML = `
+      ${handle}
+      <span class="dot" style="background:${tierColor('shop')}"></span>
+      <input type="text" class="lname lname-input" value="${it.name}" onchange="updateItem('${it.id}','name',this.value)">
+      <button class="mini subtle" title="Move back to Vault" onclick="changeTier('${it.id}','wish')">vault &#8595;</button>
+      <input type="number" class="amt-input" value="${it.amount}" onchange="updateItem('${it.id}','amount',this.value)">
+      <button class="danger-ghost" onclick="removeItem('${it.id}')">Dismiss</button>`;
+    shopUl.appendChild(li);
+  });
+
+  // Vault (inactive)
   const ul = document.getElementById('wishList');
   ul.innerHTML = '';
-  const wishItems = state.items.filter(i=>i.tier==='wish');
+  const wishItems = getListOrder(state.items.filter(i=>i.tier==='wish'), state.vaultOrder);
   if(wishItems.length===0){ ul.innerHTML='<div class="empty">Vault is empty.</div>'; return; }
   wishItems.forEach(it=>{
     const li = document.createElement('li');
+    li.dataset.itemId = it.id;
     li.innerHTML = `
+      ${handle}
       <span class="dot" style="background:${tierColor('wish')}"></span>
       <input type="text" class="lname lname-input" value="${it.name}" onchange="updateItem('${it.id}','name',this.value)">
-      <button class="mini subtle" title="Move to Money going out" onclick="changeTier('${it.id}','fixed')">commit &#8594;</button>
+      <button class="mini subtle" title="Move to Shopping list" onclick="changeTier('${it.id}','shop')">shop &#8593;</button>
       <input type="number" class="amt-input" value="${it.amount}" onchange="updateItem('${it.id}','amount',this.value)">
-      ${it.timesReconsidered>0 ? `<span class="wish-meta">passed ${it.timesReconsidered}x</span>` : ''}
-      <button class="mini subtle" onclick="notYet('${it.id}')">Not yet</button>
+      <button class="mini subtle" title="Move to Money going out" onclick="changeTier('${it.id}','fixed')">commit &#8594;</button>
       <button class="danger-ghost" onclick="removeItem('${it.id}')">Dismiss</button>`;
     ul.appendChild(li);
+  });
+}
+
+function saveVaultOrdersFromDOM(){
+  const ids = id => [...document.getElementById(id).querySelectorAll('li[data-item-id]')].map(li=>li.dataset.itemId);
+  state.shopOrder = ids('shopList');
+  state.vaultOrder = ids('wishList');
+}
+
+// The two lists share a Sortable group, so a row can be dragged from one into the other.
+// A cross-list drop changes the item's tier; either way the on-screen order is saved.
+function initVaultSortables(){
+  if(typeof Sortable === 'undefined') return;
+  const opts = {
+    group: 'vault-lists',
+    handle: '.row-drag-handle',
+    draggable: 'li[data-item-id]',
+    animation: 150,
+    onEnd: (evt)=>{
+      if(evt.from !== evt.to){
+        const it = state.items.find(i=>i.id===evt.item.dataset.itemId);
+        if(it){
+          it.tier = evt.to.id==='shopList' ? 'shop' : 'wish';
+          it.date = null; it.windowStart = null; it.windowEnd = null; it.paid = false;
+        }
+      }
+      saveVaultOrdersFromDOM();
+      saveState(); render();
+    }
+  };
+  ['shopList','wishList'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) Sortable.create(el, opts);
   });
 }
 
@@ -997,8 +1101,13 @@ function changeTier(id, newTier){
   const it = state.items.find(i=>i.id===id); if(!it) return;
   // Two states remain: committed (stored as 'fixed' so existing filters keep working)
   // and vaulted ('wish').
-  if(newTier==='wish'){
-    it.tier = 'wish';
+  state.shopOrder = (state.shopOrder||[]).filter(x=>x!==id);
+  state.vaultOrder = (state.vaultOrder||[]).filter(x=>x!==id);
+  if(newTier==='wish' || newTier==='shop'){
+    // Land at the bottom of the destination list, below whatever's there now.
+    const destKey = newTier==='shop' ? 'shopOrder' : 'vaultOrder';
+    state[destKey] = getListOrder(state.items.filter(i=>i.tier===newTier && i.id!==id), state[destKey]).map(i=>i.id).concat(id);
+    it.tier = newTier;
     it.date = null; it.windowStart=null; it.windowEnd=null; it.paid=false;
   } else {
     it.tier = 'fixed';
@@ -1027,6 +1136,8 @@ function removeItem(id){
   }
   state.items = state.items.filter(i=>i.id!==id);
   if(Array.isArray(state.ledgerOrder)) state.ledgerOrder = state.ledgerOrder.filter(x=>x!==id);
+  if(Array.isArray(state.shopOrder)) state.shopOrder = state.shopOrder.filter(x=>x!==id);
+  if(Array.isArray(state.vaultOrder)) state.vaultOrder = state.vaultOrder.filter(x=>x!==id);
   saveState(); render();
 }
 function removeIncome(id){
@@ -1041,10 +1152,6 @@ function removeIncome(id){
   }
   state.incomes = state.incomes.filter(i=>i.id!==id);
   saveState(); render();
-}
-function notYet(id){
-  const it = state.items.find(i=>i.id===id);
-  if(it){ it.timesReconsidered = (it.timesReconsidered||0)+1; saveState(); render(); }
 }
 
 function toggleSubCycleUI(){
@@ -1276,11 +1383,11 @@ function addIncome(){
   toggleIncRecurringUI();
   saveState(); render();
 }
-function addWishItem(){
+function addWishItem(tier){
   const name = document.getElementById('vName').value.trim();
   const amt = parseFloat(document.getElementById('vAmt').value)||0;
   if(!name) return;
-  state.items.push({id:uid(), name, tier:'wish', amount:amt, paid:false, addedDate:todayStr, timesReconsidered:0,
+  state.items.push({id:uid(), name, tier: tier==='shop' ? 'shop' : 'wish', amount:amt, paid:false, addedDate:todayStr, timesReconsidered:0,
     date:null, windowStart:null, windowEnd:null});
   document.getElementById('vName').value=''; document.getElementById('vAmt').value='';
   saveState(); render();
@@ -1291,13 +1398,60 @@ document.getElementById('balanceInput').addEventListener('change', (e)=>{
   saveState(); render();
 });
 
+// Runway zoom: UI-only state, not saved. days = number of days visible at once (null = everything).
+const runwayView = { days:null, focusIdx:null, lastArgs:null };
+const ZOOM_MIN_DAYS = 10;
+function zoomTotalDays(){ return runwayView.lastArgs ? runwayView.lastArgs[1].length-1 : 0; }
+function sliderToDays(v, total){
+  if(total <= ZOOM_MIN_DAYS || Number(v)<=0) return null;
+  return Math.max(ZOOM_MIN_DAYS, Math.round(total * Math.pow(ZOOM_MIN_DAYS/total, Number(v)/100)));
+}
+function daysToSlider(days, total){
+  if(!days || total <= ZOOM_MIN_DAYS) return 0;
+  return Math.round(100 * Math.log(days/total) / Math.log(ZOOM_MIN_DAYS/total));
+}
+function onRunwayZoom(v){
+  runwayView.days = sliderToDays(v, zoomTotalDays());
+  if(runwayView.lastArgs) drawChart(...runwayView.lastArgs);
+}
+function jumpToShortfall(){
+  if(!runwayView.lastArgs) return;
+  const full = runwayView.lastArgs[1];
+  const idx = full.findIndex(p=>p.balance<0);
+  if(idx<0) return;
+  if(!runwayView.days || runwayView.days > 30){
+    runwayView.days = Math.min(30, zoomTotalDays());
+    document.getElementById('runwayZoom').value = daysToSlider(runwayView.days, zoomTotalDays());
+  }
+  runwayView.focusIdx = idx;
+  drawChart(...runwayView.lastArgs);
+}
+function escHtml(str){ return String(str==null?'':str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function prettyDate(dateStr){ return new Date(dateStr+'T00:00:00').toLocaleDateString('en-US',{weekday:'short', month:'short', day:'numeric'}); }
+let runwayResizeTimer = null;
+window.addEventListener('resize', ()=>{
+  clearTimeout(runwayResizeTimer);
+  runwayResizeTimer = setTimeout(()=>{ if(runwayView.lastArgs) drawChart(...runwayView.lastArgs); }, 150);
+});
+
 function drawChart(baseline, full){
+  runwayView.lastArgs = [baseline, full];
   const holder = document.getElementById('chartHolder');
+  // Remember where the user was scrolled so re-renders don't yank the view back to the start.
+  const oldScroll = document.getElementById('chartScroll');
+  const oldCenterFrac = oldScroll && oldScroll.scrollWidth ? (oldScroll.scrollLeft + oldScroll.clientWidth/2) / oldScroll.scrollWidth : null;
   const dipsNegative = full.some(p=>p.balance<0);
-  const committed = state.items.filter(o=>o.tier!=='wish' && !o.paid && o.date);
+  const committed = state.items.filter(o=>o.tier==='fixed' && !o.paid && o.date);
   const points = full; // full has the widest date range, use it as the shared x-axis
 
-  const W = 920, H = 240, padL=54, padR=16, padT=16, padB=30;
+  const baseW = 920, H = 240, padL=54, padR=16, padT=16, padB=30;
+  const totalDays = points.length-1;
+  const visDays = runwayView.days ? Math.min(runwayView.days, totalDays) : totalDays;
+  const zoom = totalDays / visDays;
+  const W = Math.round(padL + (baseW-padL-padR)*zoom + padR);
+  const pxScale = (holder.clientWidth || baseW) / baseW;
+  document.getElementById('zoomLabel').textContent = runwayView.days ? `${visDays} days` : 'All';
+  document.getElementById('runwayZoom').disabled = totalDays <= ZOOM_MIN_DAYS;
   const chartW = W-padL-padR, chartH = H-padT-padB;
   const allVals = [...baseline, ...full].map(p=>p.balance);
   const maxB = Math.max(...allVals, Number(state.balance)||0, 50);
@@ -1332,6 +1486,37 @@ function drawChart(baseline, full){
     }
   });
 
+  // Shortfall analysis: which transaction on which day first takes the balance below $0.
+  const startBal = Number(state.balance)||0;
+  const prevBal = i => i>0 ? full[i-1].balance : startBal;
+  const dayTx = dateStr => ({
+    out: committed.filter(o=>o.date===dateStr),
+    inc: state.incomes.filter(inc=>inc.date===dateStr)
+  });
+  // Mirrors buildSeries order: that day's expenses come off first, then income lands.
+  function culpritFor(i){
+    if(!(prevBal(i) >= 0 && full[i].balance < 0)) return null;
+    let run = prevBal(i);
+    for(const o of dayTx(full[i].dateStr).out){
+      run -= Number(o.amount)||0;
+      if(run < 0) return o;
+    }
+    return null;
+  }
+  function crossingFor(i){ // start of the negative stretch that day i belongs to
+    let j = i;
+    while(j>0 && full[j-1].balance<0) j--;
+    return j;
+  }
+  const firstNegIdx = full.findIndex(p=>p.balance<0);
+  document.getElementById('jumpShortfall').style.display = firstNegIdx>=0 ? '' : 'none';
+  if(firstNegIdx>=0){
+    const c = culpritFor(firstNegIdx);
+    const cx = x(firstNegIdx), cy = y(full[firstNegIdx].balance);
+    markers += `<circle cx="${cx}" cy="${cy}" r="9" fill="none" stroke="#9b2c2c" stroke-width="2"/>`;
+    if(c) markers += `<text x="${cx}" y="${Math.max(padT+10, cy-14)}" font-size="11" font-weight="600" fill="var(--ink)" text-anchor="middle">${escHtml(c.name)}</text>`;
+  }
+
   // Group points into calendar-month bands so we can shade alternating months
   // and label the x-axis by month instead of three arbitrary dates.
   const dayW = chartW/(points.length-1);
@@ -1349,6 +1534,17 @@ function drawChart(baseline, full){
     monthBands.push({startIdx, endIdx:points.length-1, month:curMonth});
   }
 
+  const dayPx = dayW * pxScale;
+  const showDayNums = dayPx >= 22;
+  let dayTicks = '';
+  if(dayPx >= 6){
+    points.forEach((p,i)=>{
+      const tx = x(i).toFixed(1);
+      dayTicks += `<line x1="${tx}" y1="${padT+chartH}" x2="${tx}" y2="${padT+chartH+4}" stroke="var(--ink-soft)" stroke-width="1" opacity="0.5"/>`;
+      if(showDayNums) dayTicks += `<text x="${tx}" y="${padT+chartH+14}" font-size="10" fill="var(--ink-soft)" text-anchor="middle" opacity="0.8">${Number(p.dateStr.slice(8))}</text>`;
+    });
+  }
+  const monthLabelY = showDayNums ? H-2 : H-8;
   let monthBg = '', monthDividers = '', monthLabels = '';
   monthBands.forEach((b,i)=>{
     const bandXStart = i===0 ? padL : (x(b.startIdx) - dayW/2);
@@ -1363,12 +1559,13 @@ function drawChart(baseline, full){
     if(bandW > 26){
       const d = new Date(b.month+'-01T00:00:00');
       const monthLabel = d.toLocaleDateString('en-US',{month:'short'}) + (i===0 || d.getMonth()===0 ? " '"+String(d.getFullYear()).slice(2) : '');
-      monthLabels += `<text x="${((bandXStart+bandXEnd)/2).toFixed(1)}" y="${H-8}" font-size="11" fill="var(--ink-soft)" text-anchor="middle">${monthLabel}</text>`;
+      monthLabels += `<text x="${((bandXStart+bandXEnd)/2).toFixed(1)}" y="${monthLabelY}" font-size="11" fill="var(--ink-soft)" text-anchor="middle">${monthLabel}</text>`;
     }
   });
 
   holder.innerHTML = `
-  <svg viewBox="0 0 ${W} ${H}" id="runwaySvg" style="width:100%; height:auto; cursor:crosshair;">
+  <div class="chart-scroll" id="chartScroll">
+  <svg viewBox="0 0 ${W} ${H}" id="runwaySvg" style="display:block; width:${(W*pxScale).toFixed(0)}px; height:${(H*pxScale).toFixed(0)}px; cursor:crosshair;">
     ${monthBg}
     <line x1="${padL}" y1="${zeroY}" x2="${W-padR}" y2="${zeroY}" stroke="${dipsNegative?'var(--brick)':'var(--hairline)'}" stroke-width="${dipsNegative?1.5:1}"/>
     <text x="${padL-8}" y="${zeroY+4}" font-size="11" fill="var(--ink-soft)" text-anchor="end">$0</text>
@@ -1378,11 +1575,22 @@ function drawChart(baseline, full){
     <path d="${baselinePath}" fill="none" stroke="var(--ink-soft)" stroke-width="1.75" stroke-dasharray="5,4"/>
     <path d="${fullPath}" fill="none" stroke="var(--brick)" stroke-width="2.25"/>
     ${markers}
+    ${dayTicks}
     ${monthLabels}
     <g id="hoverLayer"></g>
     <rect x="${padL}" y="${padT}" width="${chartW}" height="${chartH}" fill="transparent" id="hoverCatcher"/>
   </svg>
+  </div>
   <div class="chart-tooltip" id="chartTooltip"></div>`;
+
+  // Restore scroll position (or center on a requested day, e.g. from "Jump to shortfall").
+  const scroller = document.getElementById('chartScroll');
+  if(runwayView.focusIdx != null){
+    scroller.scrollLeft = x(runwayView.focusIdx)*pxScale - scroller.clientWidth/2;
+    runwayView.focusIdx = null;
+  } else if(oldCenterFrac != null){
+    scroller.scrollLeft = oldCenterFrac*scroller.scrollWidth - scroller.clientWidth/2;
+  }
 
   const svgEl = document.getElementById('runwaySvg');
   const catcher = document.getElementById('hoverCatcher');
@@ -1414,7 +1622,25 @@ function drawChart(baseline, full){
       if(d < bestDist){ bestDist = d; nearest = v; }
     });
 
-    tooltip.innerHTML = `<div class="tt-date">${dateStr}</div>${nearest<0 ? '-$' : '$'}${fmt(Math.abs(nearest))}`;
+    let html = `<div class="tt-date">${prettyDate(dateStr)}</div>${nearest<0 ? '-$' : '$'}${fmt(Math.abs(nearest))}`;
+    const {out, inc} = dayTx(dateStr);
+    if(out.length || inc.length){
+      html += '<div class="tt-detail">'
+        + out.map(o=>`<div class="tt-row"><span>${escHtml(o.name)}</span><span>−$${fmt(o.amount)}</span></div>`).join('')
+        + inc.map(i=>`<div class="tt-row"><span>${escHtml(i.label)}</span><span>+$${fmt(i.amount)}</span></div>`).join('')
+        + '</div>';
+    } else {
+      html += '<div class="tt-empty">No transactions</div>';
+    }
+    const culprit = culpritFor(idx);
+    if(culprit){
+      html += `<div class="tt-alert">⚠ This puts you under: ${escHtml(culprit.name)}</div>`;
+    } else if(byFull < 0){
+      const ci = crossingFor(idx);
+      const cc = culpritFor(ci);
+      html += `<div class="tt-under">Under since ${prettyDate(full[ci].dateStr)}${cc ? ' — ' + escHtml(cc.name) : ''}</div>`;
+    }
+    tooltip.innerHTML = html;
     tooltip.style.opacity = '1';
     const holderRect = holder.getBoundingClientRect();
     const ttWidth = tooltip.offsetWidth || 80;
@@ -1422,6 +1648,9 @@ function drawChart(baseline, full){
     let top = (evt.clientY - holderRect.top) - 10;
     if(left + ttWidth > holderRect.width) left -= (ttWidth + 28);
     if(left < 0) left = 4;
+    const ttHeight = tooltip.offsetHeight || 60;
+    if(top + ttHeight > holderRect.height) top = (evt.clientY - holderRect.top) - ttHeight - 12;
+    if(top < 0) top = 4;
     tooltip.style.left = left + 'px';
     tooltip.style.top = top + 'px';
   }
@@ -1434,10 +1663,12 @@ function drawChart(baseline, full){
 }
 
 (async function init(){
+  document.getElementById('appVersion').textContent = 'Runway v' + APP_VERSION;
   await loadState();
   applyLayout();
   initSortable();
   initLedgerSortable();
+  initVaultSortables();
   toggleObDateUI();
   toggleObRecurringUI();
   toggleIncRecurringUI();
