@@ -71,7 +71,7 @@
   }
 
   .tile {
-    flex: 1 1 280px;
+    flex: 0 1 328px;
     max-width: 360px;
     aspect-ratio: 16/10;
     border-radius: 14px;
@@ -134,6 +134,34 @@
   .tile:hover .tile-name {
     transform: scale(1.08);
   }
+
+  /* Sheets tile: white spreadsheet grid on green. Cells link to workbooks:
+     2 workbooks = left/right halves, 3 = thirds, 4 = quadrants. */
+  .tile.sheets {
+    background: #188038;
+    padding: 1.25rem;
+    cursor: default;
+    align-items: stretch;
+    justify-content: stretch;
+  }
+  .sheets-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 3px;
+    padding: 3px;
+    background: #fff;           /* shows through the gaps as the grid lines */
+    border-radius: 4px;
+  }
+  .sheets-grid a {
+    background: #188038;
+    cursor: pointer;
+    transition: background 0.12s ease;
+  }
+  .sheets-grid a.zone { background: #2a9a52; }   /* rest of the hovered workbook's area */
+  .sheets-grid a:hover { background: var(--hover, #fff); }   /* the cell under the mouse; color set per cell */
+  .sheets-grid a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 
   @media (prefers-reduced-motion: reduce) {
     .tile, .tile img, .tile-name { transition: none; }
@@ -209,6 +237,11 @@
     <img src="img/mstc-thumb.png" alt="UT MSTC, McCombs Austin">
   </a>
 
+  <!-- Google Sheets: grid built by the script at the bottom (SHEETS list) -->
+  <div class="tile sheets">
+    <div class="sheets-grid" id="sheets-grid"></div>
+  </div>
+
 </div>
 
 <script>
@@ -218,6 +251,42 @@
   }
   updateClock();
   setInterval(updateClock, 1000);
+
+  // Workbooks on the Sheets tile (2–4). Order sets position: left→right, then top→bottom for 4.
+  const SHEETS = [
+    { name: 'Homework',   url: 'https://docs.google.com/spreadsheets/d/1AByybSV22BGHA61WMg_5WS7aojjfzYEX9coFDn816q0/edit' },
+    { name: 'Workbook 2', url: '#' },  // TODO: second workbook
+  ];
+
+  (function buildSheetsTile() {
+    const grid = document.getElementById('sheets-grid');
+    const COLS = 6, ROWS = 4, n = SHEETS.length;
+    const zoneOf = (c, r) =>
+      n === 4 ? (r < ROWS / 2 ? 0 : 2) + (c < COLS / 2 ? 0 : 1)
+              : Math.floor(c / (COLS / n));
+    // Hover colors, cycled so no cell matches its neighbor (left/right/up/down).
+    const HOVER = ['#ffffff', '#fbbc04', '#ea4335', '#4285f4', '#a142f4', '#24c1e0'];
+    const cells = [];
+    const seen = new Set();
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const z = zoneOf(c, r), sheet = SHEETS[z];
+        const a = document.createElement('a');
+        a.href = sheet.url;
+        a.target = '_blank';
+        a.title = sheet.name;
+        a.setAttribute('aria-label', sheet.name);
+        a.dataset.zone = z;
+        a.style.setProperty('--hover', HOVER[(c + 2 * r) % HOVER.length]);
+        if (seen.has(z)) a.tabIndex = -1; else seen.add(z);   // one tab stop per workbook
+        a.addEventListener('mouseenter', () =>
+          cells.forEach(x => x.classList.toggle('zone', x.dataset.zone == z)));
+        cells.push(a);
+        grid.appendChild(a);
+      }
+    }
+    grid.addEventListener('mouseleave', () => cells.forEach(x => x.classList.remove('zone')));
+  })();
 </script>
 
 </body>
