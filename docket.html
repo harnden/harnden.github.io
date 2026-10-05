@@ -9,6 +9,9 @@
 <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap');
   html, body, #root { min-height: 100%; }
@@ -150,7 +153,8 @@ function loadTasks() {
 
 function saveTasks(tasks) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    const raw = JSON.stringify(tasks);
+    writeSynced(STORAGE_KEY, raw);
   } catch (e) {}
 }
 
@@ -168,7 +172,8 @@ function loadJournal() {
 
 function saveJournal(entries) {
   try {
-    localStorage.setItem(JOURNAL_STORAGE_KEY, JSON.stringify(entries));
+    const raw = JSON.stringify(entries);
+    writeSynced(JOURNAL_STORAGE_KEY, raw);
   } catch (e) {}
 }
 
@@ -239,7 +244,8 @@ function loadCareer() {
 
 function saveCareer(career) {
   try {
-    localStorage.setItem(CAREER_STORAGE_KEY, JSON.stringify(career));
+    const raw = JSON.stringify(career);
+    writeSynced(CAREER_STORAGE_KEY, raw);
   } catch (e) {}
 }
 
@@ -274,8 +280,147 @@ function loadOrderMap(key) {
 
 function saveOrderMap(key, value) {
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    const raw = JSON.stringify(value);
+    writeSynced(key, raw);
   } catch (e) {}
+}
+
+/* ---------- cloud sync (Firebase) ----------
+   localStorage stays the working copy; every synced key is mirrored to
+   Firestore at users/{uid}/docket/{key} as { value: <json string>, updatedAt }.
+   First sign-in on a device: if the cloud is empty, local data is uploaded;
+   otherwise the cloud wins, except keys edited locally that never reached the
+   cloud (tracked in docket-sync-dirty), which are pushed up instead.
+   Board UI (collapsed columns etc.) stays per-device and is not synced. ---------- */
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyC8pc26J7tudH6BmGhRmx1vl7IRNWUPPX4',
+  authDomain: 'harnden-apps.firebaseapp.com',
+  projectId: 'harnden-apps',
+  storageBucket: 'harnden-apps.firebasestorage.app',
+  messagingSenderId: '1019620530454',
+  appId: '1:1019620530454:web:8544cf34784785daa2d837',
+};
+const SYNC_KEYS = [STORAGE_KEY, JOURNAL_STORAGE_KEY, CAREER_STORAGE_KEY, TASK_ORDER_KEY, TASK_ORDER_LIST_KEY, TASK_ORDER_HOMEWORK_LIST_KEY];
+const SYNC_DIRTY_KEY = 'docket-sync-dirty';
+const SYNC_LINKED_KEY = 'docket-sync-linked';
+
+const cloud = { enabled: false, auth: null, db: null, user: null, ready: false, unsub: null, lastSynced: {}, pending: 0, error: null };
+
+function cloudStatus() {
+  if (!cloud.enabled) return 'off';
+  if (!cloud.user) return 'signed-out';
+  if (cloud.error) return 'error';
+  if (!cloud.ready || cloud.pending > 0) return 'syncing';
+  return 'synced';
+}
+function cloudNotify() {
+  window.dispatchEvent(new CustomEvent('docket-cloud', { detail: { status: cloudStatus(), email: cloud.user ? cloud.user.email : null } }));
+}
+function loadDirty() {
+  try { return JSON.parse(localStorage.getItem(SYNC_DIRTY_KEY)) || {}; } catch (e) { return {}; }
+}
+function setDirty(key, isDirty) {
+  try {
+    const d = loadDirty();
+    if (isDirty) d[key] = true; else delete d[key];
+    localStorage.setItem(SYNC_DIRTY_KEY, JSON.stringify(d));
+  } catch (e) {}
+}
+function cloudCol() {
+  return cloud.db.collection('users').doc(cloud.user.uid).collection('docket');
+}
+
+// Writes locally, and pushes only real changes (mount-time re-saves of identical data are skipped).
+function writeSynced(key, raw) {
+  const prev = localStorage.getItem(key);
+  localStorage.setItem(key, raw);
+  if (prev !== raw) cloudPush(key, raw);
+}
+
+function cloudPush(key, raw) {
+  if (!SYNC_KEYS.includes(key)) return;
+  if (cloud.lastSynced[key] === raw) return;
+  // Only a device that has synced before can hold edits that should beat the cloud.
+  if (localStorage.getItem(SYNC_LINKED_KEY)) setDirty(key, true);
+  if (!cloud.enabled || !cloud.user || !cloud.ready) return; // stays dirty; pushed on next sign-in
+  cloud.lastSynced[key] = raw;
+  cloud.pending++;
+  cloudNotify();
+  cloudCol().doc(key).set({ value: raw, updatedAt: firebase.firestore.FieldValue.serverTimestamp() })
+    .then(() => {
+      if (cloud.lastSynced[key] === raw) setDirty(key, false);
+      cloud.error = null;
+    })
+    .catch((err) => { cloud.error = err; console.error('Docket sync failed', err); })
+    .finally(() => { cloud.pending--; cloudNotify(); });
+}
+
+function cloudStart() {
+  cloud.ready = false;
+  cloud.lastSynced = {};
+  cloudNotify();
+  cloud.unsub = cloudCol().onSnapshot({ includeMetadataChanges: true }, (snap) => {
+    // Wait for the server's answer before the first decision, never a cache guess.
+    if (!cloud.ready && snap.metadata.fromCache) return;
+    const changed = [];
+    if (!cloud.ready) {
+      const remote = {};
+      snap.forEach((doc) => { remote[doc.id] = doc.data().value; });
+      const dirty = loadDirty();
+      cloud.ready = true;
+      try { localStorage.setItem(SYNC_LINKED_KEY, '1'); } catch (e) {}
+      SYNC_KEYS.forEach((key) => {
+        const local = localStorage.getItem(key);
+        const hasRemote = typeof remote[key] === 'string';
+        if (hasRemote && !(dirty[key] && local != null)) {
+          cloud.lastSynced[key] = remote[key];
+          setDirty(key, false);
+          if (local !== remote[key]) { localStorage.setItem(key, remote[key]); changed.push(key); }
+        } else if (local != null) {
+          cloudPush(key, local);
+        }
+      });
+    } else {
+      snap.docChanges().forEach((ch) => {
+        if (ch.type === 'removed' || ch.doc.metadata.hasPendingWrites) return;
+        const key = ch.doc.id;
+        const raw = ch.doc.data().value;
+        if (!SYNC_KEYS.includes(key) || typeof raw !== 'string' || raw === cloud.lastSynced[key]) return;
+        cloud.lastSynced[key] = raw;
+        localStorage.setItem(key, raw);
+        changed.push(key);
+      });
+    }
+    if (changed.length) window.dispatchEvent(new CustomEvent('docket-remote', { detail: changed }));
+    cloudNotify();
+  }, (err) => { cloud.error = err; console.error('Docket sync listener failed', err); cloudNotify(); });
+}
+
+function cloudSignIn() {
+  if (!cloud.enabled) return;
+  const provider = new firebase.auth.GoogleAuthProvider();
+  cloud.auth.signInWithPopup(provider).catch((err) => { console.error('Sign-in failed', err); });
+}
+function cloudSignOut() {
+  if (cloud.enabled) cloud.auth.signOut();
+}
+
+try {
+  if (typeof firebase !== 'undefined') {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    cloud.auth = firebase.auth();
+    cloud.db = firebase.firestore();
+    cloud.enabled = true;
+    cloud.auth.onAuthStateChanged((user) => {
+      if (cloud.unsub) { cloud.unsub(); cloud.unsub = null; }
+      cloud.user = user;
+      cloud.ready = false;
+      cloud.error = null;
+      if (user) cloudStart(); else cloudNotify();
+    });
+  }
+} catch (e) {
+  console.error('Firebase init failed', e);
 }
 
 function mergeManualOrder(persistedIds, naturalOrderTasks) {
@@ -359,19 +504,49 @@ function Docket() {
   const [careerSel, setCareerSel] = useState(null);
   const [careerOpenId, setCareerOpenId] = useState(null);
 
+  const [sync, setSync] = useState(() => ({ status: cloudStatus(), email: cloud.user ? cloud.user.email : null }));
+
+  const loadFromStorage = (keys) => {
+    const want = (k) => !keys || keys.includes(k);
+    if (want(STORAGE_KEY)) {
+      const stored = loadTasks();
+      setTasks((stored || []).map((t, i) => normalizeTask(t, i)));
+    }
+    if (want(JOURNAL_STORAGE_KEY)) {
+      const storedJournal = loadJournal();
+      setJournalEntries((storedJournal || []).map((e, i) => normalizeJournalEntry(e, i)));
+    }
+    if (want(TASK_ORDER_KEY)) {
+      const storedOrder = loadOrderMap(TASK_ORDER_KEY);
+      if (storedOrder) setTaskOrder(storedOrder);
+    }
+    if (want(TASK_ORDER_LIST_KEY)) {
+      const storedOrderList = loadOrderMap(TASK_ORDER_LIST_KEY);
+      if (Array.isArray(storedOrderList)) setTaskOrderList(storedOrderList);
+    }
+    if (want(TASK_ORDER_HOMEWORK_LIST_KEY)) {
+      const storedOrderHomeworkList = loadOrderMap(TASK_ORDER_HOMEWORK_LIST_KEY);
+      if (Array.isArray(storedOrderHomeworkList)) setTaskOrderHomeworkList(storedOrderHomeworkList);
+    }
+    if (want(CAREER_STORAGE_KEY)) setCareer(normalizeCareer(loadCareer()));
+  };
+
   useEffect(() => {
-    const stored = loadTasks();
-    setTasks((stored || []).map((t, i) => normalizeTask(t, i)));
-    const storedJournal = loadJournal();
-    setJournalEntries((storedJournal || []).map((e, i) => normalizeJournalEntry(e, i)));
-    const storedOrder = loadOrderMap(TASK_ORDER_KEY);
-    if (storedOrder) setTaskOrder(storedOrder);
-    const storedOrderList = loadOrderMap(TASK_ORDER_LIST_KEY);
-    if (Array.isArray(storedOrderList)) setTaskOrderList(storedOrderList);
-    const storedOrderHomeworkList = loadOrderMap(TASK_ORDER_HOMEWORK_LIST_KEY);
-    if (Array.isArray(storedOrderHomeworkList)) setTaskOrderHomeworkList(storedOrderHomeworkList);
-    setCareer(normalizeCareer(loadCareer()));
+    loadFromStorage(null);
     setLoaded(true);
+  }, []);
+
+  // Another device changed something: re-read just those keys.
+  useEffect(() => {
+    const onRemote = (e) => loadFromStorage(e.detail);
+    const onCloud = (e) => setSync(e.detail);
+    window.addEventListener('docket-remote', onRemote);
+    window.addEventListener('docket-cloud', onCloud);
+    setSync({ status: cloudStatus(), email: cloud.user ? cloud.user.email : null });
+    return () => {
+      window.removeEventListener('docket-remote', onRemote);
+      window.removeEventListener('docket-cloud', onCloud);
+    };
   }, []);
 
   useEffect(() => {
@@ -804,6 +979,24 @@ function Docket() {
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            {sync.status !== 'off' && (
+              <button
+                onClick={sync.status === 'signed-out' ? cloudSignIn : cloudSignOut}
+                title={sync.email || ''}
+                className="text-xs px-3 py-2 rounded-md border flex items-center gap-2"
+                style={{ borderColor: COLORS.inkPanelBorder, color: COLORS.textMuted }}
+              >
+                {sync.status !== 'signed-out' && (
+                  <span
+                    style={{
+                      width: 7, height: 7, borderRadius: '50%', display: 'inline-block',
+                      background: sync.status === 'synced' ? COLORS.moss : sync.status === 'error' ? COLORS.rust : COLORS.amber,
+                    }}
+                  />
+                )}
+                {sync.status === 'signed-out' ? 'Sign in' : 'Sign out'}
+              </button>
+            )}
             <a
               href="https://harnden.github.io/runway.html"
               className="text-xs px-3 py-2 rounded-md border no-underline"
