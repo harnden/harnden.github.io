@@ -131,7 +131,7 @@
     <div class="col-primary" id="colPrimary">
 
   <div class="card" data-card="tally">
-    <h2><span class="drag-handle" title="Drag to move">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('tally')"><span id="chev-tally">&#9662;</span> Quick tally</span></h2>
+    <h2><span class="drag-handle">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('tally')"><span id="chev-tally">&#9662;</span> Quick tally</span></h2>
     <div id="body-tally">
       <div class="tally-grid" id="tallyGrid"></div>
       <div class="row" style="margin-top:12px; align-items:center;">
@@ -142,7 +142,7 @@
   </div>
 
   <div class="card" data-card="stand">
-    <h2><span class="drag-handle" title="Drag to move">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('stand')"><span id="chev-stand">&#9662;</span> Where things stand</span></h2>
+    <h2><span class="drag-handle">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('stand')"><span id="chev-stand">&#9662;</span> Where things stand</span></h2>
     <div id="body-stand">
     <div class="balances">
       <div class="bal-block">
@@ -168,7 +168,7 @@
   </div>
 
   <div class="card" data-card="income">
-    <h2><span class="drag-handle" title="Drag to move">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('income')"><span id="chev-income">&#9662;</span> Money coming in</span></h2>
+    <h2><span class="drag-handle">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('income')"><span id="chev-income">&#9662;</span> Money coming in</span></h2>
     <div id="body-income">
     <ul class="items" id="incomeList"></ul>
     <div class="add-form">
@@ -190,9 +190,8 @@
   </div>
 
   <div class="card" data-card="subscriptions">
-    <h2><span class="drag-handle" title="Drag to move">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('subscriptions')"><span id="chev-subscriptions">&#9662;</span> Subscriptions</span></h2>
+    <h2><span class="drag-handle">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('subscriptions')"><span id="chev-subscriptions">&#9662;</span> Subscriptions</span></h2>
     <div id="body-subscriptions">
-    <p class="card-note">Each one auto-generates its next 6 months of charges into "Money going out," tagged &#8635; monthly. Editing here only changes future, unpaid months.</p>
     <ul class="items" id="subscriptionList"></ul>
     <div class="row" style="margin-top:12px; align-items:center;">
       <div style="flex:1; font-family:'IBM Plex Mono',monospace; font-size:13px;" id="subTotals"></div>
@@ -210,7 +209,7 @@
         </div>
         <div class="field" style="max-width:100px;" id="subDayWrap"><label>Day of month</label><input type="number" id="subDay" min="1" max="31" placeholder="1"></div>
         <div class="field" style="max-width:150px; display:none;" id="subRenewalWrap"><label>Renews on</label><input type="date" id="subRenewal"></div>
-        <div class="field" style="max-width:150px;"><label>Card (optional)</label><input type="text" id="subCard" placeholder="e.g. Visa 4021"></div>
+        <div class="field" style="max-width:150px;"><label>Card</label><input type="text" id="subCard"></div>
         <button onclick="addSubscription()">Add</button>
       </div>
     </div>
@@ -218,9 +217,8 @@
   </div>
 
   <div class="card" data-card="utilities">
-    <h2><span class="drag-handle" title="Drag to move">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('utilities')"><span id="chev-utilities">&#9662;</span> Utilities</span></h2>
+    <h2><span class="drag-handle">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('utilities')"><span id="chev-utilities">&#9662;</span> Utilities</span></h2>
     <div id="body-utilities">
-    <p class="card-note">Monthly, but the amount moves. Enter a typical figure — each generated month lands in "Money going out" where you can correct it to the real bill. Editing the estimate here only rewrites future unpaid months.</p>
     <ul class="items" id="utilityList"></ul>
     <div class="row" style="margin-top:12px; align-items:center;">
       <div style="flex:1; font-family:'IBM Plex Mono',monospace; font-size:15px;">Typical month: <strong id="utilityTotal">$0</strong></div>
@@ -230,7 +228,7 @@
         <div class="field"><label>Utility</label><input type="text" id="utName" placeholder="Electric"></div>
         <div class="field" style="max-width:110px;"><label>Typical / mo</label><input type="number" id="utAmt" placeholder="0"></div>
         <div class="field" style="max-width:100px;"><label>Day of month</label><input type="number" id="utDay" min="1" max="31" placeholder="1"></div>
-        <div class="field" style="max-width:150px;"><label>Provider (optional)</label><input type="text" id="utProvider" placeholder="e.g. Austin Energy"></div>
+        <div class="field" style="max-width:150px;"><label>Provider</label><input type="text" id="utProvider"></div>
         <button onclick="addUtility()">Add</button>
       </div>
     </div>
@@ -238,7 +236,7 @@
   </div>
 
   <div class="card" data-card="ledger">
-    <h2><span class="drag-handle" title="Drag to move">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('ledger')"><span id="chev-ledger">&#9662;</span> Money going out</span></h2>
+    <h2><span class="drag-handle">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('ledger')"><span id="chev-ledger">&#9662;</span> Money going out</span></h2>
     <div id="body-ledger">
     <div class="add-form-top">
       <div class="row">
@@ -260,7 +258,7 @@
   </div>
 
   <div class="card" data-card="thisweek">
-    <h2><span class="drag-handle" title="Drag to move">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('thisweek')"><span id="chev-thisweek">&#9662;</span> Due this week</span></h2>
+    <h2><span class="drag-handle">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('thisweek')"><span id="chev-thisweek">&#9662;</span> Due this week</span></h2>
     <div id="body-thisweek">
     <ul class="items" id="thisWeekList"></ul>
     <div class="empty" id="thisWeekEmpty" style="display:none;">Nothing unpaid due in the next 7 days.</div>
@@ -268,7 +266,7 @@
   </div>
 
   <div class="card" data-card="runway">
-    <h2><span class="drag-handle" title="Drag to move">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('runway')"><span id="chev-runway">&#9662;</span> The runway</span></h2>
+    <h2><span class="drag-handle">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('runway')"><span id="chev-runway">&#9662;</span> The runway</span></h2>
     <div id="body-runway">
     <div class="zoom-row">
       <span>Zoom</span>
@@ -287,7 +285,7 @@
   </div>
 
   <div class="card" data-card="vault">
-    <h2><span class="drag-handle" title="Drag to move">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('vault')"><span id="chev-vault">&#9662;</span> Vault</span></h2>
+    <h2><span class="drag-handle">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('vault')"><span id="chev-vault">&#9662;</span> Vault</span></h2>
     <div id="body-vault">
     <div class="list-head"><span>Shopping list</span><span class="list-total" id="shopTotal">$0</span></div>
     <ul class="items" id="shopList"></ul>
@@ -305,12 +303,11 @@
   </div>
 
   <div class="card" data-card="sheet">
-    <h2><span class="drag-handle" title="Drag to move">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('sheet')"><span id="chev-sheet">&#9662;</span> Spreadsheet sandbox</span></h2>
+    <h2><span class="drag-handle">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('sheet')"><span id="chev-sheet">&#9662;</span> Spreadsheet sandbox</span></h2>
     <div id="body-sheet">
       <div id="sheetSetup">
-        <p class="card-note">Paste the <strong>embed</strong> link for a Google Sheet — in Sheets: File &rarr; Share &rarr; Publish to web &rarr; Embed tab &rarr; copy that URL (not the regular share/edit link).</p>
         <div class="row">
-          <input type="text" id="sheetUrlInput" placeholder="https://docs.google.com/spreadsheets/d/e/.../pubhtml?...">
+          <input type="text" id="sheetUrlInput">
           <button onclick="saveSheetUrl()">Save</button>
         </div>
       </div>
@@ -325,12 +322,11 @@
 
     </div>
     <div class="col-secondary" id="colSecondary">
-      <div class="secondary-hint" id="secondaryHint">Drag a card's <strong>&#8942;&#8942;</strong> handle here to start a second column</div>
+      <div class="secondary-hint" id="secondaryHint"></div>
 
   <div class="card" data-card="toxic">
-    <h2><span class="drag-handle" title="Drag to move">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('toxic')"><span id="chev-toxic">&#9662;</span> Toxic debt</span></h2>
+    <h2><span class="drag-handle">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('toxic')"><span id="chev-toxic">&#9662;</span> Toxic debt</span></h2>
     <div id="body-toxic">
-    <p class="card-note">Tracked separately on purpose — this total never touches cash on hand or the runway chart.</p>
     <ul class="items" id="toxicList"></ul>
     <div class="row" style="margin-top:12px; align-items:center;">
       <div style="flex:1; font-family:'IBM Plex Mono',monospace; font-size:15px;">Total: <strong id="toxicTotal" style="color:var(--brick)">$0</strong></div>
@@ -823,7 +819,7 @@ function renderIncome(){
       <input type="text" class="lname lname-input" value="${inc.label}" onchange="updateIncome('${inc.id}','label',this.value)">
       <input type="date" class="date-input" value="${inc.date}" onchange="updateIncome('${inc.id}','date',this.value)">
       <input type="number" class="amt-input" value="${inc.amount}" style="color:var(--sage)" onchange="updateIncome('${inc.id}','amount',this.value)">
-      ${inc.recurringId ? '<span class="tag recurring" title="Auto-generated monthly">&#8635; monthly</span>' : ''}
+      ${inc.recurringId ? '<span class="tag recurring">&#8635; monthly</span>' : ''}
       <button class="danger-ghost" onclick="removeIncome('${inc.id}')">remove</button>`;
     incUl.appendChild(li);
   });
@@ -897,7 +893,7 @@ function renderLedger(){
     if(!it.paid && recurring){
       li.classList.add(recurring.cycle==='annual' ? 'tag-annual' : recurring.kind==='utility' ? 'tag-utility' : 'tag-recurring');
     }
-    const handle = '<span class="row-drag-handle" title="Drag to reorder">&#8942;&#8942;</span>';
+    const handle = '<span class="row-drag-handle">&#8942;&#8942;</span>';
 
     if(it.paid){
       li.innerHTML = `
@@ -917,7 +913,7 @@ function renderLedger(){
         <input type="date" class="date-input" value="${it.date||''}" onchange="updateItem('${it.id}','date',this.value)">
         ${it.recurringId ? recurringBadge(it.recurringId) : ''}
         <input type="number" class="amt-input" value="${it.amount}" onchange="updateItem('${it.id}','amount',this.value)">
-        <button class="mini subtle" title="Move to Vault" onclick="changeTier('${it.id}','wish')">vault</button>
+        <button class="mini subtle" onclick="changeTier('${it.id}','wish')">vault</button>
         <button class="danger-ghost" onclick="removeItem('${it.id}')">remove</button>`;
     }
     ul.appendChild(li);
@@ -956,7 +952,7 @@ function getListOrder(items, persisted){
 }
 
 function renderWish(){
-  const handle = '<span class="row-drag-handle" title="Drag to reorder, or drag between lists">&#8942;&#8942;</span>';
+  const handle = '<span class="row-drag-handle">&#8942;&#8942;</span>';
 
   // Shopping list (active)
   const shopUl = document.getElementById('shopList');
@@ -972,7 +968,7 @@ function renderWish(){
       ${handle}
       <span class="dot" style="background:${tierColor('shop')}"></span>
       <input type="text" class="lname lname-input" value="${it.name}" onchange="updateItem('${it.id}','name',this.value)">
-      <button class="mini subtle" title="Move back to Vault" onclick="changeTier('${it.id}','wish')">vault &#8595;</button>
+      <button class="mini subtle" onclick="changeTier('${it.id}','wish')">vault &#8595;</button>
       <input type="number" class="amt-input" value="${it.amount}" onchange="updateItem('${it.id}','amount',this.value)">
       <button class="danger-ghost" onclick="removeItem('${it.id}')">Dismiss</button>`;
     shopUl.appendChild(li);
@@ -990,9 +986,9 @@ function renderWish(){
       ${handle}
       <span class="dot" style="background:${tierColor('wish')}"></span>
       <input type="text" class="lname lname-input" value="${it.name}" onchange="updateItem('${it.id}','name',this.value)">
-      <button class="mini subtle" title="Move to Shopping list" onclick="changeTier('${it.id}','shop')">shop &#8593;</button>
+      <button class="mini subtle" onclick="changeTier('${it.id}','shop')">shop &#8593;</button>
       <input type="number" class="amt-input" value="${it.amount}" onchange="updateItem('${it.id}','amount',this.value)">
-      <button class="mini subtle" title="Move to Money going out" onclick="changeTier('${it.id}','fixed')">commit &#8594;</button>
+      <button class="mini subtle" onclick="changeTier('${it.id}','fixed')">commit &#8594;</button>
       <button class="danger-ghost" onclick="removeItem('${it.id}')">Dismiss</button>`;
     ul.appendChild(li);
   });
@@ -1256,14 +1252,14 @@ function renderUtilities(){
 
 function recurringBadge(recurringId){
   const sub = Array.isArray(state.recurring) ? state.recurring.find(s=>s.id===recurringId) : null;
-  if(sub && sub.cycle==='annual') return '<span class="tag annual" title="Annual renewal — one lump sum per year">&#8635; annual</span>';
-  if(sub && sub.kind==='utility') return '<span class="tag utility" title="Auto-generated utility — correct the amount when the real bill lands">&#8635; utility</span>';
-  return '<span class="tag recurring" title="Auto-generated monthly">&#8635; monthly</span>';
+  if(sub && sub.cycle==='annual') return '<span class="tag annual">&#8635; annual</span>';
+  if(sub && sub.kind==='utility') return '<span class="tag utility">&#8635; utility</span>';
+  return '<span class="tag recurring">&#8635; monthly</span>';
 }
 
 function kindSelect(sub){
   const opt = (v,label)=> `<option value="${v}" ${sub.kind===v?'selected':''}>${label}</option>`;
-  return `<select class="tier-select" style="width:104px" title="Which pane this lives in" onchange="changeRecurringKind('${sub.id}', this.value)">
+  return `<select class="tier-select" style="width:104px" onchange="changeRecurringKind('${sub.id}', this.value)">
     ${opt('subscription','Subscription')}${opt('utility','Utility')}${opt('recurring','Other monthly')}
   </select>`;
 }
@@ -1300,12 +1296,12 @@ function renderSubscriptions(){
       <span class="dot" style="background:${isAnnual ? 'var(--plum)' : 'var(--teal)'}"></span>
       <input type="text" class="lname lname-input" value="${sub.name}" onchange="updateSubscription('${sub.id}','name',this.value)">
       <input type="number" class="amt-input" value="${sub.amount}" onchange="updateSubscription('${sub.id}','amount',this.value)">
-      <select class="tier-select" style="width:88px" title="Billing cycle" onchange="updateSubscription('${sub.id}','cycle',this.value)">
+      <select class="tier-select" style="width:88px" onchange="updateSubscription('${sub.id}','cycle',this.value)">
         <option value="monthly" ${!isAnnual?'selected':''}>Monthly</option>
         <option value="annual" ${isAnnual?'selected':''}>Annual</option>
       </select>
       ${timingField}
-      ${isAnnual ? `<span class="tag recurring" title="What this costs per month if you could pay monthly">&#8776; $${fmt(monthlyEquivalent(sub))}/mo</span>` : ''}
+      ${isAnnual ? `<span class="tag recurring">&#8776; $${fmt(monthlyEquivalent(sub))}/mo</span>` : ''}
       <input type="text" class="lname-input" style="min-width:100px; flex:0 1 120px;" placeholder="card" value="${sub.card||''}" onchange="updateSubscription('${sub.id}','card',this.value)">
       ${kindSelect(sub)}
       <button class="danger-ghost" onclick="removeSubscription('${sub.id}')">remove</button>`;
