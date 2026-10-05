@@ -125,6 +125,7 @@
     <button class="subtle" onclick="exportBackup()">&#8595; Backup (download)</button>
     <button class="subtle" onclick="document.getElementById('importFile').click()">&#8593; Restore from backup</button>
     <input type="file" id="importFile" accept="application/json" style="display:none;" onchange="importBackup(this.files[0])">
+    <button class="subtle" id="syncBtn" style="display:none; align-items:center; gap:7px;" onclick="cloudToggle()"><span id="syncDot" style="width:7px; height:7px; border-radius:50%; display:none;"></span><span id="syncLabel">Sign in</span></button>
   </div>
 
   <div class="board">
@@ -348,6 +349,9 @@
 <footer class="app-version" id="appVersion"></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script>
 const APP_VERSION = '2026.09.25.2';
 const STORAGE_KEY = 'runway-state-v3';
@@ -527,6 +531,15 @@ async function loadState(){
     const raw = localStorage.getItem(STORAGE_KEY);
     if(raw){
       state = JSON.parse(raw);
+      normalizeState();
+      return;
+    }
+  }catch(e){ /* fresh start */ }
+  seedDefaults();
+  await saveState();
+}
+
+function normalizeState(){
       if(!Array.isArray(state.scratch) || state.scratch.length!==8 || !('label' in (state.scratch[0]||{}))){
         const old = Array.isArray(state.scratch) ? state.scratch : [];
         const migrated = [];
@@ -552,17 +565,13 @@ async function loadState(){
       delete state.ui.tallyCollapsed;
       if(typeof state.sheetEmbedUrl !== 'string') state.sheetEmbedUrl = '';
       normalizeLayout();
-      return;
-    }
-  }catch(e){ /* fresh start */ }
-  seedDefaults();
-  await saveState();
 }
 
 let saveTimer=null;
 async function saveState(){
   try{
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    cloudQueuePush();
     const badge=document.getElementById('saveBadge');
     badge.classList.add('show');
     clearTimeout(saveTimer);
@@ -1658,6 +1667,126 @@ function drawChart(baseline, full){
   catcher.addEventListener('mouseleave', onLeave);
 }
 
+/* ---------- cloud sync (Firebase, same project as Docket) ----------
+   The whole state except state.ui (layout + collapsed cards, which stay
+   per-device) is mirrored to users/{uid}/runway/state as { value: <json>, updatedAt }.
+   First sign-in on a device: empty cloud -> upload local; otherwise the cloud
+   wins, unless this device made edits that never reached the cloud. ---------- */
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyC8pc26J7tudH6BmGhRmx1vl7IRNWUPPX4',
+  authDomain: 'harnden-apps.firebaseapp.com',
+  projectId: 'harnden-apps',
+  storageBucket: 'harnden-apps.firebasestorage.app',
+  messagingSenderId: '1019620530454',
+  appId: '1:1019620530454:web:8544cf34784785daa2d837',
+};
+const SYNC_DIRTY_KEY = 'runway-sync-dirty';
+const SYNC_LINKED_KEY = 'runway-sync-linked';
+const cloud = { enabled:false, auth:null, db:null, user:null, ready:false, unsub:null, lastSynced:null, pending:0, error:null, timer:null, initDone:false };
+
+function syncedJSON(){ const { ui, ...rest } = state; return JSON.stringify(rest); }
+function cloudDoc(){ return cloud.db.collection('users').doc(cloud.user.uid).collection('runway').doc('state'); }
+function setDirty(on){ try{ if(on) localStorage.setItem(SYNC_DIRTY_KEY,'1'); else localStorage.removeItem(SYNC_DIRTY_KEY); }catch(e){} }
+
+function cloudStatus(){
+  if(!cloud.enabled) return 'off';
+  if(!cloud.user) return 'signed-out';
+  if(cloud.error) return 'error';
+  if(!cloud.ready || cloud.pending>0 || cloud.timer) return 'syncing';
+  return 'synced';
+}
+function cloudRenderStatus(){
+  const btn=document.getElementById('syncBtn'); if(!btn) return;
+  const st=cloudStatus();
+  btn.style.display = st==='off' ? 'none' : 'inline-flex';
+  btn.title = cloud.user ? (cloud.user.email||'') : '';
+  document.getElementById('syncLabel').textContent = st==='signed-out' ? 'Sign in' : 'Sign out';
+  const dot=document.getElementById('syncDot');
+  dot.style.display = st==='signed-out' ? 'none' : 'inline-block';
+  dot.style.background = st==='synced' ? 'var(--sage)' : st==='error' ? '#D9634C' : 'var(--amber)';
+}
+
+// Debounced: Quick tally saves on every keystroke.
+function cloudQueuePush(){
+  const raw = syncedJSON();
+  if(raw === cloud.lastSynced) return;
+  // Init-time saves (recurring generation on a new day) are not user edits.
+  if(cloud.initDone && localStorage.getItem(SYNC_LINKED_KEY)) setDirty(true);
+  if(!cloud.enabled || !cloud.user || !cloud.ready) return;
+  clearTimeout(cloud.timer);
+  cloud.timer = setTimeout(()=>{ cloud.timer=null; cloudPushNow(); }, 800);
+  cloudRenderStatus();
+}
+function cloudPushNow(){
+  const raw = syncedJSON();
+  if(raw === cloud.lastSynced){ cloudRenderStatus(); return; }
+  cloud.lastSynced = raw;
+  cloud.pending++;
+  cloudRenderStatus();
+  cloudDoc().set({ value: raw, updatedAt: firebase.firestore.FieldValue.serverTimestamp() })
+    .then(()=>{ if(cloud.lastSynced===raw) setDirty(false); cloud.error=null; })
+    .catch(err=>{ cloud.error=err; console.error('Runway sync failed', err); })
+    .finally(()=>{ cloud.pending--; cloudRenderStatus(); });
+}
+
+async function applyRemote(raw){
+  const ui = state.ui;
+  state = JSON.parse(raw);
+  state.ui = ui;
+  normalizeState();
+  cloud.lastSynced = raw;
+  const gen = generateRecurringItems();
+  const genInc = generateRecurringIncomes();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  if(gen || genInc) cloudQueuePush();
+  render();
+}
+
+function cloudStart(){
+  cloud.ready=false; cloud.lastSynced=null;
+  cloudRenderStatus();
+  cloud.unsub = cloudDoc().onSnapshot({ includeMetadataChanges:true }, async (doc)=>{
+    if(!cloud.ready && doc.metadata.fromCache) return; // wait for the server's answer
+    const remote = doc.exists ? doc.data().value : null;
+    if(!cloud.ready){
+      cloud.ready = true;
+      try{ localStorage.setItem(SYNC_LINKED_KEY,'1'); }catch(e){}
+      const dirty = !!localStorage.getItem(SYNC_DIRTY_KEY);
+      if(typeof remote==='string' && !dirty){
+        setDirty(false);
+        if(remote !== syncedJSON()) await applyRemote(remote); else cloud.lastSynced = remote;
+      } else {
+        cloudPushNow();
+      }
+    } else if(!doc.metadata.hasPendingWrites && typeof remote==='string' && remote!==cloud.lastSynced){
+      await applyRemote(remote);
+    }
+    cloudRenderStatus();
+  }, err=>{ cloud.error=err; console.error('Runway sync listener failed', err); cloudRenderStatus(); });
+}
+
+function cloudToggle(){
+  if(!cloud.enabled) return;
+  if(cloud.user) cloud.auth.signOut();
+  else cloud.auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(err=>console.error('Sign-in failed', err));
+}
+
+function cloudInit(){
+  try{
+    if(typeof firebase==='undefined') return;
+    firebase.initializeApp(FIREBASE_CONFIG);
+    cloud.auth = firebase.auth();
+    cloud.db = firebase.firestore();
+    cloud.enabled = true;
+    cloud.auth.onAuthStateChanged(user=>{
+      if(cloud.unsub){ cloud.unsub(); cloud.unsub=null; }
+      clearTimeout(cloud.timer); cloud.timer=null;
+      cloud.user=user; cloud.ready=false; cloud.error=null;
+      if(user) cloudStart(); else cloudRenderStatus();
+    });
+  }catch(e){ console.error('Firebase init failed', e); }
+}
+
 (async function init(){
   document.getElementById('appVersion').textContent = 'Runway v' + APP_VERSION;
   await loadState();
@@ -1673,6 +1802,8 @@ function drawChart(baseline, full){
   const genInc = generateRecurringIncomes();
   if(gen || genInc) await saveState();
   render();
+  cloud.initDone = true;
+  cloudInit();
 })();
 </script>
 </body>
