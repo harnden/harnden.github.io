@@ -108,12 +108,71 @@ const COLORS = {
   mstc: '#A6753D',
 };
 
-const CATEGORIES = [
-  { key: 'work', label: 'Work', color: '#2E294E', text: '#FAF7F0', accent: '#3F8C82' },
-  { key: 'personal', label: 'Personal', color: '#F1E9DA', text: '#211F1A', accent: '#B75D8C' },
-  { key: 'jhu', label: 'JHU', color: '#2F6F9E', text: '#FAF7F0', accent: COLORS.jhu },
-  { key: 'mstc', label: 'MSTC', color: '#A6753D', text: '#FAF7F0', accent: COLORS.mstc },
+/* ---------- silos: up to eight, one per color slot. A silo is just
+   { key, label, slot }; the slot decides its colors. Unclaimed slots stay
+   invisible until a new silo is anointed with one. Retiring a silo moves
+   its tasks to another silo and frees the slot. ---------- */
+const SILO_SLOTS = [
+  { slot: 'teal', color: '#2E294E', accent: '#3F8C82' },
+  { slot: 'berry', color: '#F1E9DA', accent: '#B75D8C' },
+  { slot: 'blue', color: '#2F6F9E', accent: COLORS.jhu },
+  { slot: 'bronze', color: '#A6753D', accent: COLORS.mstc },
+  { slot: 'yellow', color: '#F3E29A', accent: '#F3E29A' },
+  { slot: 'lilac', color: '#C9B6E8', accent: '#C9B6E8' },
+  { slot: 'chartreuse', color: '#BCD63A', accent: '#BCD63A' },
+  { slot: 'gray', color: '#C8CACB', accent: '#C8CACB' },
 ];
+const MAX_SILOS = SILO_SLOTS.length;
+const SILOS_KEY = 'docket-silos';
+const DEFAULT_SILOS = [
+  { key: 'work', label: 'Work', slot: 'teal' },
+  { key: 'personal', label: 'Personal', slot: 'berry' },
+  { key: 'jhu', label: 'JHU', slot: 'blue' },
+  { key: 'mstc', label: 'MSTC', slot: 'bronze' },
+];
+
+function normalizeSilos(raw) {
+  if (!Array.isArray(raw)) return DEFAULT_SILOS;
+  const keys = new Set();
+  const slots = new Set();
+  const out = [];
+  raw.forEach((s) => {
+    if (!s || out.length >= MAX_SILOS) return;
+    const key = String(s.key || '');
+    const slot = String(s.slot || '');
+    if (!key || keys.has(key) || slots.has(slot) || !SILO_SLOTS.some((x) => x.slot === slot)) return;
+    keys.add(key);
+    slots.add(slot);
+    out.push({ key, label: String(s.label || 'Untitled'), slot });
+  });
+  return out.length ? out : DEFAULT_SILOS;
+}
+
+function loadSilos() {
+  try {
+    const raw = localStorage.getItem(SILOS_KEY);
+    if (raw) return normalizeSilos(JSON.parse(raw));
+  } catch (e) {}
+  return DEFAULT_SILOS;
+}
+
+function saveSilos(silos) {
+  try {
+    writeSynced(SILOS_KEY, JSON.stringify(silos));
+  } catch (e) {}
+}
+
+// Board-facing shape: { key, label, color, text, accent }.
+function siloCategory(s) {
+  const p = SILO_SLOTS.find((x) => x.slot === s.slot) || SILO_SLOTS[0];
+  return { key: s.key, label: s.label, slot: s.slot, color: p.color, text: textColorForHex(p.color), accent: p.accent };
+}
+
+const SilosContext = React.createContext(DEFAULT_SILOS.map(siloCategory));
+
+// Board columns shrink to this width before they start wrapping.
+const BOARD_MIN_COL = 200;
+const BOARD_GAP = 20;
 
 const DAY_MS = 1000 * 60 * 60 * 24;
 const STORAGE_KEY = 'docket-tasks';
@@ -127,8 +186,10 @@ function score(task) {
   return task.pushCount * 3 + agingBonus(task.createdAt);
 }
 
-function categoryOf(key) {
-  return CATEGORIES.find((c) => c.key === key) || CATEGORIES[0];
+// A task whose silo no longer exists (e.g. retired on another device before
+// its tasks synced over) shows in the first silo until it's reassigned.
+function categoryOf(key, cats) {
+  return cats.find((c) => c.key === key) || cats[0];
 }
 
 function hexLuminance(hex) {
@@ -300,7 +361,7 @@ const FIREBASE_CONFIG = {
   messagingSenderId: '1019620530454',
   appId: '1:1019620530454:web:8544cf34784785daa2d837',
 };
-const SYNC_KEYS = [STORAGE_KEY, JOURNAL_STORAGE_KEY, CAREER_STORAGE_KEY, TASK_ORDER_KEY, TASK_ORDER_LIST_KEY, TASK_ORDER_HOMEWORK_LIST_KEY];
+const SYNC_KEYS = [STORAGE_KEY, JOURNAL_STORAGE_KEY, CAREER_STORAGE_KEY, TASK_ORDER_KEY, TASK_ORDER_LIST_KEY, TASK_ORDER_HOMEWORK_LIST_KEY, SILOS_KEY];
 const SYNC_DIRTY_KEY = 'docket-sync-dirty';
 const SYNC_LINKED_KEY = 'docket-sync-linked';
 
@@ -450,8 +511,7 @@ function mergeManualOrder(persistedIds, naturalOrderTasks) {
 }
 
 function normalizeTask(t, idx) {
-  let category = t.category || 'work';
-  if (!CATEGORIES.some((c) => c.key === category)) category = 'work';
+  const category = t.category ? String(t.category) : 'work';
   return {
     id: t.id || `${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 6)}`,
     title: String(t.title || 'Untitled'),
@@ -487,16 +547,28 @@ function Docket() {
   const columnSortRef = useRef(null);
   const taskListRefs = useRef({});
   const listSortRef = useRef(null);
-  const [form, setForm] = useState({ title: '', category: 'work', phone: '', email: '', scheduledDate: null });
+  // Silos are saved only when you change them (anoint/retire), never on load,
+  // so a device that hasn't heard about a new silo can't overwrite it with defaults.
+  const [silos, setSilos] = useState(loadSilos);
+  const CATEGORIES = useMemo(() => silos.map(siloCategory), [silos]);
+  const commitSilos = (next) => {
+    setSilos(next);
+    saveSilos(next);
+  };
+  const [siloDraft, setSiloDraft] = useState(null); // { label, slot } while anointing
+  const [retiring, setRetiring] = useState(null); // { key, target } while retiring
+  const [form, setForm] = useState(() => ({ title: '', category: loadSilos()[0].key, phone: '', email: '', scheduledDate: null }));
   const [columnOrder, setColumnOrder] = useState(() => {
     const saved = loadBoardUI().order;
-    return Array.isArray(saved) && saved.length ? saved : CATEGORIES.map((c) => c.key);
+    return Array.isArray(saved) && saved.length ? saved : loadSilos().map((s) => s.key);
   });
   const [collapsedCols, setCollapsedCols] = useState(() => loadBoardUI().collapsed || {});
   const [taskOrder, setTaskOrder] = useState({});
   const [taskOrderList, setTaskOrderList] = useState([]);
   const [taskOrderHomeworkList, setTaskOrderHomeworkList] = useState([]);
   const homeworkListSortRef = useRef(null);
+  const boardRef = useRef(null);
+  const [boardWidth, setBoardWidth] = useState(0);
   // Career pane. careerLit is the lit wedge (null = task board showing);
   // careerSel is the selected company, which scopes roles/contacts.
   const [career, setCareer] = useState(emptyCareer);
@@ -529,7 +601,14 @@ function Docket() {
       if (Array.isArray(storedOrderHomeworkList)) setTaskOrderHomeworkList(storedOrderHomeworkList);
     }
     if (want(CAREER_STORAGE_KEY)) setCareer(normalizeCareer(loadCareer()));
+    if (want(SILOS_KEY)) setSilos(loadSilos());
   };
+
+  // If the silo the input form points at disappears (retired here or on
+  // another device), fall back to the first silo.
+  useEffect(() => {
+    if (!silos.some((s) => s.key === form.category)) setForm((f) => ({ ...f, category: silos[0].key }));
+  }, [silos]);
 
   useEffect(() => {
     loadFromStorage(null);
@@ -592,6 +671,16 @@ function Docket() {
   }, [columnOrder, collapsedCols]);
 
   useEffect(() => {
+    const el = boardRef.current;
+    if (!el) return;
+    setBoardWidth(el.clientWidth);
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => setBoardWidth(el.clientWidth));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [viewMode, careerLit]);
+
+  useEffect(() => {
     if (viewMode !== 'columns' || typeof Sortable === 'undefined' || !columnSortRef.current) return;
     const sortable = Sortable.create(columnSortRef.current, {
       handle: '.drag-handle',
@@ -602,7 +691,7 @@ function Docket() {
       },
     });
     return () => sortable.destroy();
-  }, [viewMode, careerLit]);
+  }, [viewMode, careerLit, silos]);
 
   useEffect(() => {
     if (viewMode !== 'columns' || typeof Sortable === 'undefined') return;
@@ -622,7 +711,7 @@ function Docket() {
       })
       .filter(Boolean);
     return () => instances.forEach((inst) => inst.destroy());
-  }, [viewMode, collapsedCols, careerLit]);
+  }, [viewMode, collapsedCols, careerLit, silos]);
 
   useEffect(() => {
     if (viewMode !== 'list' || typeof Sortable === 'undefined') return;
@@ -691,6 +780,49 @@ function Docket() {
 
   const toggleColumnCollapse = (key) => setCollapsedCols((prev) => ({ ...prev, [key]: !prev[key] }));
 
+  const freeSlots = SILO_SLOTS.filter((p) => !silos.some((s) => s.slot === p.slot));
+
+  const startAnoint = () => setSiloDraft({ label: '', slot: freeSlots[0] ? freeSlots[0].slot : null });
+
+  const anointSilo = () => {
+    if (!siloDraft) return;
+    const label = siloDraft.label.trim();
+    if (!label || !freeSlots.some((p) => p.slot === siloDraft.slot) || silos.length >= MAX_SILOS) return;
+    const key = `silo-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+    commitSilos([...silos, { key, label, slot: siloDraft.slot }]);
+    setForm((f) => ({ ...f, category: key }));
+    setSiloDraft(null);
+  };
+
+  // Retiring moves every task in the silo (done ones too) to the target silo,
+  // then frees the color slot.
+  const retireSilo = () => {
+    if (!retiring || silos.length < 2) return;
+    const { key, target } = retiring;
+    if (!silos.some((s) => s.key === target) || target === key) return;
+    setTasks((prev) => prev.map((t) => (t.category === key ? { ...t, category: target } : t)));
+    setTaskOrder((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+    commitSilos(silos.filter((s) => s.key !== key));
+    setColumnOrder((prev) => prev.filter((k) => k !== key));
+    setCollapsedCols((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+    if (filterCategory === key) setFilterCategory(null);
+    setEditDraft((d) => (d && d.category === key ? { ...d, category: target } : d));
+    setRetiring(null);
+  };
+
+  const startRetire = (key) => {
+    const target = (silos.find((s) => s.key !== key) || {}).key;
+    setRetiring({ key, target });
+  };
+
   const isSnoozedToday = (task) => task.snoozedDay === today;
 
   const addTask = () => {
@@ -708,7 +840,7 @@ function Docket() {
       scheduledDate: form.scheduledDate,
     };
     setTasks((prev) => [...prev, t]);
-    setForm({ title: '', category: 'work', phone: '', email: '', scheduledDate: null });
+    setForm({ title: '', category: silos[0].key, phone: '', email: '', scheduledDate: null });
   };
 
   const addJournalEntry = () => {
@@ -774,9 +906,9 @@ function Docket() {
   };
 
   const exportBackup = () => {
-    // v2 backup: one object carrying tasks, journal and career. Older backups
-    // (a bare array of tasks) still import — see handleFileSelected.
-    const payload = { app: 'docket', version: 2, exportedAt: new Date().toISOString(), tasks, journal: journalEntries, career };
+    // v2 backup: one object carrying tasks, journal, career and silos. Older
+    // backups (a bare array of tasks, or v2 without silos) still import.
+    const payload = { app: 'docket', version: 2, exportedAt: new Date().toISOString(), tasks, journal: journalEntries, career, silos };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -803,12 +935,13 @@ function Docket() {
         const parsed = JSON.parse(reader.result);
         let next;
         if (Array.isArray(parsed)) {
-          next = { tasks: parsed.map((t, idx) => normalizeTask(t, idx)), journal: null, career: null };
+          next = { tasks: parsed.map((t, idx) => normalizeTask(t, idx)), journal: null, career: null, silos: null };
         } else if (parsed && Array.isArray(parsed.tasks)) {
           next = {
             tasks: parsed.tasks.map((t, idx) => normalizeTask(t, idx)),
             journal: Array.isArray(parsed.journal) ? parsed.journal.map((j, idx) => normalizeJournalEntry(j, idx)) : null,
             career: parsed.career ? normalizeCareer(parsed.career) : null,
+            silos: Array.isArray(parsed.silos) ? normalizeSilos(parsed.silos) : null,
           };
         } else {
           throw new Error('unrecognized backup');
@@ -826,6 +959,7 @@ function Docket() {
   const confirmImport = () => {
     setTasks(pendingImport.tasks);
     if (pendingImport.journal) setJournalEntries(pendingImport.journal);
+    if (pendingImport.silos) commitSilos(pendingImport.silos);
     if (pendingImport.career) {
       setCareer(pendingImport.career);
       setCareerSel(null);
@@ -872,14 +1006,13 @@ function Docket() {
       map[c.key] = [];
     });
     activeTasks.forEach((t) => {
-      const key = t.category || 'work';
-      if (map[key]) map[key].push(t);
+      map[categoryOf(t.category, CATEGORIES).key].push(t);
     });
     Object.keys(map).forEach((k) => {
       map[k] = naturalSort(map[k]);
     });
     return map;
-  }, [activeTasks]);
+  }, [activeTasks, CATEGORIES]);
 
   const byCategory = useMemo(() => {
     const map = {};
@@ -889,7 +1022,7 @@ function Docket() {
     return map;
   }, [naturalByCategory, taskOrder]);
 
-  const naturalAllTasksList = useMemo(() => CATEGORIES.flatMap((c) => naturalByCategory[c.key]), [naturalByCategory]);
+  const naturalAllTasksList = useMemo(() => CATEGORIES.flatMap((c) => naturalByCategory[c.key] || []), [naturalByCategory, CATEGORIES]);
 
   const allTasksList = useMemo(
     () => mergeManualOrder(taskOrderList, naturalAllTasksList),
@@ -901,11 +1034,16 @@ function Docket() {
     .filter(Boolean)
     .concat(CATEGORIES.filter((c) => !columnOrder.includes(c.key)));
 
+  const boardCols = Math.max(1, Math.min(CATEGORIES.length, Math.floor((boardWidth + BOARD_GAP) / (BOARD_MIN_COL + BOARD_GAP)) || 1));
+  const compactCards = boardWidth > 0 && (boardWidth - (boardCols - 1) * BOARD_GAP) / boardCols < 300;
+
   const journalByNewest = [...journalEntries].sort((a, b) => b.createdAt - a.createdAt);
 
   const renderColumn = (col, isDraggable) => {
-    const list = byCategory[col.key];
+    const list = byCategory[col.key] || [];
     const collapsed = !!collapsedCols[col.key];
+    const isRetiring = retiring && retiring.key === col.key;
+    const retireCount = tasks.filter((t) => t.category === col.key).length;
     const isHomework = col.key === 'jhu' || col.key === 'mstc';
     return (
       <div
@@ -919,8 +1057,8 @@ function Docket() {
           borderLeft: isHomework ? `1px dashed ${COLORS.inkPanelBorder}` : undefined,
         }}
       >
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-1.5">
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="flex items-center gap-1.5 min-w-0">
             {isDraggable && (
               <span className="drag-handle" title="Drag to reorder" style={{ color: COLORS.textMuted, fontSize: 13, letterSpacing: 1 }}>
                 ⋮⋮
@@ -930,17 +1068,61 @@ function Docket() {
               onClick={() => toggleColumnCollapse(col.key)}
               aria-label={collapsed ? `Expand ${col.label}` : `Collapse ${col.label}`}
               title={col.label}
-              className="flex items-center gap-1.5"
+              className="flex items-center gap-1.5 min-w-0"
               style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
             >
               <span style={{ color: COLORS.textMuted, fontSize: 10 }}>{collapsed ? '▸' : '▾'}</span>
-              <span className="w-2.5 h-2.5 rounded-full" style={{ background: col.accent }} />
+              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: col.accent }} />
+              <span className="text-xs font-semibold uppercase tracking-wide truncate" style={{ color: COLORS.textOnDark }}>
+                {col.label}
+              </span>
             </button>
           </div>
-          <span className="font-mono text-xs" style={{ color: COLORS.textMuted }}>
-            {list.length}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs" style={{ color: COLORS.textMuted }}>
+              {list.length}
+            </span>
+            {silos.length > 1 && (
+              <button
+                onClick={() => (isRetiring ? setRetiring(null) : startRetire(col.key))}
+                aria-label={`Retire ${col.label}`}
+                title={`Retire ${col.label}`}
+                className="opacity-50 hover:opacity-100"
+                style={{ color: COLORS.textMuted, background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+              >
+                <XIcon size={12} />
+              </button>
+            )}
+          </div>
         </div>
+        {isRetiring && (
+          <div className="rounded-md p-3 mb-3 text-xs space-y-2" style={{ background: COLORS.ink, border: `1px solid ${col.accent}`, color: COLORS.textOnDark }}>
+            <div className="font-semibold">Retire {col.label}</div>
+            {retireCount > 0 && (
+              <label className="flex items-center gap-2 flex-wrap" style={{ color: COLORS.textMuted }}>
+                Move {retireCount} task{retireCount === 1 ? '' : 's'} to
+                <select
+                  value={retiring.target}
+                  onChange={(e) => setRetiring((r) => ({ ...r, target: e.target.value }))}
+                  className="text-xs px-2 py-1 rounded-md border"
+                  style={{ background: COLORS.inkPanel, color: COLORS.textOnDark, borderColor: COLORS.inkPanelBorder }}
+                >
+                  {CATEGORIES.filter((c) => c.key !== col.key).map((c) => (
+                    <option key={c.key} value={c.key}>{c.label}</option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <div className="flex items-center gap-2">
+              <button onClick={retireSilo} className="text-xs px-3 py-1 rounded-md font-medium" style={{ background: COLORS.rust, color: COLORS.paper }}>
+                Retire
+              </button>
+              <button onClick={() => setRetiring(null)} className="text-xs px-3 py-1 rounded-md" style={{ color: COLORS.textMuted }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
         {!collapsed && (
           <div className="space-y-3" ref={(el) => { taskListRefs.current[col.key] = el; }}>
             {list.map((t) => (
@@ -948,6 +1130,7 @@ function Docket() {
                 key={t.id}
                 task={t}
                 snoozed={isSnoozedToday(t)}
+                compact={compactCards}
                 isEditing={editingId === t.id}
                 editDraft={editDraft}
                 setEditDraft={setEditDraft}
@@ -966,6 +1149,7 @@ function Docket() {
   };
 
   return (
+    <SilosContext.Provider value={CATEGORIES}>
     <div style={{ background: COLORS.ink, minHeight: '100%', color: COLORS.textOnDark }} className="w-full">
       <div className="docket-root w-full px-4 sm:px-6 py-8">
         {/* Header */}
@@ -1038,7 +1222,8 @@ function Docket() {
               Replace your {tasks.length} current task{tasks.length === 1 ? '' : 's'} with {pendingImport.tasks.length} from
               the backup file
               {pendingImport.journal ? `, your journal with ${pendingImport.journal.length} entr${pendingImport.journal.length === 1 ? 'y' : 'ies'}` : ''}
-              {pendingImport.career ? `, and your career entries with ${careerCount(pendingImport.career)}` : ''}?
+              {pendingImport.career ? `${pendingImport.silos ? ',' : ', and'} your career entries with ${careerCount(pendingImport.career)}` : ''}
+              {pendingImport.silos ? `, and your silos with ${pendingImport.silos.map((x) => x.label).join(', ')}` : ''}?
             </span>
             <div className="flex items-center gap-2 shrink-0">
               <button onClick={confirmImport} className="text-xs px-3 py-1.5 rounded-md font-medium" style={{ background: COLORS.moss, color: COLORS.paper }}>
@@ -1148,7 +1333,66 @@ function Docket() {
                     label={c.label}
                   />
                 ))}
+                {silos.length < MAX_SILOS && !siloDraft && (
+                  <button
+                    onClick={startAnoint}
+                    aria-label="New silo"
+                    title="New silo"
+                    className="text-xs px-2.5 py-1.5 rounded-md border border-dashed font-medium flex items-center"
+                    style={{ borderColor: '#B9B19E', color: COLORS.textMutedOnPaper }}
+                  >
+                    <Plus size={13} />
+                  </button>
+                )}
               </div>
+              {siloDraft && (
+                <div className="mb-3 flex items-center gap-2 flex-wrap">
+                  <input
+                    autoFocus
+                    value={siloDraft.label}
+                    onChange={(e) => setSiloDraft((d) => ({ ...d, label: e.target.value }))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') anointSilo();
+                      if (e.key === 'Escape') setSiloDraft(null);
+                    }}
+                    aria-label="New silo name"
+                    placeholder="New silo"
+                    className="text-sm px-3 py-1.5 rounded-md border w-40"
+                    style={{ background: COLORS.paperDim, color: COLORS.textInk, borderColor: '#E3DCC9' }}
+                  />
+                  <div className="flex items-center gap-1.5">
+                    {freeSlots.map((p) => {
+                      const picked = siloDraft.slot === p.slot;
+                      return (
+                        <button
+                          key={p.slot}
+                          onClick={() => setSiloDraft((d) => ({ ...d, slot: p.slot }))}
+                          aria-label={`Color ${p.slot}`}
+                          aria-pressed={picked}
+                          title={p.slot}
+                          className="rounded-full"
+                          style={{
+                            width: 22, height: 22, background: p.accent,
+                            border: '1px solid rgba(0,0,0,0.25)',
+                            boxShadow: picked ? `0 0 0 2px ${COLORS.paper}, 0 0 0 4px ${COLORS.textInk}` : 'none',
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+                  <button
+                    onClick={anointSilo}
+                    disabled={!siloDraft.label.trim() || !siloDraft.slot}
+                    className="text-xs px-3 py-1.5 rounded-md font-semibold disabled:opacity-40"
+                    style={{ background: COLORS.moss, color: COLORS.paper }}
+                  >
+                    Anoint
+                  </button>
+                  <button onClick={() => setSiloDraft(null)} className="text-xs px-2 py-1.5" style={{ color: COLORS.textMutedOnPaper }}>
+                    Cancel
+                  </button>
+                </div>
+              )}
               <div className="mb-3">
                 <button
                   onClick={() => setShowFormDetails((s) => !s)}
@@ -1233,29 +1477,8 @@ function Docket() {
           />
         ) : (
         <>
-        {/* Filters */}
-        <div className="flex items-center justify-between gap-4 mb-3 flex-wrap">
-          <div className="flex items-center gap-2 flex-wrap">
-            {CATEGORIES.map((c) => (
-              <button
-                key={c.key}
-                onClick={() => setFilterCategory(filterCategory === c.key ? null : c.key)}
-                className="text-xs px-2.5 py-1 rounded-full border font-medium"
-                style={
-                  filterCategory === c.key
-                    ? { background: c.color, borderColor: c.color, color: c.text }
-                    : { borderColor: COLORS.inkPanelBorder, color: COLORS.textMuted }
-                }
-              >
-                {c.label}
-              </button>
-            ))}
-            {filterCategory && (
-              <button onClick={() => setFilterCategory(null)} className="text-xs underline" style={{ color: COLORS.textMuted }}>
-                Clear filter
-              </button>
-            )}
-          </div>
+        {/* View toggle */}
+        <div className="flex items-center justify-end gap-4 mb-3">
           <div className="flex items-center gap-1 rounded-md p-0.5" style={{ background: COLORS.inkPanel, border: `1px solid ${COLORS.inkPanelBorder}` }}>
             <button
               onClick={() => setViewMode('columns')}
@@ -1274,20 +1497,15 @@ function Docket() {
           </div>
         </div>
 
-        <div className="flex items-center gap-4 flex-wrap mb-5">
-          {CATEGORIES.map((c) => (
-            <div key={c.key} className="flex items-center gap-1.5" title={`${c.label} category`}>
-              <span className="w-2 h-2 rounded-full shrink-0" style={{ background: c.accent }} />
-              <span className="text-xs" style={{ color: COLORS.textMuted }}>
-                {c.label}
-              </span>
-            </div>
-          ))}
-        </div>
 
-        {/* Board: four columns for Work, Personal, JHU, MSTC */}
+        {/* Board: one column per silo, all in one row, shrinking until a
+            column would drop below BOARD_MIN_COL; past that they wrap. */}
         {viewMode === 'columns' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+          <div
+            ref={boardRef}
+            className="grid gap-5 mb-8"
+            style={{ gridTemplateColumns: `repeat(${boardCols}, minmax(0, 1fr))` }}
+          >
             <div className="contents" ref={columnSortRef}>
               {orderedCategories.map((c) => renderColumn(c, true))}
             </div>
@@ -1376,6 +1594,7 @@ function Docket() {
         )}
       </div>
     </div>
+    </SilosContext.Provider>
   );
 }
 
@@ -1721,6 +1940,7 @@ function ContactListPanel({ title, Icon, items, field, hrefPrefix }) {
 }
 
 function EditForm({ draft, setDraft, onSave, onCancel, ink }) {
+  const CATEGORIES = React.useContext(SilosContext);
   return (
     <div className="space-y-2">
       <input
@@ -1791,13 +2011,14 @@ function EditForm({ draft, setDraft, onSave, onCancel, ink }) {
   );
 }
 
-function TaskCard({ task, snoozed, isEditing, editDraft, setEditDraft, onEditStart, onEditSave, onEditCancel, onComplete, onPush, onDelete }) {
-  const category = categoryOf(task.category);
+function TaskCard({ task, snoozed, compact, isEditing, editDraft, setEditDraft, onEditStart, onEditSave, onEditCancel, onComplete, onPush, onDelete }) {
+  const CATEGORIES = React.useContext(SilosContext);
+  const category = categoryOf(task.category, CATEGORIES);
   const cardBg = category.accent;
   const cardText = textColorForHex(cardBg);
 
   if (isEditing) {
-    const editCategory = categoryOf(editDraft.category);
+    const editCategory = categoryOf(editDraft.category, CATEGORIES);
     const editBg = editCategory.accent;
     const editText = textColorForHex(editBg);
     return (
@@ -1810,6 +2031,24 @@ function TaskCard({ task, snoozed, isEditing, editDraft, setEditDraft, onEditSta
       </div>
     );
   }
+
+  // In narrow columns the edit/push/delete icons drop to the bottom row so
+  // the title keeps the full width.
+  const actions = (
+    <>
+      <button onClick={onEditStart} aria-label="Edit task" title="Edit" className="shrink-0 opacity-80" style={{ color: cardText }}>
+        <PencilIcon size={14} />
+      </button>
+      {!snoozed && (
+        <button onClick={onPush} aria-label="Push to tomorrow" title="Not today — push to tomorrow" className="shrink-0 opacity-80" style={{ color: cardText }}>
+          <Clock size={14} />
+        </button>
+      )}
+      <button onClick={onDelete} aria-label="Delete task" title="Delete" className="shrink-0 opacity-80" style={{ color: cardText }}>
+        <XIcon size={14} />
+      </button>
+    </>
+  );
 
   return (
     <div
@@ -1839,20 +2078,10 @@ function TaskCard({ task, snoozed, isEditing, editDraft, setEditDraft, onEditSta
           className="mt-0.5 w-4 h-4 shrink-0"
           style={{ accentColor: cardText }}
         />
-        <p onClick={onEditStart} className="text-sm font-medium leading-snug flex-1 cursor-pointer" style={{ color: cardText }}>
+        <p onClick={onEditStart} className="text-sm font-medium leading-snug flex-1 min-w-0 break-words cursor-pointer" style={{ color: cardText }}>
           {task.title}
         </p>
-        <button onClick={onEditStart} aria-label="Edit task" title="Edit" className="shrink-0 opacity-80" style={{ color: cardText }}>
-          <PencilIcon size={14} />
-        </button>
-        {!snoozed && (
-          <button onClick={onPush} aria-label="Push to tomorrow" title="Not today — push to tomorrow" className="shrink-0 opacity-80" style={{ color: cardText }}>
-            <Clock size={14} />
-          </button>
-        )}
-        <button onClick={onDelete} aria-label="Delete task" title="Delete" className="shrink-0 opacity-80" style={{ color: cardText }}>
-          <XIcon size={14} />
-        </button>
+        {!compact && actions}
       </div>
       <div className="flex items-center gap-2 mt-2 flex-wrap pl-6">
         <span
@@ -1865,7 +2094,7 @@ function TaskCard({ task, snoozed, isEditing, editDraft, setEditDraft, onEditSta
             href={`tel:${task.phone.replace(/[^0-9+]/g, '')}`}
             onClick={(e) => e.stopPropagation()}
             title={`Call ${task.phone}`}
-            className="flex items-center gap-1 underline"
+            className="flex items-center gap-1 underline min-w-0 break-all"
             style={{ color: cardText }}
           >
             <PhoneIcon size={12} /> {task.phone}
@@ -1876,7 +2105,7 @@ function TaskCard({ task, snoozed, isEditing, editDraft, setEditDraft, onEditSta
             href={`mailto:${task.email}`}
             onClick={(e) => e.stopPropagation()}
             title={`Email ${task.email}`}
-            className="flex items-center gap-1 underline"
+            className="flex items-center gap-1 underline min-w-0 break-all"
             style={{ color: cardText }}
           >
             <MailIcon size={12} /> {task.email}
@@ -1888,6 +2117,7 @@ function TaskCard({ task, snoozed, isEditing, editDraft, setEditDraft, onEditSta
             back tomorrow
           </span>
         )}
+        {compact && <div className="ml-auto flex items-center gap-2.5">{actions}</div>}
       </div>
     </div>
   );
