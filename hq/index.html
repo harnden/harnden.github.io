@@ -1,310 +1,257 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<title>Klaxon</title>
+<meta name="theme-color" content="#f3f6fa">
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Klaxon">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --bg: #390574;
-    --text: #f0f0f5;
-    --muted: rgba(240,240,245,0.4);
-  }
-
-  body {
-    background-color: #18181c;
-    background-blend-mode: overlay; 
-    background-image: url("img/backie5.png");
-    font-family: 'DM Sans', sans-serif;
-    min-height: 100vh;
-    padding: 3rem 2.5rem 4rem;
-    cursor: default;
-  }
-
-  header {
-    display: flex;
-    align-items: baseline;
-    gap: 1rem;
-    margin-bottom: 3rem;
-  }
-
-  h1 {
-    font-family: 'DM Serif Display', serif;
-    font-size: 2.2rem;
-    font-weight: 400;
-    letter-spacing: -0.02em;
-    color: var(--text);
-  }
-
-  .time {
-    font-size: 0.85rem;
-    color: var(--muted);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .section-label {
-    font-size: 0.7rem;
-    color: var(--muted);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    font-weight: 500;
-    margin-bottom: 1rem;
-  }
-
-  .grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    justify-content: center;
-  }
-
-  /* Tools row sits below streaming, separated by space and a faint rule */
-  .grid + .grid {
-    margin-top: 2.5rem;
-    padding-top: 2.5rem;
-    border-top: 1px solid rgba(240,240,245,0.08);
-  }
-
-  .tile {
-    flex: 0 1 328px;
-    max-width: 360px;
-    aspect-ratio: 16/10;
-    border-radius: 14px;
-    overflow: hidden;
-    cursor: pointer;
-    background: #000;
-    transition: transform 0.18s ease, box-shadow 0.18s ease;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .tile:hover {
-    transform: translateY(-3px) scale(1.015);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-  }
-
-  .tile:active {
-    transform: translateY(0) scale(0.99);
-  }
-
-  .tile:focus-visible {
-    outline: 2px solid var(--text);
-    outline-offset: 3px;
-  }
-
-  .tile img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    display: block;
-    flex-shrink: 0;
-    padding: 12%;
-    transition: padding 0.22s ease;
-  }
-
-  .tile:hover img {
-    padding: 6%;
-  }
-
-  .tile img.contain {
-    padding: 12%;
-  }
-
-  .tile:hover img.contain {
-    padding: 6%;
-  }
-
-  /* Text stand-in for tiles that don't have a thumbnail yet.
-     Swap the <span> for an <img> once the image exists. */
-  .tile-name {
-    font-family: 'DM Serif Display', serif;
-    font-size: 2.4rem;
-    letter-spacing: -0.02em;
-    color: var(--text);
-    transition: transform 0.22s ease;
-  }
-
-  .tile:hover .tile-name {
-    transform: scale(1.08);
-  }
-
-  /* Sheets tile: white spreadsheet grid on green. Cells link to workbooks:
-     2 workbooks = left/right halves, 3 = thirds, 4 = quadrants. */
-  .tile.sheets {
-    background: #188038;
-    padding: 1.25rem;
-    cursor: default;
-    align-items: stretch;
-    justify-content: stretch;
-  }
-  .sheets-grid {
-    flex: 1;
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    grid-template-rows: repeat(4, 1fr);
-    gap: 3px;
-    padding: 3px;
-    background: #fff;           /* shows through the gaps as the grid lines */
-    border-radius: 4px;
-  }
-  .sheets-grid a {
-    background: #188038;
-    cursor: pointer;
-    transition: background 0.12s ease;
-  }
-  .sheets-grid a.zone { background: #2a9a52; }   /* rest of the hovered workbook's area */
-  .sheets-grid a:hover { background: var(--hover, #fff); }   /* the cell under the mouse; color set per cell */
-  .sheets-grid a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-
-  @media (prefers-reduced-motion: reduce) {
-    .tile, .tile img, .tile-name { transition: none; }
-    .tile:hover { transform: none; }
-  }
+/* Layout: one-column phone tool. Setup card -> running dial; whole screen flashes during a siren. */
+:root{
+  --bg:#f3f6fa; --panel:#ffffff; --fg:#14233a; --muted:#5a6a80; --line:#d6dfea;
+  --accent:#1f5fbf; --accent-fg:#ffffff; --amber:#f0a81e; --alarm:#d9241c;
+  --display:"Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+  --body:"IBM Plex Sans", system-ui, -apple-system, sans-serif;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  -webkit-tap-highlight-color:transparent;transition:background .15s}
+main{max-width:440px;margin:0 auto;padding-block:20px 28px;display:flex;flex-direction:column;gap:18px;min-height:100%;box-sizing:border-box}
+h1{font-family:var(--display);font-weight:800;font-size:44px;line-height:.95;margin:0;letter-spacing:.01em;text-transform:uppercase;text-wrap:balance}
+h1 span{color:var(--amber)}
+.sub{color:var(--muted);margin:6px 0 0;font-size:15px;line-height:1.45}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.row label,.row .lbl{font-weight:600;font-size:15px}
+.row small{display:block;color:var(--muted);font-weight:400;font-size:13px;margin-top:2px}
+.stepper{display:flex;align-items:center;gap:6px}
+.stepper button{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:22px;line-height:1;cursor:pointer}
+.stepper input{width:64px;height:40px;text-align:center;font-family:var(--display);font-weight:800;font-size:26px;border:0;background:transparent;color:var(--fg);font-variant-numeric:tabular-nums;-moz-appearance:textfield}
+.stepper input::-webkit-inner-spin-button,.stepper input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:transparent;color:var(--fg);padding:9px 12px;font:500 14px var(--body);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+input[type=range]{width:140px;accent-color:var(--accent)}
+.btn{display:block;width:100%;border:0;border-radius:14px;padding:18px;font-family:var(--display);font-weight:800;font-size:26px;letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
+.btn.go{background:var(--accent);color:var(--accent-fg)}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line);font-size:18px;padding:14px}
+.btn:disabled{opacity:.4}
+.btn:focus-visible,.stepper button:focus-visible,.seg button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.err{color:var(--accent);font-size:14px;margin:0;min-height:1em}
+.note{color:var(--muted);font-size:13px;line-height:1.5;margin:0}
+/* running */
+.dial{position:relative;width:min(78vw,320px);aspect-ratio:1;max-width:100%;margin:8px auto 0}
+.dial svg{width:100%;height:100%;transform:rotate(-90deg)}
+.dial .track{stroke:var(--line);fill:none}
+.dial .prog{stroke:var(--fg);fill:none;stroke-linecap:round;transition:stroke .2s}
+.dial .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.time{font-family:var(--display);font-weight:800;font-size:76px;line-height:1;font-variant-numeric:tabular-nums}
+.cap{color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.12em;margin-top:6px}
+.pips{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+.pip{width:14px;height:14px;border-radius:50%;border:2px solid var(--muted)}
+.pip.done{background:var(--amber);border-color:var(--amber)}
+.status{text-align:center;font-family:var(--display);font-weight:800;font-size:28px;text-transform:uppercase;letter-spacing:.06em;min-height:34px}
+details{font-size:14px;color:var(--muted)}
+details summary{cursor:pointer}
+details ol{font-variant-numeric:tabular-nums;padding-left:22px;margin:8px 0 0}
+body.alarm{background:var(--alarm)}
+body.alarm .time,body.alarm .status,body.alarm .cap{color:var(--accent-fg)}
+body.alarm .dial .prog{stroke:var(--accent-fg)}
+body.alarm .dial .track{stroke:rgba(255,255,255,.3)}
+body.alarm .btn.ghost{color:var(--accent-fg);border-color:rgba(255,255,255,.5)}
+body.alarm details{color:var(--accent-fg)}
+body.alarm .pip{border-color:var(--accent-fg)} body.alarm .pip.done{background:var(--accent-fg)}
+body.alarm.flash{background:#111}
+@media (prefers-reduced-motion: reduce){body.alarm.flash{background:var(--alarm)}}
 </style>
-</head>
-<body>
 
-<header>
-  <span class="time" id="clock"></span>
-</header>
+<main>
+  <header>
+    <h1>Klax<span>on</span></h1>
+    <p class="sub">Set a window and a number of sirens. They go off at random moments you can't predict.</p>
+  </header>
 
-<!-- Streaming -->
-<div class="grid">
+  <section id="setup" style="display:flex;flex-direction:column;gap:14px">
+    <div class="panel">
+      <div class="row"><label for="total">Total time<small>minutes</small></label>
+        <div class="stepper"><button type="button" data-step="total:-1" aria-label="Less time">−</button><input id="total" type="number" inputmode="numeric" min="1" max="240" value="20"><button type="button" data-step="total:1" aria-label="More time">+</button></div></div>
+      <div class="row"><label for="count">Sirens<small>how many times</small></label>
+        <div class="stepper"><button type="button" data-step="count:-1" aria-label="Fewer sirens">−</button><input id="count" type="number" inputmode="numeric" min="1" max="50" value="5"><button type="button" data-step="count:1" aria-label="More sirens">+</button></div></div>
+      <div class="row"><label for="dur">Each siren<small>seconds</small></label>
+        <div class="stepper"><button type="button" data-step="dur:-5" aria-label="Shorter siren">−</button><input id="dur" type="number" inputmode="numeric" min="2" max="120" value="20"><button type="button" data-step="dur:5" aria-label="Longer siren">+</button></div></div>
+      <div class="row"><span class="lbl">Sound</span>
+        <div class="seg" id="sound"><button type="button" data-v="wail" aria-pressed="true">Wail</button><button type="button" data-v="yelp" aria-pressed="false">Yelp</button><button type="button" data-v="horn" aria-pressed="false">Horn</button></div></div>
+      <div class="row"><span class="lbl">Your music<small>when a siren goes off</small></span>
+        <div class="seg" id="music"><button type="button" data-v="transient-solo" aria-pressed="true">Pause it</button><button type="button" data-v="transient" aria-pressed="false">Lower it</button></div></div>
+      <div class="row"><label for="vol">Volume</label><input id="vol" type="range" min="0.1" max="1" step="0.05" value="0.9"></div>
+    </div>
+    <p class="err" id="err"></p>
+    <button class="btn go" id="start" type="button">Start</button>
+    <button class="btn ghost" id="test" type="button">Test sound (2 sec)</button>
+    <p class="note">Start your music first, then come back here and tap Start. Keep this screen open while it runs (the app keeps the display awake). Between sirens your music plays normally; each siren cuts in over it. On iPhone this needs iOS 17 or later. Tip: Share → Add to Home Screen for a full-screen app.</p>
+  </section>
 
-  <a class="tile" title="need to pay bill" href="https://netflix.com" target="_blank">
-    <img class="contain" src="img/logo-netflix.png" alt="Netflix">
-  </a>
-
-  <a class="tile" href="https://disneyplus.com" target="_blank">
-    <img src="img/logo-disney.jpeg" alt="Disney+">
-  </a>
-
-  <a class="tile" href="https://max.com" target="_blank">
-    <img class="contain" style="filter:invert(1)" src="img/logo-hbo.png" alt="Max">
-  </a>
-
-  <a class="tile" title="swap for Paramount+ in late June" href="https://peacocktv.com" target="_blank">
-    <img src="img/logo-peacock.png" alt="Peacock">
-  </a>
-
-  <a class="tile" href="https://paramountplus.com" target="_blank">
-    <img class="contain" style="filter:invert(1)" src="img/logo-paramount.png" alt="Paramount+">
-  </a>
-
-  <a class="tile" href="https://tv.apple.com" target="_blank">
-    <img src="img/logo-appletv.jpeg" alt="Apple TV+">
-  </a>
-
-  <a class="tile" title="$6 credit available!" href="https://primevideo.com" target="_blank">
-    <img src="img/logo-prime.png" alt="Prime Video">
-  </a>
-
-  <a class="tile" title="bundled with disney+" href="https://hulu.com" target="_blank">
-    <img src="img/logo-hulu.png" alt="Hulu">
-  </a>
-
-  <a class="tile" href="https://mygreatlearning.com" target="_blank">
-    <img src="img/great-learning.jpeg" alt="Great Learning">
-  </a>
-
-  <a class="tile" title="53rd District Court, Travis County" href="https://www.youtube.com/channel/UCTDZXEaLHAIEbwiL9HDLgIw" target="_blank">
-    <img class="contain" src="img/images.png" alt="YouTube">
-  </a>
-
-  <a class="tile" title="fightincowboy: Dark Souls 3 walkthrough" href="https://www.youtube.com/watch?v=2ZnFfnQeihc&list=PL7RtZMiaOk8gqctsEgBQ9IhQAnm_P5ILT" target="_blank">
-    <img class="contain" src="img/images.png" alt="YouTube">
-  </a>
-
-  <a class="tile" style="background:#fff" title="MBA Math" href="https://www.mbamath.com" target="_blank">
-    <img class="contain" src="img/logo.png" alt="MBA Math">
-  </a>
-
-</div>
-
-<!-- My tools -->
-<div class="grid">
-
-  <a class="tile" style="background:#f0e4d6" href="../runway.html" target="_blank">
-    <img src="img/runway-thumb.png" alt="Runway">
-  </a>
-
-  <!-- TODO: confirm path -->
-  <a class="tile" style="background:#a03a30" href="../docket.html" target="_blank">
-    <img src="img/docket-thumb.png" alt="Docket">
-  </a>
-
-  <!-- TODO: confirm path to soccer hub -->
-  <a class="tile" style="background:#f0e4d6" href="../soccer/" target="_blank">
-    <img src="img/soccer-thumb.png" alt="Soccer">
-  </a>
-
-  <a class="tile" style="background:#bf5700" title="MSTC on Canvas" href="https://utexas.instructure.com/courses/1447036" target="_blank">
-    <img src="img/mstc-thumb.png" alt="UT MSTC, McCombs Austin">
-  </a>
-
-  <!-- Google Sheets: grid built by the script at the bottom (SHEETS list) -->
-  <div class="tile sheets">
-    <div class="sheets-grid" id="sheets-grid"></div>
-  </div>
-
-  <!-- Runs the macOS Shortcut named "Open Terminal" (Mac only) -->
-  <a class="tile" style="background:#000" title="Terminal" href="shortcuts://run-shortcut?name=Open%20Terminal">
-    <span class="tile-name" style="font-family:Menlo, monospace">&gt;_</span>
-  </a>
-
-</div>
+  <section id="run" hidden style="flex-direction:column;gap:18px">
+    <div class="dial">
+      <svg viewBox="0 0 100 100" aria-hidden="true"><circle class="track" cx="50" cy="50" r="45" stroke-width="5"/><circle class="prog" id="prog" cx="50" cy="50" r="45" stroke-width="5" stroke-dasharray="282.74" stroke-dashoffset="0"/></svg>
+      <div class="center"><div class="time" id="remain">20:00</div><div class="cap">remaining</div></div>
+    </div>
+    <div class="status" id="status" aria-live="polite">Armed</div>
+    <div class="pips" id="pips"></div>
+    <button class="btn ghost" id="silence" type="button" hidden>Silence this siren</button>
+    <button class="btn ghost" id="stop" type="button">Stop</button>
+    <details><summary>Reveal siren times (spoils the surprise)</summary><ol id="sched"></ol></details>
+  </section>
+</main>
 
 <script>
-  function updateClock() {
-    const now = new Date();
-    document.getElementById('clock').textContent = now.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+(() => {
+  const $ = id => document.getElementById(id);
+  const S = {sound:'wail', music:'transient-solo'};
+  // restore settings
+  try{ const s=JSON.parse(localStorage.getItem('siren-settings')||'null'); if(s){ ['total','count','dur','vol'].forEach(k=>{ if(s[k]!=null) $(k).value=s[k]; }); if(s.sound) S.sound=s.sound; if(s.music) S.music=s.music; } }catch(e){}
+  function bindSeg(id,key){
+    const btns=[...document.querySelectorAll('#'+id+' button')];
+    const paint=()=>btns.forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.v===S[key])));
+    paint(); btns.forEach(b=>b.addEventListener('click',()=>{S[key]=b.dataset.v;paint();save();}));
   }
-  updateClock();
-  setInterval(updateClock, 1000);
+  bindSeg('sound','sound'); bindSeg('music','music');
+  // iOS audio session: "ambient" mixes quietly under other apps' audio;
+  // "transient-solo" pauses it, "transient" ducks it while the siren plays.
+  let curSession=null;
+  function setSession(type){ if(curSession===type) return; curSession=type; try{ if(navigator.audioSession) navigator.audioSession.type=type; }catch(e){} }
+  document.querySelectorAll('[data-step]').forEach(b=>b.addEventListener('click',()=>{
+    const [id,d]=b.dataset.step.split(':'); const el=$(id);
+    el.value=Math.min(+el.max,Math.max(+el.min,(+el.value||0)+ +d)); save();
+  }));
+  ['total','count','dur','vol'].forEach(k=>$(k).addEventListener('change',save));
+  function save(){ try{ localStorage.setItem('siren-settings',JSON.stringify({total:$('total').value,count:$('count').value,dur:$('dur').value,vol:$('vol').value,sound:S.sound,music:S.music})); }catch(e){} }
 
-  // Workbooks on the Sheets tile (2–4). Order sets position: left→right, then top→bottom for 4.
-  const SHEETS = [
-    { name: 'Homework',   url: 'https://docs.google.com/spreadsheets/d/1AByybSV22BGHA61WMg_5WS7aojjfzYEX9coFDn816q0/edit' },
-    { name: 'Possession Schedule', url: 'https://docs.google.com/spreadsheets/d/1HYplAoevraDiBv9VOx_luWoYHglCyjoQhfYif1VJl2U/edit' },
-  ];
+  // ---------- schedule ----------
+  // Random gaps: n+1 exponential weights scaled to the free time, so spacing
+  // clusters and spreads unpredictably. Each gap also gets a small floor so
+  // sirens never overlap and the first one never fires instantly.
+  function makeSchedule(T, n, d){
+    const floor = Math.min(15, Math.max(3, (T - n*d) / (n + 1) * 0.25));
+    const free = T - n*d - n*floor;
+    if (free < 0) return null;
+    const w = Array.from({length:n+1}, () => -Math.log(1 - Math.random()));
+    const sum = w.reduce((a,b)=>a+b,0);
+    const starts=[]; let t=0;
+    for(let i=0;i<n;i++){ t += floor + free*w[i]/sum; starts.push(t); t += d; }
+    return starts;
+  }
 
-  (function buildSheetsTile() {
-    const grid = document.getElementById('sheets-grid');
-    const COLS = 6, ROWS = 4, n = SHEETS.length;
-    const zoneOf = (c, r) =>
-      n === 4 ? (r < ROWS / 2 ? 0 : 2) + (c < COLS / 2 ? 0 : 1)
-              : Math.floor(c / (COLS / n));
-    // Hover colors, cycled so no cell matches its neighbor (left/right/up/down).
-    const HOVER = ['#ffffff', '#fbbc04', '#ea4335', '#4285f4', '#a142f4', '#24c1e0'];
-    const cells = [];
-    const seen = new Set();
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        const z = zoneOf(c, r), sheet = SHEETS[z];
-        const a = document.createElement('a');
-        a.href = sheet.url;
-        a.target = '_blank';
-        a.title = sheet.name;
-        a.setAttribute('aria-label', sheet.name);
-        a.dataset.zone = z;
-        a.style.setProperty('--hover', HOVER[(c + 2 * r) % HOVER.length]);
-        if (seen.has(z)) a.tabIndex = -1; else seen.add(z);   // one tab stop per workbook
-        a.addEventListener('mouseenter', () =>
-          cells.forEach(x => x.classList.toggle('zone', x.dataset.zone == z)));
-        cells.push(a);
-        grid.appendChild(a);
-      }
+  // ---------- audio ----------
+  let ctx=null, master=null;
+  function ensureCtx(){
+    if(!ctx){ ctx=new (window.AudioContext||window.webkitAudioContext)(); master=ctx.createGain(); master.connect(ctx.destination); }
+    if(ctx.state!=='running') ctx.resume();
+    master.gain.value=+$('vol').value;
+    return ctx;
+  }
+  function sirenAt(t0, d, kind){
+    const out=ctx.createGain(); out.gain.setValueAtTime(0,t0);
+    out.gain.linearRampToValueAtTime(0.55,t0+0.25);
+    out.gain.setValueAtTime(0.55,Math.max(t0+0.25,t0+d-0.4));
+    out.gain.linearRampToValueAtTime(0,t0+d);
+    const lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=3200;
+    lp.connect(out); out.connect(master);
+    const oscs=[];
+    if(kind==='horn'){
+      [233,294,349].forEach((f,i)=>{ const o=ctx.createOscillator(); o.type=i?'sawtooth':'square'; o.frequency.value=f; const g=ctx.createGain(); g.gain.value=0.33; o.connect(g); g.connect(lp); oscs.push(o); });
+      // pulse: 0.7s on / 0.35s off
+      const p=ctx.createGain(); lp.disconnect(); lp.connect(p); p.connect(out);
+      p.gain.setValueAtTime(0,t0);
+      for(let t=t0;t<t0+d;t+=1.05){ p.gain.setValueAtTime(1,t); p.gain.setValueAtTime(0,Math.min(t+0.7,t0+d)); }
+    } else {
+      const a=ctx.createOscillator(); a.type='sawtooth';
+      const b=ctx.createOscillator(); b.type='square';
+      const gb=ctx.createGain(); gb.gain.value=0.35; b.connect(gb); gb.connect(lp); a.connect(lp);
+      const lo=kind==='yelp'?700:620, hi=kind==='yelp'?1650:1450, half=kind==='yelp'?0.17:3.5;
+      [a,b].forEach((o,i)=>{
+        const fp=o.frequency, k=i?1.006:1;
+        fp.setValueAtTime(lo*k,t0);
+        for(let t=t0;t<t0+d;t+=half*2){ fp.linearRampToValueAtTime(hi*k,t+half); fp.linearRampToValueAtTime(lo*k,t+half*2); }
+        oscs.push(o);
+      });
     }
-    grid.addEventListener('mouseleave', () => cells.forEach(x => x.classList.remove('zone')));
-  })();
-</script>
+    oscs.forEach(o=>{o.start(t0);o.stop(t0+d+0.05);});
+    return {out,oscs};
+  }
+  function beep(t,f,len){ const o=ctx.createOscillator(),g=ctx.createGain(); o.type='triangle'; o.frequency.value=f; g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.4,t+0.01); g.gain.exponentialRampToValueAtTime(0.001,t+len); o.connect(g); g.connect(master); o.start(t); o.stop(t+len+0.02); }
 
-</body>
-</html>
+  let testTimer=null;
+  $('test').addEventListener('click',()=>{
+    setSession(S.music); ensureCtx(); sirenAt(ctx.currentTime+0.05,2,S.sound);
+    clearTimeout(testTimer); testTimer=setTimeout(()=>{ if(!run) setSession('ambient'); },2300);
+  });
+
+  // ---------- run ----------
+  let run=null, wake=null;
+  async function keepAwake(){ try{ if('wakeLock' in navigator){ wake=await navigator.wakeLock.request('screen'); } }catch(e){} }
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible' && run){ if(ctx && ctx.state!=='running') ctx.resume(); keepAwake(); } });
+
+  $('start').addEventListener('click',()=>{
+    const T=Math.round(+$('total').value*60), n=Math.round(+$('count').value), d=+$('dur').value;
+    if(!(T>0&&n>0&&d>0)){ $('err').textContent='Enter a time, a number of sirens and a length.'; return; }
+    const starts=makeSchedule(T,n,d);
+    if(!starts){ $('err').textContent=`${n} sirens of ${d} sec don't fit in ${T/60} min. Add time or use fewer or shorter sirens.`; return; }
+    $('err').textContent=''; save();
+    setSession('ambient'); ensureCtx();
+    const base=ctx.currentTime+0.3;
+    // inaudible keep-alive tone so the audio session stays active
+    const ka=ctx.createOscillator(), kg=ctx.createGain(); ka.frequency.value=30; kg.gain.value=0.0008; ka.connect(kg); kg.connect(ctx.destination); ka.start(base); ka.stop(base+T+1);
+    beep(base,880,0.15);
+    const events=starts.map(s=>({s,e:s+d,node:sirenAt(base+s,d,S.sound),silenced:false}));
+    [0,0.25,0.5].forEach(o=>beep(base+T+o,660,0.2));
+    run={base,T,d,events,ka};
+    $('pips').innerHTML=events.map(()=>'<span class="pip"></span>').join('');
+    $('sched').innerHTML=starts.map(s=>`<li>${fmt(s)} – ${fmt(s+d)}</li>`).join('');
+    $('setup').hidden=true; $('run').hidden=false; $('run').style.display='flex';
+    keepAwake(); tick();
+  });
+
+  function stopRun(){
+    if(!run) return;
+    run.events.forEach(ev=>ev.node.oscs.forEach(o=>{try{o.stop();}catch(e){}}));
+    try{run.ka.stop();}catch(e){}
+    // cancel the end chime too by closing and recreating the context
+    try{ctx.close();}catch(e){} ctx=null;
+    run=null; setSession('auto'); document.body.classList.remove('alarm','flash');
+    try{wake&&wake.release();}catch(e){} wake=null;
+    $('run').hidden=true; $('run').style.display=''; $('setup').hidden=false;
+  }
+  $('stop').addEventListener('click',stopRun);
+  $('silence').addEventListener('click',()=>{
+    if(!run) return; const now=ctx.currentTime-run.base;
+    run.events.forEach(ev=>{ if(now>=ev.s&&now<ev.e){ ev.silenced=true; const g=ev.node.out.gain; g.cancelScheduledValues(ctx.currentTime); g.setValueAtTime(g.value,ctx.currentTime); g.linearRampToValueAtTime(0,ctx.currentTime+0.1);} });
+  });
+
+  function fmt(s){ s=Math.max(0,Math.ceil(s)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+  const C=282.74;
+  function tick(){
+    if(!run) return;
+    const now=ctx.currentTime-run.base, T=run.T;
+    $('remain').textContent=fmt(T-now);
+    $('prog').setAttribute('stroke-dashoffset', String(C*Math.min(1,Math.max(0,now/T))));
+    const active=run.events.find(ev=>now>=ev.s&&now<ev.e);
+    const done=run.events.filter(ev=>now>=ev.s).length;
+    document.querySelectorAll('#pips .pip').forEach((p,i)=>p.classList.toggle('done',i<done));
+    const alarm=!!active && !active.silenced;
+    // claim the speaker just before each siren, hand it back right after
+    const soon=run.events.some(ev=>now>=ev.s-0.6 && now<ev.e && !ev.silenced);
+    setSession(soon ? S.music : 'ambient');
+    document.body.classList.toggle('alarm',!!active);
+    document.body.classList.toggle('flash',alarm && Math.floor(now*2.5)%2===0);
+    $('silence').hidden=!alarm;
+    if(now>=T){ $('status').textContent='Done'; $('remain').textContent='0:00'; document.body.classList.remove('alarm','flash'); $('silence').hidden=true; $('stop').textContent='Back'; return; }
+    $('stop').textContent='Stop';
+    $('status').textContent = active ? 'Siren!' : (now<0.5?'Armed':'Waiting…');
+    requestAnimationFrame(tick);
+  }
+  $('stop').addEventListener('click',()=>{ $('stop').textContent='Stop'; });
+})();
+</script>
