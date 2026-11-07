@@ -324,6 +324,59 @@
     </div>
   </div>
 
+  <div class="card" data-card="project">
+    <h2><span class="drag-handle">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('project')"><span id="chev-project">&#9662;</span> Project</span></h2>
+    <div id="body-project">
+    <p class="card-note">Self-contained scratch math. Nothing here touches cash on hand or the runway.</p>
+    <div class="row" style="align-items:flex-end; gap:28px; margin-bottom:6px;">
+      <div class="field" style="max-width:200px;">
+        <label>Starting figure</label>
+        <div style="display:flex; gap:6px;">
+          <input type="number" id="projStart" step="0.01" placeholder="0" style="flex:1; min-width:0;" oninput="updateProjectStart(this.value)">
+          <button class="subtle mini" title="Clear starting figure" onclick="clearProjectStart()">clear</button>
+        </div>
+      </div>
+      <div class="bal-block">
+        <div class="bal-label">Starting figure</div>
+        <div class="bal-figure" id="projStartFig">$0.00</div>
+      </div>
+      <div class="bal-block">
+        <div class="bal-label">Minus debits</div>
+        <div class="bal-figure" id="projRemain" style="color:var(--sage)">$0.00</div>
+      </div>
+    </div>
+    <ul class="items" id="projDebits"></ul>
+    <div class="row" style="margin-top:12px; align-items:center;">
+      <button onclick="addProjectDebit()">+ Add debit</button>
+      <div style="flex:1; font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--ink-soft);">Debits: <strong id="projDebitTotal" style="color:var(--ink)">$0.00</strong></div>
+      <button class="danger-ghost" onclick="clearProject()">Clear all</button>
+    </div>
+    </div>
+  </div>
+
+  <div class="card" data-card="estimate">
+    <h2><span class="drag-handle">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('estimate')"><span id="chev-estimate">&#9662;</span> Monthly estimate</span></h2>
+    <div id="body-estimate">
+    <p class="card-note">One month of every subscription and utility, pulled live from those panes (edit them there; annual subscriptions count at &divide;12), plus anything you add below.</p>
+    <ul class="items" id="estAuto"></ul>
+    <ul class="items" id="estExtra"></ul>
+    <div class="row" style="margin-top:12px; align-items:center;">
+      <div style="flex:1;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:15px;">Estimated month: <strong id="estTotal">$0.00</strong></div>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-soft); margin-top:3px;" id="estBreakdown"></div>
+      </div>
+    </div>
+    <div class="add-form">
+      <div class="row">
+        <div class="field"><label>Add to estimate</label><input type="text" id="estName" placeholder="e.g. Groceries"></div>
+        <div class="field" style="max-width:120px;"><label>Amount</label><input type="number" id="estAmt" step="0.01" placeholder="0" onkeydown="if(event.key==='Enter') addEstimateExtra()"></div>
+        <button onclick="addEstimateExtra()">Add</button>
+        <button class="subtle" onclick="clearEstimateExtras()">Clear added</button>
+      </div>
+    </div>
+    </div>
+  </div>
+
     </div>
     <div class="col-secondary" id="colSecondary">
       <div class="secondary-hint" id="secondaryHint"></div>
@@ -356,12 +409,12 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script>
-const APP_VERSION = '2026.09.25.2';
+const APP_VERSION = '2026.11.07.1';
 const STORAGE_KEY = 'runway-state-v3';
 const todayStr = new Date().toISOString().slice(0,10);
 
 let state = { balance:0, incomes:[], items:[], scratch:[], toxicDebts:[], recurring:[], recurringIncomes:[], ledgerOrder:[], shopOrder:[], vaultOrder:[], ui:{collapsed:{}, layout:null}, sheetEmbedUrl:'' };
-const CARD_IDS = ['tally','stand','income','subscriptions','utilities','ledger','thisweek','runway','vault','sheet','toxic'];
+const CARD_IDS = ['tally','stand','income','subscriptions','utilities','ledger','thisweek','runway','vault','project','estimate','sheet','toxic'];
 
 function uid(){ return Math.random().toString(36).slice(2,9); }
 function pad2(n){ return String(n).padStart(2,'0'); }
@@ -567,6 +620,7 @@ function normalizeState(){
       }
       delete state.ui.tallyCollapsed;
       if(typeof state.sheetEmbedUrl !== 'string') state.sheetEmbedUrl = '';
+      ensureNewPanesState();
       normalizeLayout();
 }
 
@@ -818,7 +872,175 @@ function render(){
   renderWish();
   renderToxicDebt();
   renderSheetCard();
+  renderProject();
+  renderEstimate();
   drawChart(baseline, full);
+}
+
+// ---------- Project: self-contained calculator — starting figure minus debits ----------
+// Never touches cash on hand, the ledger, or the runway chart.
+function blankDebit(){ return { id: uid(), label:'', amount:'' }; }
+function ensureNewPanesState(){
+  if(!state.project || typeof state.project!=='object') state.project = { start:'', debits:[] };
+  if(!Array.isArray(state.project.debits)) state.project.debits = [];
+  if(state.project.debits.length===0) state.project.debits = [blankDebit(), blankDebit(), blankDebit()];
+  if(!Array.isArray(state.estimateExtras)) state.estimateExtras = [];
+}
+function money2(n){
+  const v = Number(n)||0;
+  return (v<0?'-$':'$') + Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function projectTotals(){
+  const start = parseFloat(state.project.start)||0;
+  const debits = state.project.debits.reduce((s,d)=> s + (parseFloat(d.amount)||0), 0);
+  return { start, debits, remain: start - debits };
+}
+function updateProjectFigures(){
+  const t = projectTotals();
+  document.getElementById('projStartFig').textContent = money2(t.start);
+  const r = document.getElementById('projRemain');
+  r.textContent = money2(t.remain);
+  r.style.color = t.remain<0 ? 'var(--brick)' : 'var(--sage)';
+  document.getElementById('projDebitTotal').textContent = money2(t.debits);
+}
+function renderProject(){
+  ensureNewPanesState();
+  const startInput = document.getElementById('projStart');
+  if(document.activeElement !== startInput) startInput.value = state.project.start;
+  const ul = document.getElementById('projDebits');
+  ul.innerHTML = '';
+  state.project.debits.forEach((d,i)=>{
+    const li = document.createElement('li');
+    li.dataset.debitId = d.id;
+    li.innerHTML = `
+      <span class="wish-meta" style="min-width:18px;">${i+1}</span>
+      <input type="text" class="lname lname-input" placeholder="Debit ${i+1}" value="${escHtml(d.label)}" oninput="updateProjectDebit('${d.id}','label',this.value)">
+      <input type="number" class="amt-input" step="0.01" placeholder="0" value="${escHtml(d.amount)}" oninput="updateProjectDebit('${d.id}','amount',this.value)">
+      <button class="subtle mini" title="Clear this debit" onclick="clearProjectDebit('${d.id}')">clear</button>
+      <button class="danger-ghost" onclick="removeProjectDebit('${d.id}')">remove</button>`;
+    ul.appendChild(li);
+  });
+  updateProjectFigures();
+}
+// Typing updates figures in place — no re-render, so focus stays in the field.
+function updateProjectStart(value){
+  ensureNewPanesState();
+  state.project.start = value;
+  saveState(); updateProjectFigures();
+}
+function clearProjectStart(){
+  ensureNewPanesState();
+  state.project.start = '';
+  document.getElementById('projStart').value = '';
+  saveState(); updateProjectFigures();
+}
+function updateProjectDebit(id, field, value){
+  const d = state.project.debits.find(x=>x.id===id); if(!d) return;
+  d[field] = value;
+  saveState(); updateProjectFigures();
+}
+function clearProjectDebit(id){
+  const d = state.project.debits.find(x=>x.id===id); if(!d) return;
+  d.label = ''; d.amount = '';
+  saveState(); renderProject();
+}
+function removeProjectDebit(id){
+  state.project.debits = state.project.debits.filter(x=>x.id!==id);
+  saveState(); renderProject();
+}
+function addProjectDebit(){
+  ensureNewPanesState();
+  const d = blankDebit();
+  state.project.debits.push(d);
+  saveState(); renderProject();
+  const row = document.querySelector(`#projDebits li[data-debit-id="${d.id}"] input[type=number]`);
+  if(row) row.focus();
+}
+function clearProject(){
+  state.project = { start:'', debits:[blankDebit(), blankDebit(), blankDebit()] };
+  document.getElementById('projStart').value = '';
+  saveState(); renderProject();
+}
+
+// ---------- Monthly estimate: one month of every subscription + utility, plus ad hoc ----------
+// Subscription/utility rows are read live from state.recurring (edit them in their own panes).
+// Annual subscriptions count at 1/12 so the month isn't skewed by a single renewal.
+function estimateTotals(){
+  const rec = Array.isArray(state.recurring) ? state.recurring : [];
+  const subs = rec.filter(s=>s.kind==='subscription');
+  const utils = rec.filter(s=>s.kind==='utility');
+  const subTotal = subs.reduce((s,x)=> s + monthlyEquivalent(x), 0);
+  const utilTotal = utils.reduce((s,x)=> s + (Number(x.amount)||0), 0);
+  const extraTotal = state.estimateExtras.reduce((s,x)=> s + (parseFloat(x.amount)||0), 0);
+  return { subs, utils, subTotal, utilTotal, extraTotal, total: subTotal + utilTotal + extraTotal };
+}
+function updateEstimateTotals(){
+  const t = estimateTotals();
+  document.getElementById('estTotal').textContent = money2(t.total);
+  document.getElementById('estBreakdown').textContent =
+    `Subscriptions ${money2(t.subTotal)} · Utilities ${money2(t.utilTotal)} · Added ${money2(t.extraTotal)}`;
+}
+function renderEstimate(){
+  ensureNewPanesState();
+  const t = estimateTotals();
+  const autoUl = document.getElementById('estAuto');
+  autoUl.innerHTML = '';
+  const autoRows = [
+    ...[...t.subs].sort((a,b)=> (a.dayOfMonth||0)-(b.dayOfMonth||0)).map(s=>({
+      name:s.name, amount:monthlyEquivalent(s),
+      tag: s.cycle==='annual' ? '<span class="tag annual">annual ÷ 12</span>' : '<span class="tag recurring">subscription</span>',
+      dot: s.cycle==='annual' ? 'var(--plum)' : 'var(--teal)'
+    })),
+    ...[...t.utils].sort((a,b)=> (a.dayOfMonth||0)-(b.dayOfMonth||0)).map(u=>({
+      name:u.name, amount:Number(u.amount)||0, tag:'<span class="tag utility">utility</span>', dot:'var(--amber)'
+    }))
+  ];
+  if(autoRows.length===0) autoUl.innerHTML = '<div class="empty">Nothing in Subscriptions or Utilities yet.</div>';
+  autoRows.forEach(r=>{
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <span class="dot" style="background:${r.dot}"></span>
+      <span class="lname">${escHtml(r.name)}</span>
+      ${r.tag}
+      <span class="amt-input" style="text-align:right; display:inline-block;">${money2(r.amount)}</span>`;
+    autoUl.appendChild(li);
+  });
+  const exUl = document.getElementById('estExtra');
+  exUl.innerHTML = '';
+  state.estimateExtras.forEach(x=>{
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <span class="dot" style="background:var(--ink-soft)"></span>
+      <input type="text" class="lname lname-input" value="${escHtml(x.name)}" oninput="updateEstimateExtra('${x.id}','name',this.value)">
+      <span class="tag later">added</span>
+      <input type="number" class="amt-input" step="0.01" value="${escHtml(x.amount)}" oninput="updateEstimateExtra('${x.id}','amount',this.value)">
+      <button class="danger-ghost" onclick="removeEstimateExtra('${x.id}')">remove</button>`;
+    exUl.appendChild(li);
+  });
+  updateEstimateTotals();
+}
+function addEstimateExtra(){
+  ensureNewPanesState();
+  const name = document.getElementById('estName').value.trim();
+  const amount = document.getElementById('estAmt').value;
+  if(!name && !amount) return;
+  state.estimateExtras.push({ id:uid(), name: name || 'Other', amount });
+  document.getElementById('estName').value=''; document.getElementById('estAmt').value='';
+  saveState(); renderEstimate();
+  document.getElementById('estName').focus();
+}
+function updateEstimateExtra(id, field, value){
+  const x = state.estimateExtras.find(e=>e.id===id); if(!x) return;
+  x[field] = value;
+  saveState(); updateEstimateTotals();
+}
+function removeEstimateExtra(id){
+  state.estimateExtras = state.estimateExtras.filter(e=>e.id!==id);
+  saveState(); renderEstimate();
+}
+function clearEstimateExtras(){
+  state.estimateExtras = [];
+  saveState(); renderEstimate();
 }
 
 function renderIncome(){
