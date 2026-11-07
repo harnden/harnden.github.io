@@ -193,6 +193,34 @@
     </div>
   </div>
 
+  <div class="card" data-card="bills">
+    <h2><span class="drag-handle">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('bills')"><span id="chev-bills">&#9662;</span> Bills</span></h2>
+    <div id="body-bills">
+    <p class="card-note">Fixed obligations: rent, car payment, insurance. Each one feeds its upcoming charges into "Money going out." Editing here only changes future, unpaid months.</p>
+    <ul class="items" id="billList"></ul>
+    <div class="row" style="margin-top:12px; align-items:center;">
+      <div style="flex:1; font-family:'IBM Plex Mono',monospace; font-size:13px;" id="billTotals"></div>
+    </div>
+    <div class="add-form">
+      <div class="row">
+        <div class="field"><label>Bill</label><input type="text" id="billName" placeholder="e.g. Rent"></div>
+        <div class="field" style="max-width:110px;"><label>Amount</label><input type="number" id="billAmt" placeholder="0"></div>
+        <div class="field" style="max-width:110px;">
+          <label>Billed</label>
+          <select id="billCycle" onchange="toggleBillCycleUI()">
+            <option value="monthly">Monthly</option>
+            <option value="annual">Annual</option>
+          </select>
+        </div>
+        <div class="field" style="max-width:100px;" id="billDayWrap"><label>Day of month</label><input type="number" id="billDay" min="1" max="31" placeholder="1"></div>
+        <div class="field" style="max-width:150px; display:none;" id="billRenewalWrap"><label>Due on</label><input type="date" id="billRenewal"></div>
+        <div class="field" style="max-width:150px;"><label>Paid from (optional)</label><input type="text" id="billAcct" placeholder="e.g. Checking"></div>
+        <button onclick="addBill()">Add</button>
+      </div>
+    </div>
+    </div>
+  </div>
+
   <div class="card" data-card="subscriptions">
     <h2><span class="drag-handle">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('subscriptions')"><span id="chev-subscriptions">&#9662;</span> Subscriptions</span></h2>
     <div id="body-subscriptions">
@@ -357,7 +385,7 @@
   <div class="card" data-card="estimate">
     <h2><span class="drag-handle">&#8942;&#8942;</span><span style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;" onclick="toggleCard('estimate')"><span id="chev-estimate">&#9662;</span> Monthly estimate</span></h2>
     <div id="body-estimate">
-    <p class="card-note">One month of every subscription and utility, pulled live from those panes (edit them there; annual subscriptions count at &divide;12), plus anything you add below.</p>
+    <p class="card-note">One month of every bill, subscription and utility, pulled live from those panes (edit them there; annual items count at &divide;12), plus anything you add below.</p>
     <ul class="items" id="estAuto"></ul>
     <ul class="items" id="estExtra"></ul>
     <div class="row" style="margin-top:12px; align-items:center;">
@@ -409,12 +437,12 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script>
-const APP_VERSION = '2026.11.07.1';
+const APP_VERSION = '2026.11.07.2';
 const STORAGE_KEY = 'runway-state-v3';
 const todayStr = new Date().toISOString().slice(0,10);
 
 let state = { balance:0, incomes:[], items:[], scratch:[], toxicDebts:[], recurring:[], recurringIncomes:[], ledgerOrder:[], shopOrder:[], vaultOrder:[], ui:{collapsed:{}, layout:null}, sheetEmbedUrl:'' };
-const CARD_IDS = ['tally','stand','income','subscriptions','utilities','ledger','thisweek','runway','vault','project','estimate','sheet','toxic'];
+const CARD_IDS = ['tally','stand','income','bills','subscriptions','utilities','ledger','thisweek','runway','vault','project','estimate','sheet','toxic'];
 
 function uid(){ return Math.random().toString(36).slice(2,9); }
 function pad2(n){ return String(n).padStart(2,'0'); }
@@ -553,7 +581,10 @@ function normalizeLayout(){
   const known = new Set([...primary, ...secondary]);
   CARD_IDS.forEach(id=>{
     if(!known.has(id)){
-      if(id==='sheet' || id==='toxic') secondary.push(id); else primary.push(id);
+      if(id==='sheet' || id==='toxic') secondary.push(id);
+      else if(id==='bills' && secondary.includes('subscriptions')) secondary.splice(secondary.indexOf('subscriptions'), 0, id);
+      else if(id==='bills' && primary.includes('subscriptions')) primary.splice(primary.indexOf('subscriptions'), 0, id);
+      else primary.push(id);
     }
   });
   state.ui.layout = { primary, secondary };
@@ -867,6 +898,7 @@ function render(){
   applyAllCardCollapse();
   renderSubscriptions();
   renderUtilities();
+  renderBills();
   renderLedger();
   renderThisWeek();
   renderWish();
@@ -969,16 +1001,18 @@ function estimateTotals(){
   const rec = Array.isArray(state.recurring) ? state.recurring : [];
   const subs = rec.filter(s=>s.kind==='subscription');
   const utils = rec.filter(s=>s.kind==='utility');
+  const bills = rec.filter(s=>s.kind==='recurring');
+  const billTotal = bills.reduce((s,x)=> s + monthlyEquivalent(x), 0);
   const subTotal = subs.reduce((s,x)=> s + monthlyEquivalent(x), 0);
   const utilTotal = utils.reduce((s,x)=> s + (Number(x.amount)||0), 0);
   const extraTotal = state.estimateExtras.reduce((s,x)=> s + (parseFloat(x.amount)||0), 0);
-  return { subs, utils, subTotal, utilTotal, extraTotal, total: subTotal + utilTotal + extraTotal };
+  return { subs, utils, bills, subTotal, utilTotal, billTotal, extraTotal, total: billTotal + subTotal + utilTotal + extraTotal };
 }
 function updateEstimateTotals(){
   const t = estimateTotals();
   document.getElementById('estTotal').textContent = money2(t.total);
   document.getElementById('estBreakdown').textContent =
-    `Subscriptions ${money2(t.subTotal)} · Utilities ${money2(t.utilTotal)} · Added ${money2(t.extraTotal)}`;
+    `Bills ${money2(t.billTotal)} · Subscriptions ${money2(t.subTotal)} · Utilities ${money2(t.utilTotal)} · Added ${money2(t.extraTotal)}`;
 }
 function renderEstimate(){
   ensureNewPanesState();
@@ -986,6 +1020,11 @@ function renderEstimate(){
   const autoUl = document.getElementById('estAuto');
   autoUl.innerHTML = '';
   const autoRows = [
+    ...[...t.bills].sort((a,b)=> (a.dayOfMonth||0)-(b.dayOfMonth||0)).map(b=>({
+      name:b.name, amount:monthlyEquivalent(b),
+      tag: b.cycle==='annual' ? '<span class="tag annual">bill ÷ 12</span>' : '<span class="tag urgent">bill</span>',
+      dot:'var(--brick)'
+    })),
     ...[...t.subs].sort((a,b)=> (a.dayOfMonth||0)-(b.dayOfMonth||0)).map(s=>({
       name:s.name, amount:monthlyEquivalent(s),
       tag: s.cycle==='annual' ? '<span class="tag annual">annual ÷ 12</span>' : '<span class="tag recurring">subscription</span>',
@@ -995,7 +1034,7 @@ function renderEstimate(){
       name:u.name, amount:Number(u.amount)||0, tag:'<span class="tag utility">utility</span>', dot:'var(--amber)'
     }))
   ];
-  if(autoRows.length===0) autoUl.innerHTML = '<div class="empty">Nothing in Subscriptions or Utilities yet.</div>';
+  if(autoRows.length===0) autoUl.innerHTML = '<div class="empty">Nothing in Bills, Subscriptions or Utilities yet.</div>';
   autoRows.forEach(r=>{
     const li = document.createElement('li');
     li.innerHTML = `
@@ -1494,7 +1533,7 @@ function recurringBadge(recurringId){
 function kindSelect(sub){
   const opt = (v,label)=> `<option value="${v}" ${sub.kind===v?'selected':''}>${label}</option>`;
   return `<select class="tier-select" style="width:104px" onchange="changeRecurringKind('${sub.id}', this.value)">
-    ${opt('subscription','Subscription')}${opt('utility','Utility')}${opt('recurring','Other monthly')}
+    ${opt('subscription','Subscription')}${opt('utility','Utility')}${opt('recurring','Bill')}
   </select>`;
 }
 function changeRecurringKind(id, kind){
@@ -1502,6 +1541,75 @@ function changeRecurringKind(id, kind){
   if(!RECURRING_KINDS.includes(kind)) return;
   sub.kind = kind;
   saveState(); render();
+}
+
+// ---------- Bills: fixed obligations (rent, car payment, insurance) ----------
+// Same recurring engine as Subscriptions; stored as kind 'recurring', so anything
+// previously added via "Recurring monthly" in Money going out shows up here too.
+function toggleBillCycleUI(){
+  const annual = document.getElementById('billCycle').value==='annual';
+  document.getElementById('billDayWrap').style.display = annual ? 'none' : 'flex';
+  document.getElementById('billRenewalWrap').style.display = annual ? 'flex' : 'none';
+}
+function addBill(){
+  const name = document.getElementById('billName').value.trim();
+  const amt = parseFloat(document.getElementById('billAmt').value)||0;
+  const cycle = document.getElementById('billCycle').value==='annual' ? 'annual' : 'monthly';
+  let day = parseInt(document.getElementById('billDay').value, 10);
+  if(!day || day<1) day = 1; if(day>31) day = 31;
+  const due = document.getElementById('billRenewal').value;
+  const acct = document.getElementById('billAcct').value.trim();
+  if(!name) return;
+  const bill = { id:uid(), name, amount:amt, dayOfMonth:day, card: acct||null, kind:'recurring', cycle };
+  if(cycle==='annual') bill.renewalDate = due || todayStr;
+  state.recurring.push(bill);
+  ['billName','billAmt','billDay','billAcct','billRenewal'].forEach(id=> document.getElementById(id).value='');
+  document.getElementById('billCycle').value='monthly';
+  toggleBillCycleUI();
+  generateRecurringItems();
+  saveState(); render();
+}
+function renderBills(){
+  const ul = document.getElementById('billList');
+  if(!ul) return;
+  ul.innerHTML = '';
+  const bills = Array.isArray(state.recurring) ? state.recurring.filter(s=>s.kind==='recurring') : [];
+  const totalEl = document.getElementById('billTotals');
+  if(bills.length===0){
+    ul.innerHTML = '<div class="empty">No bills tracked yet.</div>';
+    totalEl.innerHTML = '';
+    return;
+  }
+  [...bills].sort((a,b)=>{
+    if((a.cycle==='annual') !== (b.cycle==='annual')) return a.cycle==='annual' ? 1 : -1;
+    return (a.dayOfMonth||0) - (b.dayOfMonth||0);
+  }).forEach(b=>{
+    const isAnnual = b.cycle==='annual';
+    const timing = isAnnual
+      ? `<span class="wish-meta">due</span>
+         <input type="date" class="date-input" style="width:130px" value="${nextAnnualDate(b.renewalDate)||''}" onchange="updateSubscription('${b.id}','renewalDate',this.value)">`
+      : `<span class="wish-meta">day</span>
+         <input type="number" class="amt-input" style="width:56px" min="1" max="31" value="${b.dayOfMonth}" onchange="updateSubscription('${b.id}','dayOfMonth',this.value)">`;
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <span class="dot" style="background:${isAnnual ? 'var(--plum)' : 'var(--brick)'}"></span>
+      <input type="text" class="lname lname-input" value="${escHtml(b.name)}" onchange="updateSubscription('${b.id}','name',this.value)">
+      <input type="number" class="amt-input" value="${b.amount}" onchange="updateSubscription('${b.id}','amount',this.value)">
+      <select class="tier-select" style="width:88px" onchange="updateSubscription('${b.id}','cycle',this.value)">
+        <option value="monthly" ${!isAnnual?'selected':''}>Monthly</option>
+        <option value="annual" ${isAnnual?'selected':''}>Annual</option>
+      </select>
+      ${timing}
+      ${isAnnual ? `<span class="tag recurring">&#8776; $${fmt(monthlyEquivalent(b))}/mo</span>` : ''}
+      <input type="text" class="lname-input" style="min-width:100px; flex:0 1 120px;" placeholder="paid from" value="${escHtml(b.card||'')}" onchange="updateSubscription('${b.id}','card',this.value)">
+      ${kindSelect(b)}
+      <button class="danger-ghost" onclick="removeSubscription('${b.id}')">remove</button>`;
+    ul.appendChild(li);
+  });
+  const monthlyRun = bills.filter(b=>b.cycle!=='annual').reduce((s,x)=> s + (Number(x.amount)||0), 0);
+  const perMonth = bills.reduce((s,x)=> s + monthlyEquivalent(x), 0);
+  totalEl.innerHTML = `Monthly: <strong>$${fmt(monthlyRun)}</strong>
+    &nbsp;·&nbsp; True cost per month: <strong>$${fmt(perMonth)}</strong>`;
 }
 
 function renderSubscriptions(){
@@ -2023,6 +2131,7 @@ function cloudInit(){
   toggleObRecurringUI();
   toggleIncRecurringUI();
   toggleSubCycleUI();
+  toggleBillCycleUI();
   const gen = generateRecurringItems();
   const genInc = generateRecurringIncomes();
   if(gen || genInc) await saveState();
