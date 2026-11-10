@@ -13,7 +13,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&family=Alumni+Sans:wght@500;600;700&family=Libre+Franklin:wght@400;500;600;700&display=swap');
   html, body, #root { min-height: 100%; }
   body { margin: 0; background: #14181B; }
   .docket-root { font-family: 'IBM Plex Sans', ui-sans-serif, system-ui; }
@@ -310,6 +310,40 @@ function saveCareer(career) {
   } catch (e) {}
 }
 
+/* ---------- leads (the Radar pane): a real role, at a company, with someone
+   you can reach. Their own storage key; synced. ---------- */
+const LEADS_KEY = 'docket-leads';
+
+function normalizeLead(x, i) {
+  const str = (v) => (v == null ? '' : String(v));
+  return {
+    id: x.id ? String(x.id) : `${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`,
+    title: str(x.title), company: str(x.company), url: str(x.url),
+    contact: str(x.contact), how: str(x.how), next: str(x.next), due: str(x.due),
+    stage: RADAR_STAGES.some(([s]) => s === x.stage) ? x.stage : 'To reach out',
+    reachedAt: Number(x.reachedAt) || null,
+    log: Array.isArray(x.log) ? x.log.filter((n) => n && n.text).map((n) => ({ at: Number(n.at) || Date.now(), text: String(n.text) })) : [],
+    taskId: x.taskId ? String(x.taskId) : null,
+    closed: !!x.closed,
+    fresh: !!x.fresh,
+    createdAt: Number(x.createdAt) || Date.now(),
+  };
+}
+
+function loadLeads() {
+  try {
+    const raw = localStorage.getItem(LEADS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return null;
+}
+
+function saveLeads(leads) {
+  try {
+    writeSynced(LEADS_KEY, JSON.stringify(leads.map(({ fresh, ...rest }) => rest)));
+  } catch (e) {}
+}
+
 const BOARD_UI_KEY = 'docket-board-ui';
 
 function loadBoardUI() {
@@ -361,7 +395,7 @@ const FIREBASE_CONFIG = {
   messagingSenderId: '1019620530454',
   appId: '1:1019620530454:web:8544cf34784785daa2d837',
 };
-const SYNC_KEYS = [STORAGE_KEY, JOURNAL_STORAGE_KEY, CAREER_STORAGE_KEY, TASK_ORDER_KEY, TASK_ORDER_LIST_KEY, TASK_ORDER_HOMEWORK_LIST_KEY, SILOS_KEY];
+const SYNC_KEYS = [STORAGE_KEY, JOURNAL_STORAGE_KEY, CAREER_STORAGE_KEY, LEADS_KEY, TASK_ORDER_KEY, TASK_ORDER_LIST_KEY, TASK_ORDER_HOMEWORK_LIST_KEY, SILOS_KEY];
 const SYNC_DIRTY_KEY = 'docket-sync-dirty';
 const SYNC_LINKED_KEY = 'docket-sync-linked';
 
@@ -572,6 +606,8 @@ function Docket() {
   // Career pane. careerLit is the lit wedge (null = task board showing);
   // careerSel is the selected company, which scopes roles/contacts.
   const [career, setCareer] = useState(emptyCareer);
+  const [leads, setLeads] = useState([]);
+  const [radarOpen, setRadarOpen] = useState(false);
   const [careerLit, setCareerLit] = useState(null);
   const [careerSel, setCareerSel] = useState(null);
   const [careerOpenId, setCareerOpenId] = useState(null);
@@ -601,6 +637,7 @@ function Docket() {
       if (Array.isArray(storedOrderHomeworkList)) setTaskOrderHomeworkList(storedOrderHomeworkList);
     }
     if (want(CAREER_STORAGE_KEY)) setCareer(normalizeCareer(loadCareer()));
+    if (want(LEADS_KEY)) setLeads((loadLeads() || []).map((x, i) => normalizeLead(x, i)));
     if (want(SILOS_KEY)) setSilos(loadSilos());
   };
 
@@ -632,6 +669,11 @@ function Docket() {
     if (!loaded) return;
     saveCareer(career);
   }, [career, loaded]);
+
+  useEffect(() => {
+    if (!loaded) return;
+    saveLeads(leads);
+  }, [leads, loaded]);
 
   // Esc closes the career pane and returns to the board.
   useEffect(() => {
@@ -843,6 +885,30 @@ function Docket() {
     setForm({ title: '', category: silos[0].key, phone: '', email: '', scheduledDate: null });
   };
 
+  // Pin a lead's next step as a dated task in the job-hunt silo; unpin removes it.
+  const pinLead = (lead) => {
+    if (lead.taskId) {
+      setTasks((prev) => prev.filter((t) => t.id !== lead.taskId));
+      setLeads((prev) => prev.map((l) => (l.id === lead.id ? { ...l, taskId: null } : l)));
+      return;
+    }
+    const silo = silos.find((s) => /job|career/i.test(s.label)) || silos[0];
+    const t = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      title: [lead.next || 'Follow up', lead.company].filter(Boolean).join(' · '),
+      category: silo.key,
+      phone: '',
+      email: '',
+      pushCount: 0,
+      completed: false,
+      createdAt: Date.now(),
+      snoozedDay: null,
+      scheduledDate: lead.due || null,
+    };
+    setTasks((prev) => [...prev, t]);
+    setLeads((prev) => prev.map((l) => (l.id === lead.id ? { ...l, taskId: t.id } : l)));
+  };
+
   const addJournalEntry = () => {
     if (!journalDraft.trim()) return;
     const entry = {
@@ -908,7 +974,7 @@ function Docket() {
   const exportBackup = () => {
     // v2 backup: one object carrying tasks, journal, career and silos. Older
     // backups (a bare array of tasks, or v2 without silos) still import.
-    const payload = { app: 'docket', version: 2, exportedAt: new Date().toISOString(), tasks, journal: journalEntries, career, silos };
+    const payload = { app: 'docket', version: 2, exportedAt: new Date().toISOString(), tasks, journal: journalEntries, career, silos, leads };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -942,6 +1008,7 @@ function Docket() {
             journal: Array.isArray(parsed.journal) ? parsed.journal.map((j, idx) => normalizeJournalEntry(j, idx)) : null,
             career: parsed.career ? normalizeCareer(parsed.career) : null,
             silos: Array.isArray(parsed.silos) ? normalizeSilos(parsed.silos) : null,
+            leads: Array.isArray(parsed.leads) ? parsed.leads.map((x, i) => normalizeLead(x, i)) : null,
           };
         } else {
           throw new Error('unrecognized backup');
@@ -960,6 +1027,7 @@ function Docket() {
     setTasks(pendingImport.tasks);
     if (pendingImport.journal) setJournalEntries(pendingImport.journal);
     if (pendingImport.silos) commitSilos(pendingImport.silos);
+    if (pendingImport.leads) setLeads(pendingImport.leads);
     if (pendingImport.career) {
       setCareer(pendingImport.career);
       setCareerSel(null);
@@ -1181,6 +1249,13 @@ function Docket() {
                 {sync.status === 'signed-out' ? 'Sign in' : 'Sign out'}
               </button>
             )}
+            <button
+              onClick={() => { setRadarOpen((v) => !v); setCareerLit(null); setCareerOpenId(null); }}
+              className="text-xs px-3 py-2 rounded-md border"
+              style={radarOpen ? { borderColor: COLORS.amber, background: COLORS.amber, color: COLORS.ink, fontWeight: 600 } : { borderColor: COLORS.inkPanelBorder, color: COLORS.textMuted }}
+            >
+              Radar
+            </button>
             <a
               href="https://harnden.github.io/runway.html"
               className="text-xs px-3 py-2 rounded-md border no-underline"
@@ -1463,7 +1538,9 @@ function Docket() {
         </div>
         </div>
 
-        {careerLit ? (
+        {radarOpen ? (
+          <RadarPane leads={leads} setLeads={setLeads} career={career} onPin={pinLead} onExit={() => setRadarOpen(false)} />
+        ) : careerLit ? (
           <CareerPane
             career={career}
             lit={careerLit}
@@ -1616,6 +1693,237 @@ function careerSector(a0, a1) {
   const [x3, y3] = polar(r, a1 - iOff);
   const [x4, y4] = polar(r, a0 + iOff);
   return `M${x1} ${y1} A${R} ${R} 0 0 1 ${x2} ${y2} L${x3} ${y3} A${r} ${r} 0 0 0 ${x4} ${y4} Z`;
+}
+
+/* ---------- Radar: leads (a real role + someone you can reach) on top,
+   Role Radar's morning listings below. Leads live in docket-leads and sync
+   like everything else; listings come from radar.json, which Role Radar
+   publishes to this site after each scan. ---------- */
+const RADAR_STAGES = [
+  ['To reach out', '#767169'],
+  ['Asked', '#D98E3F'],
+  ['Reached out', '#A0612A'],
+  ['Referred', '#B5473A'],
+  ['Applied', '#5C7A5E'],
+  ['Interviewing', '#3F5A41'],
+];
+const RADAR_STAGE_COLOR = Object.fromEntries(RADAR_STAGES);
+const RADAR_SANS = "'Libre Franklin', 'Franklin Gothic Medium', 'Franklin Gothic', ui-sans-serif, sans-serif";
+const RADAR_DISPLAY = "'Alumni Sans', 'Franklin Gothic Medium', sans-serif";
+
+function radarStamp(ms) {
+  if (!ms) return '';
+  return new Date(ms).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
+function radarDue(d) {
+  if (!d) return { text: '', late: false };
+  const today = new Date().toISOString().slice(0, 10);
+  const [y, m, day] = d.split('-').map(Number);
+  const label = new Date(y, m - 1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  if (d === today) return { text: 'today', late: true };
+  return d < today ? { text: `${label} · overdue`, late: true } : { text: label, late: false };
+}
+
+function companyKey(name) {
+  return String(name || '').split('·')[0].trim().toLowerCase();
+}
+
+function RadarField({ label, children }) {
+  return (
+    <label style={{ display: 'flex', flexDirection: 'column', gap: 4, textAlign: 'center' }}>
+      <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6A655B' }}>{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function LeadCard({ lead, onPatch, onClose, onPin }) {
+  const [editing, setEditing] = useState(!!lead.fresh);
+  const [draft, setDraft] = useState('');
+  const fld = { width: '100%', boxSizing: 'border-box', minHeight: 40, padding: '8px 10px', borderRadius: 8, border: '1px solid #D9D2C1', background: '#FFFDF8', color: '#211F1A', fontSize: 14, textAlign: 'center', fontFamily: 'inherit' };
+  const btn = { minHeight: 40, padding: '0 14px', borderRadius: 10, border: '1px solid #D9D2C1', background: 'transparent', color: '#211F1A', fontSize: 13, cursor: 'pointer' };
+  const color = RADAR_STAGE_COLOR[lead.stage] || '#767169';
+  const due = radarDue(lead.due);
+  const set = (k) => (e) => onPatch({ [k]: e.target.value });
+
+  const pickStage = (e) => {
+    const v = e.target.value;
+    onPatch(v === 'Reached out' ? { stage: v, reachedAt: Date.now() } : { stage: v });
+  };
+  const addNote = () => {
+    const t = draft.trim();
+    if (!t) return;
+    onPatch({ log: [...lead.log, { at: Date.now(), text: t }] });
+    setDraft('');
+  };
+  const doneEditing = () => {
+    setEditing(false);
+    if (lead.fresh) onPatch({ fresh: false });
+  };
+
+  return (
+    <article style={{ flex: '0 1 390px', minWidth: 300, boxSizing: 'border-box', background: COLORS.paper, color: COLORS.textInk, borderRadius: 16, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 12, borderTop: `5px solid ${color}`, textAlign: 'center' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+        <select value={lead.stage} onChange={pickStage} aria-label="Status"
+          style={{ minHeight: 36, padding: '0 12px', borderRadius: 999, border: `1px solid ${color}`, background: color, color: '#FAF7F0', fontFamily: 'inherit', fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
+          {RADAR_STAGES.map(([s]) => <option key={s} value={s}>{s}</option>)}
+        </select>
+        {lead.reachedAt ? <span style={{ fontSize: 12, color: '#6A655B' }}>Reached out {radarStamp(lead.reachedAt)}</span> : null}
+      </div>
+
+      {editing ? (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div style={{ gridColumn: '1 / -1' }}><RadarField label="Role"><input style={fld} value={lead.title} onChange={set('title')} autoFocus /></RadarField></div>
+            <RadarField label="Company"><input style={fld} value={lead.company} onChange={set('company')} /></RadarField>
+            <RadarField label="Posting link"><input style={fld} value={lead.url} onChange={set('url')} placeholder="https://" /></RadarField>
+            <RadarField label="Who"><input style={fld} value={lead.contact} onChange={set('contact')} /></RadarField>
+            <RadarField label="Due"><input style={fld} type="date" value={lead.due} onChange={set('due')} /></RadarField>
+            <div style={{ gridColumn: '1 / -1' }}><RadarField label="Way in"><textarea style={{ ...fld, resize: 'vertical' }} rows={2} value={lead.how} onChange={set('how')} /></RadarField></div>
+            <div style={{ gridColumn: '1 / -1' }}><RadarField label="Next step"><input style={fld} value={lead.next} onChange={set('next')} /></RadarField></div>
+          </div>
+          <div><button type="button" onClick={doneEditing} style={{ ...btn, border: 0, background: COLORS.textInk, color: COLORS.paper, fontWeight: 600 }}>Done</button></div>
+        </>
+      ) : (
+        <>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <h3 style={{ margin: 0, fontSize: 21, fontWeight: 600, lineHeight: 1.25 }}>{lead.title || 'Untitled'}</h3>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6A655B' }}>{lead.company}</span>
+              {lead.url ? <a href={lead.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#A0612A' }}>Posting ↗</a> : null}
+            </div>
+          </div>
+          <div style={{ background: COLORS.paperDim, borderRadius: 10, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div style={{ fontWeight: 600, fontSize: 15 }}>{lead.contact || 'Who?'}</div>
+            {lead.how ? <div style={{ fontSize: 14, lineHeight: 1.45, color: '#3B3830' }}>{lead.how}</div> : null}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {lead.log.map((n, i) => (
+              <div key={n.at + '-' + i} style={{ fontSize: 13, lineHeight: 1.45, color: '#3B3830' }}>
+                <span style={{ color: '#8A8476', marginRight: 6 }}>{radarStamp(n.at)}</span>{n.text}{' '}
+                <button type="button" aria-label="Delete note" onClick={() => onPatch({ log: lead.log.filter((_, j) => j !== i) })}
+                  style={{ border: 0, background: 'none', color: '#B9B19E', cursor: 'pointer', padding: '0 2px' }}>×</button>
+              </div>
+            ))}
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input style={{ ...fld, minHeight: 36, fontSize: 13 }} value={draft} onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addNote(); } }} aria-label="Note" placeholder="+ note" />
+              <button type="button" onClick={addNote} aria-label="Add note" style={{ ...btn, flex: '0 0 36px', minHeight: 36, padding: 0 }}>+</button>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
+            <span>→ {lead.next || '—'}</span>
+            {due.text ? <span style={{ fontSize: 12, color: due.late ? COLORS.rust : '#6A655B' }}>{due.text}</span> : null}
+            {lead.taskId ? <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#3F5A41' }}>📌 Pinned</span> : null}
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
+            <button type="button" onClick={() => setEditing(true)} style={{ ...btn, border: `1px solid ${COLORS.textInk}`, fontWeight: 600 }}>Edit</button>
+            <button type="button" onClick={onPin} style={btn}>{lead.taskId ? 'Unpin' : 'Pin'}</button>
+            <button type="button" onClick={onClose} style={{ ...btn, color: '#6A655B' }}>Close</button>
+          </div>
+        </>
+      )}
+    </article>
+  );
+}
+
+function RadarPane({ leads, setLeads, career, onPin, onExit }) {
+  const [feed, setFeed] = useState(null);
+  const [feedError, setFeedError] = useState(false);
+  const [passed, setPassed] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('docket-radar-passed')) || {}; } catch (e) { return {}; }
+  });
+  const [showClosed, setShowClosed] = useState(false);
+
+  useEffect(() => {
+    fetch(`radar.json?t=${Date.now()}`, { cache: 'no-store' })
+      .then((r) => { if (!r.ok) throw new Error(String(r.status)); return r.json(); })
+      .then(setFeed)
+      .catch(() => setFeedError(true));
+  }, []);
+
+  useEffect(() => {
+    try { localStorage.setItem('docket-radar-passed', JSON.stringify(passed)); } catch (e) {}
+  }, [passed]);
+
+  const patch = (id, p) => setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, ...p } : l)));
+  const open = leads.filter((l) => !l.closed);
+  const closedCount = leads.length - open.length;
+
+  const known = {};
+  const companyName = (id) => (career.companies.find((c) => c.id === id) || {}).name || '';
+  career.contacts.forEach((c) => { const k = companyKey(companyName(c.company)); if (k && !known[k]) known[k] = c.name; });
+  open.forEach((l) => { const k = companyKey(l.company); if (k && l.contact && !known[k]) known[k] = l.contact; });
+  const promoted = new Set(leads.map((l) => l.url).filter(Boolean));
+
+  const addLead = (extra) => setLeads((prev) => [normalizeLead({ fresh: true, ...extra }, prev.length), ...prev]);
+
+  const jobs = feed && Array.isArray(feed.jobs) ? feed.jobs.filter((j) => !passed[j.url]) : [];
+  const shown = jobs.slice(0, 40);
+
+  return (
+    <div style={{ fontFamily: RADAR_SANS, textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 28, maxWidth: 1240, margin: '0 auto 48px' }}>
+      <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center', justifyContent: 'center' }}>
+          <h2 style={{ margin: 0, fontFamily: RADAR_DISPLAY, fontWeight: 700, fontSize: 64, lineHeight: 1, letterSpacing: '0.01em', color: COLORS.paper }}>Warm it up, Kris.</h2>
+          <button type="button" onClick={() => addLead({})} aria-label="Add"
+            style={{ width: 48, height: 48, borderRadius: 999, border: `1px solid ${COLORS.amber}`, background: 'transparent', color: COLORS.amber, fontSize: 26, lineHeight: 1, cursor: 'pointer' }}>+</button>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 14 }}>
+          {(showClosed ? leads : open).map((l) => (
+            <LeadCard key={l.id} lead={l}
+              onPatch={(p) => patch(l.id, p)}
+              onClose={() => patch(l.id, { closed: !l.closed })}
+              onPin={() => onPin(l)} />
+          ))}
+        </div>
+        {closedCount ? (
+          <div style={{ fontSize: 13, color: COLORS.textMuted }}>
+            {closedCount} closed · <button type="button" onClick={() => setShowClosed((v) => !v)} style={{ border: 0, background: 'none', color: COLORS.amber, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>{showClosed ? 'Hide' : 'Show'}</button>
+          </div>
+        ) : null}
+      </section>
+
+      <section style={{ background: COLORS.inkPanel, border: `1px solid ${COLORS.inkPanelBorder}`, borderRadius: 16, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'baseline', justifyContent: 'center', padding: '18px 20px', borderBottom: `1px solid ${COLORS.inkPanelBorder}` }}>
+          <h2 style={{ margin: 0, fontFamily: RADAR_DISPLAY, fontWeight: 700, fontSize: 36, color: COLORS.paper }}>Role Radar</h2>
+          {feed ? <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#8FB291' }}>{radarStamp(Date.parse(feed.scannedAt))} · {feed.jobs.length}</span> : null}
+        </div>
+        {feedError ? <div style={{ padding: '14px 20px', fontSize: 14, color: COLORS.textMuted }}>No scan yet.</div> : null}
+        {shown.map((j) => {
+          const who = known[companyKey(j.company)];
+          const done = promoted.has(j.url);
+          const hot = !!who && !done;
+          return (
+            <div key={j.url} style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 16px', alignItems: 'center', justifyContent: 'center', padding: '14px 20px', borderBottom: `1px solid ${COLORS.inkPanelBorder}` }}>
+              <div style={{ flex: '1 1 420px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <a href={j.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 16, fontWeight: 500, color: COLORS.textOnDark, textDecoration: 'none' }}>{j.title}</a>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontSize: 12, letterSpacing: '0.04em', color: COLORS.textMuted }}>{[j.company, j.posted].filter(Boolean).join(' · ')}</span>
+                  {who ? <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '3px 8px', borderRadius: 999, background: COLORS.moss, color: COLORS.paper }}>{who}</span> : null}
+                </div>
+              </div>
+              <button type="button" aria-label="Move up" disabled={done}
+                onClick={() => addLead({ title: j.title, company: companyKey(j.company) ? j.company.split('·')[0].trim() : '', url: j.url, contact: who || '', next: who ? `Ask ${who} about this opening` : '' })}
+                style={{ minHeight: 40, minWidth: 44, padding: '0 14px', borderRadius: 10, fontWeight: 600, fontSize: 15, cursor: done ? 'default' : 'pointer', border: done ? `1px solid ${COLORS.inkPanelBorder}` : hot ? 0 : `1px solid ${COLORS.amber}`, background: hot ? COLORS.amber : 'transparent', color: done ? '#8FB291' : hot ? COLORS.ink : COLORS.amber }}>
+                {done ? '✓' : '↑'}
+              </button>
+              <button type="button" aria-label={`Pass on ${j.title}`} onClick={() => setPassed((p) => ({ ...p, [j.url]: true }))}
+                style={{ minHeight: 40, padding: '0 12px', borderRadius: 10, border: `1px solid ${COLORS.inkPanelBorder}`, background: 'transparent', color: COLORS.textMuted, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>Pass</button>
+            </div>
+          );
+        })}
+        {feed ? (
+          <div style={{ padding: '14px 20px', display: 'flex', flexWrap: 'wrap', gap: '8px 20px', justifyContent: 'center', fontSize: 13, color: COLORS.textMuted }}>
+            {jobs.length > shown.length ? <span>+{jobs.length - shown.length} more</span> : null}
+            {feed.byHand && feed.byHand.length ? <span>By hand: {feed.byHand.join(', ')}</span> : null}
+          </div>
+        ) : null}
+      </section>
+      <div><button type="button" onClick={onExit} style={{ border: 0, background: 'none', color: COLORS.textMuted, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }}>← Board</button></div>
+    </div>
+  );
 }
 
 function CareerWheel({ career, lit, sel, onToggle, onAdd }) {
