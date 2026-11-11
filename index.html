@@ -1,321 +1,207 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!doctype html>
+<html lang="en" data-palette="eggplant" data-font="franklin" data-align="center">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Joshua Harnden — Technology Commercialization at UT Austin McCombs, Agentic AI at Johns Hopkins, and 18+ years of executive broadcast delivery." />
+    <title>Joshua Harnden</title>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display&display=swap" rel="stylesheet">
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Alumni+Sans:ital,wght@0,400..900;1,400..900&family=Anton&family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Libre+Franklin:ital,wght@0,400..900;1,400..900&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="site.css" />
+  </head>
+  <body>
+    <div class="site">
+      <!-- Site Header -->
+      <header class="site-header">
+        <a class="wordmark" href="#top" aria-label="Joshua Harnden, home">
+          <span class="wordmark-box">JH</span>
+          <span>Joshua Harnden</span>
+        </a>
 
-  :root {
-    --bg: #390574;
-    --text: #f0f0f5;
-    --muted: rgba(240,240,245,0.4);
-  }
+        <nav aria-label="Main navigation">
+          <a href="#focus">Focus</a>
+          <a href="#background">Credentials</a>
+          <a class="contact-nav" href="mailto:joshua@harnden.org">Contact <span aria-hidden="true">↗</span></a>
+        </nav>
+      </header>
 
-  body {
-    background-color: #18181c;
-    background-blend-mode: overlay; 
-    background-image: url("img/backie5.png");
-    font-family: 'DM Sans', sans-serif;
-    min-height: 100vh;
-    padding: 3rem 2.5rem 4rem;
-    cursor: default;
-  }
+      <main id="top">
+        <!-- Hero Section -->
+        <section class="intro">
+          <div class="intro-copy">
+            <p class="eyebrow">
+              <span class="sunset-rule" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+              Austin, Texas · Enterprise AI & Delivery
+            </p>
+            <h1>Joshua<br class="desktop-break" /> Harnden<span class="period">.</span></h1>
+            <p class="lede">
+              18 years leading high-stakes cross-functional production and narrative delivery in broadcast television. Now building at the intersection of <strong>agentic AI workflows</strong> and <strong>enterprise commercialization</strong>.
+            </p>
+            <div class="intro-links">
+              <a class="hero-btn" href="https://linkedin.com/in/storyproducer" target="_blank" rel="noreferrer">LinkedIn Profile <span aria-hidden="true">↗</span></a>
+              <a class="hero-btn" href="mailto:joshua@harnden.org">joshua@harnden.org <span aria-hidden="true">↗</span></a>
+              <a class="hero-btn" href="#focus">Explore Focus Areas <span aria-hidden="true">↓</span></a>
+            </div>
+          </div>
+          <figure class="portrait-wrap">
+            <img src="assets/joshua-headshot.png" alt="Joshua Harnden" />
+            <figcaption>Austin, TX · McCombs M.S.T.C.</figcaption>
+          </figure>
+        </section>
 
-  header {
-    display: flex;
-    align-items: baseline;
-    gap: 1rem;
-    margin-bottom: 3rem;
-  }
+        <!-- Section 1: Core Focus Areas (The 4 Pillars) -->
+        <section class="work-section" id="focus" aria-labelledby="focusTitle">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">
+                <span class="sunset-rule" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+                01 — Core Focus
+              </p>
+              <h2 id="focusTitle">What I Bring to the Table</h2>
+            </div>
+            <p class="section-aside">The intersection of technical capability,<br />operational leadership, and commercial narrative.</p>
+          </div>
 
-  h1 {
-    font-family: 'DM Serif Display', serif;
-    font-size: 2.2rem;
-    font-weight: 400;
-    letter-spacing: -0.02em;
-    color: var(--text);
-  }
+          <div class="pillar-grid">
+            <!-- Pillar 1: AI & Tech -->
+            <article class="pillar-card pillar-1">
+              <div class="pillar-header">
+                <span class="pillar-num">01</span>
+                <span class="pillar-tag">Emerging Tech</span>
+              </div>
+              <h3>Agentic AI & Prompt Systems</h3>
+              <p>Hands-on experience evaluating, training, and stress-testing frontier models (Mercor, Outlier, Uber AI Solutions). Concurrently earning the <strong>Certificate in Agentic AI from Johns Hopkins University</strong>, focusing on autonomous multi-agent workflows and human-in-the-loop validation.</p>
+            </article>
 
-  .time {
-    font-size: 0.85rem;
-    color: var(--muted);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
+            <!-- Pillar 2: Commercialization -->
+            <article class="pillar-card pillar-2">
+              <div class="pillar-header">
+                <span class="pillar-num">02</span>
+                <span class="pillar-tag">Business & GTM</span>
+              </div>
+              <h3>Technology Commercialization</h3>
+              <p>M.S. in Technology Commercialization (M.S.T.C.) candidate at <strong>UT Austin McCombs School of Business</strong>. Focused on translating complex, bleeding-edge technical capabilities into clear, defensible product market positioning and business models.</p>
+            </article>
 
-  .section-label {
-    font-size: 0.7rem;
-    color: var(--muted);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    font-weight: 500;
-    margin-bottom: 1rem;
-  }
+            <!-- Pillar 3: Delivery -->
+            <article class="pillar-card pillar-3">
+              <div class="pillar-header">
+                <span class="pillar-num">03</span>
+                <span class="pillar-tag">Execution & Ops</span>
+              </div>
+              <h3>High-Stakes Delivery & Operations</h3>
+              <p>18 years as Co-Executive Producer and Supervising Producer running 300+ broadcast episodes (MTV, Bravo, E!, TLC, History). Managing 10–20 person cross-functional teams, $500K budgets, and immovable network delivery schedules under intense pressure.</p>
+            </article>
 
-  .grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    justify-content: center;
-  }
+            <!-- Pillar 4: Narrative -->
+            <article class="pillar-card pillar-4">
+              <div class="pillar-header">
+                <span class="pillar-num">04</span>
+                <span class="pillar-tag">Communication</span>
+              </div>
+              <h3>Narrative Architecture & Story</h3>
+              <p><strong>Princeton B.A. in English</strong> and <strong>Otis M.F.A. in Creative Writing</strong>. Expert at "de-AI-ifying" boilerplate content to craft compelling, high-conviction product positioning, stakeholder presentations, and executive communication.</p>
+            </article>
+          </div>
+        </section>
 
-  /* Tools row sits below streaming, separated by space and a faint rule */
-  .grid + .grid {
-    margin-top: 2.5rem;
-    padding-top: 2.5rem;
-    border-top: 1px solid rgba(240,240,245,0.08);
-  }
+        <!-- Section 2: Background & Credentials -->
+        <section class="capability-section" id="background" aria-labelledby="credTitle">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">
+                <span class="sunset-rule" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+                02 — Background & Pedigree
+              </p>
+              <h2 id="credTitle">Credentials & Track Record</h2>
+            </div>
+            <p class="section-aside">A proven history of<br />rigor and scale.</p>
+          </div>
 
-  .tile {
-    flex: 0 1 328px;
-    max-width: 360px;
-    aspect-ratio: 16/10;
-    border-radius: 14px;
-    overflow: hidden;
-    cursor: pointer;
-    background: #000;
-    transition: transform 0.18s ease, box-shadow 0.18s ease;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+          <div class="experience-list">
+            <!-- 1. Broadcast Leadership -->
+            <div class="experience-row">
+              <h3>Broadcast & Media Production</h3>
+              <p>
+                18 years as Co-Executive Producer and Supervising Producer delivering 300+ broadcast episodes across cable and streaming: 
+                <em>My 600-lb Life</em> (TLC, 132 episodes), <em>The Hills</em> & <em>The City</em> (MTV), <em>Keeping Up With the Kardashians</em> (E!), and <em>Roman Atwood’s Daydreams</em> (YouTube Red, Emmy-nominated). Directed 10–20 person cross-functional teams, $500K episode budgets, and high-pressure post-production turnarounds.
+              </p>
+              <span class="row-note">
+                <a class="out-link" href="https://harnden.github.io/tvwork.html" target="_blank">TV Production CV ↗</a>
+              </span>
+            </div>
 
-  .tile:hover {
-    transform: translateY(-3px) scale(1.015);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-  }
+            <!-- 2. Frontier AI Model Training & Evaluation -->
+            <div class="experience-row">
+              <h3>Frontier AI Evaluation & Training</h3>
+              <p>
+                Contractor evaluating, red-teaming, and training complex reasoning frontier models and agentic prompt architectures (Mercor, Outlier, Uber AI Solutions, Handshake). Applying 18 years of editorial rigor and domain expertise to stress-test edge cases, eliminate hallucinations, and optimize human-in-the-loop workflows.
+              </p>
+              <span class="row-note">Frontier AI Labs</span>
+            </div>
 
-  .tile:active {
-    transform: translateY(0) scale(0.99);
-  }
+            <!-- 3. Athletics & Youth Mentorship -->
+            <div class="experience-row">
+              <h3>Community Leadership</h3>
+              <p>
+                Head Coach for two competitive youth soccer teams at FC Westlake in Austin. Fostering player development, strategic problem-solving under pressure, parent communication, and team culture.
+              </p>
+              <span class="row-note" style="color: var(--pastel-pink, #f7a8d0); font-weight: 600; text-shadow: 0 0 10px rgba(247, 168, 208, 0.35);">Austin, TX</span>
+            </div>
 
-  .tile:focus-visible {
-    outline: 2px solid var(--text);
-    outline-offset: 3px;
-  }
+            <!-- 4. Academic Foundation & Honors -->
+            <div class="experience-row">
+              <h3>Degrees & Academic Honors</h3>
+              <p>
+                <strong>M.S. Technology Commercialization</strong> (UT Austin McCombs School of Business, exp. 2027)<br />
+                <strong>Certificate, Agentic AI</strong> (Johns Hopkins University, in progress)<br />
+                <strong>M.F.A. Creative Writing</strong> (Otis College of Art and Design)<br />
+                <strong>Certificate, Screenwriting</strong> (UCLA)<br />
+                <strong>B.A. English</strong> (Princeton University)
+              </p>
+              <span class="row-note">Princeton · McCombs · JHU · UCLA</span>
+            </div>
+          </div>
+        </section>
 
-  .tile img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    display: block;
-    flex-shrink: 0;
-    padding: 12%;
-    transition: padding 0.22s ease;
-  }
+        <!-- Section 3: Character Builders & Sundry Adventures -->
+        <section class="capability-section" id="adventures" aria-labelledby="advTitle">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">
+                <span class="sunset-rule" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+                03 — Real-World Education
+              </p>
+              <h2 id="advTitle">Character Builders & Sundry Adventures</h2>
+            </div>
+            <p class="section-aside">The unvarnished curriculum<br />of how people tick.</p>
+          </div>
 
-  .tile:hover img {
-    padding: 6%;
-  }
+          <div class="adventures-card">
+            <p>
+              Giving 3,500 rides behind the wheel for Uber, selling supplemental insurance for the Duck, muddling mango mojitos off Union Square in S.F., NewGate Internet, or the loneliest gig of my life on the Paramount Studio Lot. Before and between the production years and grad school, everything teaches you human nature, resilience, and perspective.
+            </p>
+          </div>
+        </section>
+      </main>
 
-  .tile img.contain {
-    padding: 12%;
-  }
-
-  .tile:hover img.contain {
-    padding: 6%;
-  }
-
-  /* Text stand-in for tiles that don't have a thumbnail yet.
-     Swap the <span> for an <img> once the image exists. */
-  .tile-name {
-    font-family: 'DM Serif Display', serif;
-    font-size: 2.4rem;
-    letter-spacing: -0.02em;
-    color: var(--text);
-    transition: transform 0.22s ease;
-  }
-
-  .tile:hover .tile-name {
-    transform: scale(1.08);
-  }
-
-  /* Sheets tile: white spreadsheet grid on green. Cells link to workbooks:
-     2 workbooks = left/right halves, 3 = thirds, 4 = quadrants. */
-  .tile.sheets {
-    background: #188038;
-    padding: 1.25rem;
-    cursor: default;
-    align-items: stretch;
-    justify-content: stretch;
-  }
-  .sheets-grid {
-    flex: 1;
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    grid-template-rows: repeat(4, 1fr);
-    gap: 3px;
-    padding: 3px;
-    background: #fff;           /* shows through the gaps as the grid lines */
-    border-radius: 4px;
-  }
-  .sheets-grid a {
-    background: #188038;
-    cursor: pointer;
-    transition: background 0.12s ease;
-  }
-  .sheets-grid a.zone { background: #2a9a52; }   /* rest of the hovered workbook's area */
-  .sheets-grid a:hover { background: var(--hover, #fff); }   /* the cell under the mouse; color set per cell */
-  .sheets-grid a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-
-  @media (prefers-reduced-motion: reduce) {
-    .tile, .tile img, .tile-name { transition: none; }
-    .tile:hover { transform: none; }
-  }
-</style>
-</head>
-<body>
-
-<header>
-  <span class="time" id="clock"></span>
-</header>
-
-<!-- Streaming -->
-<div class="grid">
-
-  <a class="tile" title="need to pay bill" href="https://netflix.com" target="_blank">
-    <img class="contain" src="img/logo-netflix.png" alt="Netflix">
-  </a>
-
-  <a class="tile" href="https://disneyplus.com" target="_blank">
-    <img src="img/logo-disney.jpeg" alt="Disney+">
-  </a>
-
-  <a class="tile" href="https://max.com" target="_blank">
-    <img class="contain" style="filter:invert(1)" src="img/logo-hbo.png" alt="Max">
-  </a>
-
-  <a class="tile" title="swap for Paramount+ in late June" href="https://peacocktv.com" target="_blank">
-    <img src="img/logo-peacock.png" alt="Peacock">
-  </a>
-
-  <a class="tile" href="https://paramountplus.com" target="_blank">
-    <img class="contain" style="filter:invert(1)" src="img/logo-paramount.png" alt="Paramount+">
-  </a>
-
-  <a class="tile" href="https://tv.apple.com" target="_blank">
-    <img src="img/logo-appletv.jpeg" alt="Apple TV+">
-  </a>
-
-  <a class="tile" title="$6 credit available!" href="https://primevideo.com" target="_blank">
-    <img src="img/logo-prime.png" alt="Prime Video">
-  </a>
-
-  <a class="tile" title="bundled with disney+" href="https://hulu.com" target="_blank">
-    <img src="img/logo-hulu.png" alt="Hulu">
-  </a>
-
-  <a class="tile" href="https://mygreatlearning.com" target="_blank">
-    <img src="img/great-learning.jpeg" alt="Great Learning">
-  </a>
-
-  <a class="tile" title="53rd District Court, Travis County" href="https://www.youtube.com/channel/UCTDZXEaLHAIEbwiL9HDLgIw" target="_blank">
-    <img class="contain" src="img/images.png" alt="YouTube">
-  </a>
-
-  <a class="tile" title="fightincowboy: Dark Souls 3 walkthrough" href="https://www.youtube.com/watch?v=2ZnFfnQeihc&list=PL7RtZMiaOk8gqctsEgBQ9IhQAnm_P5ILT" target="_blank">
-    <img class="contain" src="img/images.png" alt="YouTube">
-  </a>
-
-  <a class="tile" style="background:#fff" title="MBA Math" href="https://www.mbamath.com" target="_blank">
-    <img class="contain" src="img/logo.png" alt="MBA Math">
-  </a>
-
-</div>
-
-<!-- My tools -->
-<div class="grid">
-
-  <a class="tile" style="background:#f0e4d6" href="../runway.html" target="_blank">
-    <img src="img/runway-thumb.png" alt="Runway">
-  </a>
-
-  <!-- TODO: confirm path -->
-  <a class="tile" style="background:#a03a30" href="../docket.html" target="_blank">
-    <img src="img/docket-thumb.png" alt="Docket">
-  </a>
-
-  <!-- TODO: confirm path to soccer hub -->
-  <a class="tile" style="background:#f0e4d6" href="../soccer/" target="_blank">
-    <img src="img/soccer-thumb.png" alt="Soccer">
-  </a>
-
-  <!-- Runs the macOS Shortcut "MSTC Canvas", which opens Canvas in Chrome Profile 5 (Mac only) -->
-  <a class="tile" style="background:#bf5700" title="MSTC on Canvas" href="shortcuts://run-shortcut?name=MSTC%20Canvas">
-    <img src="img/mstc-thumb.png" alt="UT MSTC, McCombs Austin">
-  </a>
-
-  <!-- Handshake AI: log in, then "AI Work" in the left nav -->
-  <a class="tile" style="background:#cbf746" title="Handshake AI" href="https://app.joinhandshake.com/login" target="_blank">
-    <img class="contain" src="img/handshake_480-x-320.png" alt="Handshake AI">
-  </a>
-
-  <!-- Google Sheets: grid built by the script at the bottom (SHEETS list) -->
-  <div class="tile sheets">
-    <div class="sheets-grid" id="sheets-grid"></div>
-  </div>
-
-  <!-- Runs the macOS Shortcut named "Open Terminal" (Mac only) -->
-  <a class="tile" style="background:#000" title="Terminal" href="shortcuts://run-shortcut?name=Open%20Terminal">
-    <span class="tile-name" style="font-family:Menlo, monospace">&gt;_</span>
-  </a>
-
-  <!-- Outlook Triage: local app, only works while it's running on localhost:3000 -->
-  <a class="tile" style="background:#1a0f24" title="Outlook Triage" href="http://localhost:3000" target="_blank">
-    <img class="contain" src="img/triage-thumb.png" alt="Outlook Triage">
-  </a>
-
-</div>
-
-<script>
-  function updateClock() {
-    const now = new Date();
-    document.getElementById('clock').textContent = now.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
-  }
-  updateClock();
-  setInterval(updateClock, 1000);
-
-  // Workbooks on the Sheets tile (2–4). Order sets position: left→right, then top→bottom for 4.
-  const SHEETS = [
-    { name: 'Homework',   url: 'https://docs.google.com/spreadsheets/d/1AByybSV22BGHA61WMg_5WS7aojjfzYEX9coFDn816q0/edit' },
-    { name: 'Possession Schedule', url: 'https://docs.google.com/spreadsheets/d/1HYplAoevraDiBv9VOx_luWoYHglCyjoQhfYif1VJl2U/edit' },
-  ];
-
-  (function buildSheetsTile() {
-    const grid = document.getElementById('sheets-grid');
-    const COLS = 6, ROWS = 4, n = SHEETS.length;
-    const zoneOf = (c, r) =>
-      n === 4 ? (r < ROWS / 2 ? 0 : 2) + (c < COLS / 2 ? 0 : 1)
-              : Math.floor(c / (COLS / n));
-    // Hover colors, cycled so no cell matches its neighbor (left/right/up/down).
-    const HOVER = ['#ffffff', '#fbbc04', '#ea4335', '#4285f4', '#a142f4', '#24c1e0'];
-    const cells = [];
-    const seen = new Set();
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        const z = zoneOf(c, r), sheet = SHEETS[z];
-        const a = document.createElement('a');
-        a.href = sheet.url;
-        a.target = '_blank';
-        a.title = sheet.name;
-        a.setAttribute('aria-label', sheet.name);
-        a.dataset.zone = z;
-        a.style.setProperty('--hover', HOVER[(c + 2 * r) % HOVER.length]);
-        if (seen.has(z)) a.tabIndex = -1; else seen.add(z);   // one tab stop per workbook
-        a.addEventListener('mouseenter', () =>
-          cells.forEach(x => x.classList.toggle('zone', x.dataset.zone == z)));
-        cells.push(a);
-        grid.appendChild(a);
-      }
-    }
-    grid.addEventListener('mouseleave', () => cells.forEach(x => x.classList.remove('zone')));
-  })();
-</script>
-
-</body>
+      <!-- Footer with 4-Color Grounding Rule -->
+      <footer class="site-footer" id="contact">
+        <div class="sunset-rule footer-rule" aria-hidden="true">
+          <i></i><i></i><i></i><i></i>
+        </div>
+        <div class="footer-content">
+          <span>Joshua Harnden · Austin, TX</span>
+          <div class="footer-links">
+            <a href="https://linkedin.com/in/storyproducer" target="_blank" rel="noreferrer">LinkedIn ↗</a>
+            <a href="mailto:joshua@harnden.org">joshua@harnden.org ↗</a>
+            <a href="https://harnden.github.io/tvwork.html">Television CV ↗</a>
+            <a href="/launcher.html" class="workspace-link" title="Private workspace">Workspace ↗</a>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </body>
 </html>

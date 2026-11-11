@@ -1,0 +1,1063 @@
+:root {
+  color-scheme: light;
+  --paper: #f5f1e9;
+  --surface: #fbf9f4;
+  --parchment: #ebe4d7;
+  --ink: #24221f;
+  --muted: #6f6a61;
+  --line: #d9d0c1;
+  --accent: #17414b;
+  --accent-soft: #e5ecea;
+  --warm: #b64f30;
+  --sun-1: #f5b82e;
+  --sun-2: #f08a24;
+  --sun-3: #c42c27;
+  --sun-4: #1f6e77;
+  --page-width: 1080px;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-size: 15px; line-height: 1.55; }
+a { color: inherit; }
+.site { max-width: var(--page-width); margin: 0 auto; padding: 0 54px; background: var(--paper); }
+.site-header { height: 70px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.wordmark { text-decoration: none; font-size: 12px; font-weight: 650; display: inline-flex; gap: 9px; align-items: center; }
+.wordmark-box { height: 27px; width: 27px; display: grid; place-items: center; border: 1px solid var(--accent); color: var(--accent); font: 600 10px/1 Georgia, serif; letter-spacing: -.05em; }
+nav { display: flex; gap: 25px; align-items: center; font-size: 11px; color: var(--muted); }
+nav a { text-decoration: none; }
+nav a:hover, .email-link:hover, .text-link:hover, .out-link:hover { color: var(--warm); }
+.contact-nav { color: var(--ink); font-weight: 650; }
+.contact-nav span { color: var(--accent); margin-left: 3px; }
+.eyebrow { margin: 0; color: var(--muted); text-transform: uppercase; letter-spacing: .15em; font-size: 9px; line-height: 1.5; font-weight: 700; }
+.intro { min-height: 338px; display: grid; grid-template-columns: minmax(0, 1fr) 176px; gap: 54px; align-items: center; padding: 48px 0 42px; border-bottom: 1px solid var(--line); }
+.intro-copy { max-width: 680px; }
+.intro .eyebrow { display: flex; align-items: center; gap: 9px; }
+.sunset-rule {
+  display: flex;
+  width: 52px;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+.sunset-rule i { flex: 1; }
+.sunset-rule i:nth-child(1) { background: var(--sun-1); }.sunset-rule i:nth-child(2) { background: var(--sun-2); }.sunset-rule i:nth-child(3) { background: var(--sun-3); }.sunset-rule i:nth-child(4) { background: var(--sun-4); }
+h1, h2, h3, p, figure { margin-top: 0; }
+h1 { font: 500 clamp(48px, 6.5vw, 76px)/.99 Georgia, "Times New Roman", serif; letter-spacing: -.065em; margin: 20px 0 15px; }
+.period { color: var(--accent); }
+.lede { max-width: 630px; color: var(--muted); font-size: 16px; line-height: 1.55; margin: 0; }
+.intro-links { display: flex; gap: 25px; flex-wrap: wrap; margin-top: 23px; align-items: center; font-size: 11px; }
+.text-link { color: var(--accent); font-weight: 700; text-decoration: none; }
+.email-link { color: var(--muted); text-decoration: none; }
+.portrait-wrap {
+  margin: 0;
+  justify-self: end;
+  width: 162px;
+  position: relative;
+}
+
+/* Ambient Pastel Pink Backglow behind Headshot */
+/* Permanent Base Ambient Glow */
+.portrait-wrap::before {
+  content: "";
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle, rgba(247, 168, 208, 0.35) 0%, rgba(247, 168, 208, 0.12) 50%, transparent 75%);
+  border-radius: 50%;
+  z-index: 0;
+  filter: blur(18px);
+  pointer-events: none;
+}
+
+/* Supercharged Hover Bloom: Uses pure OPACITY and TRANSFORM for guaranteed 2.5s slow decay */
+.portrait-wrap::after {
+  content: "";
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(247, 168, 208, 0.68) 0%, rgba(247, 168, 208, 0.25) 55%, transparent 80%);
+  border-radius: 50%;
+  z-index: 0;
+  filter: blur(24px);
+  pointer-events: none;
+  opacity: 0;
+  /* The genuine, guaranteed slow decay on mouse-out: 2.4 seconds! */
+  transition: opacity 2.4s cubic-bezier(0.1, 0.9, 0.2, 1),
+              transform 2.4s cubic-bezier(0.1, 0.9, 0.2, 1);
+}
+
+.portrait-wrap:hover::after {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1.42);
+  /* Fast, punchy wake-up on hover */
+  transition: opacity 0.25s ease-out,
+              transform 0.25s ease-out;
+}
+
+.portrait-wrap img {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 162px;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  object-position: center 35%;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border-radius: 4px;
+  filter: saturate(.88);
+  /* Gentle 1.4s return */
+  transition: transform 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.portrait-wrap:hover img {
+  transform: scale(1.18);
+  filter: saturate(1.0);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s ease;
+}
+
+.portrait-wrap figcaption {
+  position: relative;
+  z-index: 1;
+  color: var(--muted);
+  font: 9px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  margin-top: 7px;
+}
+.work-section, .capability-section, .experience-section { padding: 44px 0 46px; border-bottom: 1px solid var(--line); }
+.section-head { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 22px; }
+.section-head h2 { margin: 5px 0 0; font: 500 30px/1.1 Georgia, "Times New Roman", serif; letter-spacing: -.035em; }
+.section-aside { color: var(--muted); font-size: 10px; line-height: 1.45; text-align: right; margin: 0 0 1px; }
+.featured-project { display: grid; grid-template-columns: 50px minmax(0,1fr); gap: 16px; border-top: 1px solid var(--line); padding: 22px 0 25px; }
+.feature-index, .row-index { color: var(--accent); font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.feature-title-row { display: flex; justify-content: space-between; gap: 20px; align-items: flex-end; }
+.feature-title-row h3 { font: 500 34px/1 Georgia, "Times New Roman", serif; letter-spacing: -.04em; margin: 4px 0 0; }
+.out-link { color: var(--accent); text-decoration: none; white-space: nowrap; font-size: 10px; font-weight: 700; padding-bottom: 4px; }
+.project-summary { color: var(--muted); max-width: 640px; font-size: 13px; margin: 13px 0 19px; }
+.case-prompts { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 18px; margin: 0; padding-top: 14px; border-top: 1px solid var(--line); }
+.case-prompts div { min-width: 0; }
+.case-prompts dt { color: var(--accent); font-size: 9px; text-transform: uppercase; letter-spacing: .1em; font-weight: 750; }
+.case-prompts dd { color: var(--muted); margin: 5px 0 0; font-size: 10px; line-height: 1.45; }
+.project-list { border-top: 1px solid var(--line); }
+.project-row { display: grid; grid-template-columns: 50px minmax(0,1fr) 130px 24px; gap: 16px; align-items: center; padding: 17px 0; border-bottom: 1px solid var(--line); }
+.row-main h3 { margin: 0; font-size: 13px; font-weight: 650; letter-spacing: -.01em; }
+.row-main p { color: var(--muted); margin: 3px 0 0; font-size: 10px; }
+.row-note { color: var(--muted); font: 9px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace; text-align: right; }
+.row-link { color: var(--accent); text-align: right; text-decoration: none; font-size: 15px; }
+.muted-link { color: var(--line); }
+.capability-grid { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--line); }
+.capability-grid article { padding: 20px 32px 0 0; }
+.capability-grid article + article { border-left: 1px solid var(--line); padding-left: 30px; padding-right: 0; }
+.cap-number { font: 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--accent); margin-bottom: 14px; }
+.capability-grid h3, .experience-row h3 { font: 500 20px/1.15 Georgia, "Times New Roman", serif; margin: 0 0 7px; }
+.capability-grid article > p:last-child { color: var(--muted); font-size: 11px; line-height: 1.55; margin: 0; max-width: 420px; }
+.experience-section .section-head { margin-bottom: 20px; }
+.experience-row { display: grid; grid-template-columns: minmax(180px, .9fr) minmax(0,1.6fr) 150px; gap: 20px; align-items: baseline; border-top: 1px solid var(--line); padding: 22px 0 24px; }
+.experience-row h3 { margin: 0; font-size: 20px; font-weight: 650; color: var(--ink); line-height: 1.25; }
+.experience-row p { margin: 0; color: var(--muted); font-size: 14.5px; line-height: 1.6; }
+.experience-row .row-note { text-align: right; }
+.site-footer { min-height: 74px; display: flex; align-items: center; justify-content: space-between; gap: 14px; color: var(--muted); font-size: 9px; }
+.site-footer span:first-child { color: var(--ink); font-weight: 700; }
+.site-footer a { color: var(--accent); text-decoration: none; font-weight: 650; }
+
+html[data-palette="sunset"] { --accent: #17414b; --warm: #c42c27; --accent-soft: #f5e4d5; }
+html[data-palette="sunset"] .sunset-rule { width: 56px; height: 5px; }
+html[data-palette="sunset"] .period { color: var(--sun-3); }
+html[data-palette="sunset"] .feature-index { color: var(--sun-3); }
+html[data-palette="sunset"] .case-prompts dt { color: var(--sun-4); }
+html[data-palette="teal"] { color-scheme: dark; --paper: #17414b; --surface: #20525c; --parchment: #2d6068; --ink: #f5f1e9; --muted: #c0d0ce; --line: #4c7479; --accent: #f5b82e; --accent-soft: #28545b; --warm: #f08a24; }
+html[data-palette="teal"] .sunset-rule { opacity: .92; }
+html[data-palette="teal"] .site-footer span:first-child { color: var(--ink); }
+html[data-inverse="true"] { color-scheme: dark; --paper: #17414b; --surface: #20525c; --parchment: #2d6068; --ink: #f5f1e9; --muted: #c0d0ce; --line: #4c7479; --accent: #f5b82e; --accent-soft: #28545b; --warm: #f08a24; }
+html[data-palette="teal"][data-inverse="true"] { color-scheme: light; --paper: #f5f1e9; --surface: #fbf9f4; --parchment: #ebe4d7; --ink: #24221f; --muted: #6f6a61; --line: #d9d0c1; --accent: #17414b; --accent-soft: #e5ecea; --warm: #b64f30; }
+
+@media (max-width: 760px) {
+  .site { padding: 0 28px; }
+  .intro { grid-template-columns: minmax(0,1fr) 138px; gap: 28px; }
+  .portrait-wrap, .portrait-wrap img { width: 138px; }
+  .project-row { grid-template-columns: 32px minmax(0,1fr) 105px 20px; gap: 10px; }
+  .experience-row { grid-template-columns: 1fr 1.4fr; }
+  .experience-row .row-note { grid-column: 2; text-align: left; }
+}
+@media (max-width: 560px) {
+  body { font-size: 14px; }
+  .site { padding: 0 20px; }
+  .site-header { height: 60px; }
+  nav { gap: 14px; font-size: 10px; }
+  nav a:nth-child(2) { display: none; }
+  .intro { grid-template-columns: 1fr; gap: 20px; padding: 36px 0 28px; }
+  .intro-copy { order: 1; }
+  .portrait-wrap { order: 0; justify-self: start; width: 74px; }
+  .portrait-wrap img { width: 74px; }
+  .portrait-wrap figcaption { display: none; }
+  h1 { font-size: 52px; margin-top: 14px; }
+  .desktop-break { display: none; }
+  .lede { font-size: 14px; }
+  .work-section, .capability-section, .experience-section { padding: 32px 0; }
+  .section-head h2 { font-size: 26px; }
+  .section-aside { font-size: 9px; }
+  .featured-project { grid-template-columns: 30px minmax(0,1fr); gap: 9px; padding-top: 17px; }
+  .feature-title-row h3 { font-size: 29px; }
+  .out-link { font-size: 9px; }
+  .project-summary { font-size: 12px; }
+  .case-prompts { grid-template-columns: 1fr; gap: 10px; }
+  .case-prompts dd { margin-top: 2px; }
+  .project-row { grid-template-columns: 24px minmax(0,1fr) 20px; gap: 8px; padding: 13px 0; }
+  .project-row .row-note { display: none; }
+  .row-main p { max-width: 100%; }
+  .capability-grid { grid-template-columns: 1fr; }
+  .capability-grid article, .capability-grid article + article { border: 0; padding: 17px 0 0; }
+  .capability-grid article + article { border-top: 1px solid var(--line); margin-top: 17px; }
+  .experience-row { grid-template-columns: 1fr 20px; gap: 5px 10px; }
+  .experience-row p { grid-column: 1; grid-row: 2; }
+  .experience-row .row-note { display: none; }
+  .site-footer { align-items: flex-start; flex-direction: column; justify-content: center; padding: 16px 0; }
+}
+
+/* --- Studio Font Toggles --- */
+html[data-font="newsreader"] h1,
+html[data-font="newsreader"] h2,
+html[data-font="newsreader"] h3,
+html[data-font="newsreader"] .wordmark-box,
+html[data-font="newsreader"] .feature-title-row h3 {
+  font-family: 'Newsreader', Georgia, serif;
+}
+
+html[data-font="playfair"] h1,
+html[data-font="playfair"] h2,
+html[data-font="playfair"] h3,
+html[data-font="playfair"] .wordmark-box,
+html[data-font="playfair"] .feature-title-row h3 {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+html[data-font="georgia"] h1,
+html[data-font="georgia"] h2,
+html[data-font="georgia"] h3,
+html[data-font="georgia"] .wordmark-box,
+html[data-font="georgia"] .feature-title-row h3 {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+html[data-font="inter"] h1,
+html[data-font="inter"] h2,
+html[data-font="inter"] h3,
+html[data-font="inter"] .wordmark-box,
+html[data-font="inter"] .feature-title-row h3 {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.04em;
+}
+
+html[data-font="mono"] h1,
+html[data-font="mono"] h2,
+html[data-font="mono"] h3,
+html[data-font="mono"] .wordmark-box,
+html[data-font="mono"] .feature-title-row h3 {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  letter-spacing: -0.035em;
+}
+
+/* --- New Studio Palettes --- */
+
+/* 1. Deep Eggplant Purple */
+html[data-palette="eggplant"] {
+  color-scheme: dark;
+  --paper: #12091a;          /* Deep rich eggplant */
+  --surface: #1c0e27;        /* Elevated card surface */
+  --parchment: #251335;
+  --ink: #f9f8fc;            /* Pure crisp off-white, zero beige */
+  --muted: #b8a7c6;          /* Soft cool lavender silver */
+  --line: #371d4d;           /* Subtle dark aubergine border */
+  --accent: #FDE047;         /* Crisp Luminous Canary Yellow */
+  --accent-soft: #28240a;
+  --pastel-pink: #F7A8D0;    /* Soft Pastel Pink Accent */
+  --warm: #F472B6;           /* Pastel Rose */
+  --sun-1: #FDE047;         /* Canary Yellow */
+  --sun-2: #F59E0B;         /* Sunset Amber */
+  --sun-3: #E11D48;         /* Crimson */
+  --sun-4: #F7A8D0;         /* Pastel Pink */
+}
+html[data-palette="eggplant"] .site-footer span:first-child { color: var(--ink); }
+
+/* 2. Deep Midnight Navy */
+html[data-palette="navy"] {
+  color-scheme: dark;
+  --paper: #09101b;
+  --surface: #101b2c;
+  --parchment: #18283f;
+  --ink: #f0f4fd;
+  --muted: #93a9c7;
+  --line: #203452;
+  --accent: #38bdf8;
+  --accent-soft: #14243b;
+  --warm: #fbbf24;
+  --sun-1: #38bdf8;
+  --sun-2: #60a5fa;
+  --sun-3: #818cf8;
+  --sun-4: #c084fc;
+}
+html[data-palette="navy"] .site-footer span:first-child { color: var(--ink); }
+
+/* 3. Powder Blue Mist */
+html[data-palette="powder"] {
+  color-scheme: light;
+  --paper: #ebf3f9;
+  --surface: #f6fafd;
+  --parchment: #dae8f3;
+  --ink: #0c1f33;
+  --muted: #516d87;
+  --line: #c3d7ea;
+  --accent: #0284c7;
+  --accent-soft: #d8ecfa;
+  --warm: #d97706;
+  --sun-1: #38bdf8;
+  --sun-2: #0284c7;
+  --sun-3: #0369a1;
+  --sun-4: #0c4a6e;
+}
+/* --- New Bold & Expressive Fonts --- */
+
+/* Alumni Sans: Tall, athletic, condensed architectural power */
+html[data-font="alumni"] h1 {
+  font-family: 'Alumni Sans', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  line-height: 0.92;
+}
+html[data-font="alumni"] h2,
+html[data-font="alumni"] h3,
+html[data-font="alumni"] .feature-title-row h3 {
+  font-family: 'Alumni Sans', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+html[data-font="alumni"] .wordmark-box {
+  font-family: 'Alumni Sans', sans-serif;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+/* Franklin Gothic (Libre Franklin): Muscular, authoritative American newsroom sans */
+html[data-font="franklin"] h1 {
+  font-family: 'Libre Franklin', -apple-system, sans-serif;
+  font-weight: 850;
+  letter-spacing: -0.04em;
+  line-height: 0.96;
+}
+html[data-font="franklin"] h2,
+html[data-font="franklin"] h3,
+html[data-font="franklin"] .feature-title-row h3 {
+  font-family: 'Libre Franklin', -apple-system, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+html[data-font="franklin"] .wordmark-box {
+  font-family: 'Libre Franklin', sans-serif;
+  font-weight: 800;
+}
+
+/* Syne: Avant-garde, graphic, high-impact display */
+html[data-font="syne"] h1 {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
+}
+html[data-font="syne"] h2,
+html[data-font="syne"] h3,
+html[data-font="syne"] .feature-title-row h3 {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* Fraunces: Bold, expressive, curvy editorial serif */
+html[data-font="fraunces"] h1 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-variation-settings: "opsz" 72, "WONK" 1;
+}
+html[data-font="fraunces"] h2,
+html[data-font="fraunces"] h3,
+html[data-font="fraunces"] .feature-title-row h3 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+/* Anton: Punchy poster impact */
+html[data-font="anton"] h1 {
+  font-family: 'Anton', sans-serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 0.94;
+}
+html[data-font="anton"] h2,
+html[data-font="anton"] h3,
+html[data-font="anton"] .feature-title-row h3 {
+  font-family: 'Anton', sans-serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* --- Center Justification Layout --- */
+html[data-align="center"] .intro {
+  grid-template-columns: 1fr;
+  text-align: center;
+  justify-items: center;
+  gap: 32px;
+}
+
+html[data-align="center"] .intro-copy {
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+html[data-align="center"] .intro .eyebrow {
+  justify-content: center;
+}
+
+html[data-align="center"] .lede {
+  margin: 0 auto;
+  text-align: center;
+}
+
+html[data-align="center"] .intro-links {
+  justify-content: center;
+}
+
+html[data-align="center"] .portrait-wrap {
+  justify-self: center;
+  margin: 12px auto 0;
+  order: 2;
+}
+
+html[data-align="center"] .section-head {
+  text-align: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+html[data-align="center"] .section-head h2 {
+  text-align: center;
+}
+
+html[data-align="center"] .section-aside {
+  text-align: center;
+}
+
+html[data-align="center"] .featured-project {
+  grid-template-columns: 1fr;
+  text-align: center;
+}
+
+html[data-align="center"] .feature-index {
+  margin: 0 auto 6px;
+}
+
+html[data-align="center"] .feature-title-row {
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+html[data-align="center"] .project-summary {
+  margin: 12px auto 18px;
+  text-align: center;
+}
+
+html[data-align="center"] .case-prompts {
+  text-align: center;
+}
+
+html[data-align="center"] .project-row {
+  grid-template-columns: 40px minmax(0,1fr) 120px 24px;
+}
+
+html[data-align="center"] .capability-grid {
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+html[data-align="center"] .capability-grid article {
+  text-align: center;
+  padding: 16px 0;
+  border-left: none !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+html[data-align="center"] .capability-grid article > p:last-child {
+  margin: 0 auto;
+  text-align: center;
+}
+
+html[data-align="center"] .experience-row {
+  text-align: center;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  justify-items: center;
+}
+
+html[data-align="center"] .experience-row .row-note {
+  text-align: center;
+}
+
+html[data-align="center"] .site-footer {
+  justify-content: center;
+  gap: 24px;
+}
+
+/* --- 4-Color Palette Rhythm & Pillar Grid --- */
+
+.header-rule {
+  width: 72px;
+  height: 4px;
+}
+
+.footer-rule {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  margin-bottom: 22px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+/* Hero Action Buttons */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--accent);
+  color: var(--paper) !important;
+  font-weight: 700;
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 11px;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.btn-primary:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: none !important; border-radius: 4px;
+  color: var(--ink) !important;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 7px 14px;
+  border-radius: 4px;
+  font-size: 11px;
+  transition: background 0.15s ease;
+}
+.btn-secondary:hover {
+  background: var(--surface);
+  border-color: var(--accent);
+}
+
+/* Pillar Cards */
+.pillar-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin-top: 14px;
+}
+
+.pillar-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 24px 22px 22px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Substantial, steady 6px top bands */
+.pillar-card.pillar-1 { border-top: 6px solid var(--sun-1) !important; }
+.pillar-card.pillar-2 { border-top: 6px solid var(--sun-2) !important; }
+.pillar-card.pillar-3 { border-top: 6px solid var(--sun-3) !important; }
+.pillar-card.pillar-4 { border-top: 6px solid var(--sun-4) !important; }
+
+.pillar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.pillar-1 .pillar-num { color: var(--sun-1); }
+.pillar-2 .pillar-num { color: var(--sun-2); }
+.pillar-3 .pillar-num { color: var(--sun-3); }
+.pillar-4 .pillar-num { color: var(--sun-4); }
+
+.pillar-num {
+  font: 700 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.pillar-tag {
+  font: 700 9px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.pillar-card h3 {
+  font-size: 19px;
+  line-height: 1.25;
+  margin: 0 0 10px;
+  color: var(--ink);
+}
+
+.pillar-card p {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.pillar-card strong {
+  color: var(--ink);
+}
+
+/* Experience List */
+.experience-list {
+  border-top: 1px solid var(--line);
+}
+
+.site-footer {
+  flex-direction: column;
+  padding: 30px 0 36px;
+  border-top: 1px solid var(--line);
+}
+
+.footer-content {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.footer-links {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+
+.workspace-link {
+  opacity: 0.45;
+  font-size: 9px;
+}
+.workspace-link:hover {
+  opacity: 1;
+}
+
+/* Center Justification for Pillars */
+html[data-align="center"] .pillar-grid {
+  text-align: center;
+}
+html[data-align="center"] .pillar-header {
+  justify-content: center;
+  gap: 10px;
+}
+
+@media (max-width: 760px) {
+  .pillar-grid {
+    grid-template-columns: 1fr;
+  }
+  .footer-content {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+}
+
+/* --- High-Energy Chartreuse & Yellow Palettes --- */
+
+/* 1. Electric Chartreuse on Obsidian Carbon */
+html[data-palette="chartreuse"] {
+  color-scheme: dark;
+  --paper: #0e0f13;
+  --surface: #161820;
+  --parchment: #222530;
+  --ink: #f4f6fa;
+  --muted: #9fa7b8;
+  --line: #2b2f3d;
+  --accent: #cbf746;       /* Electric Chartreuse */
+  --accent-soft: #1d2512;
+  --warm: #fbbf24;
+  --sun-1: #cbf746;       /* Chartreuse */
+  --sun-2: #facc15;       /* Vivid Yellow */
+  --sun-3: #fb7185;       /* Neon Coral */
+  --sun-4: #38bdf8;       /* Electric Cyan */
+}
+html[data-palette="chartreuse"] .site-footer span:first-child { color: var(--ink); }
+html[data-palette="chartreuse"] .period { color: var(--accent); }
+
+/* 2. Deep Eggplant with Acid Chartreuse Accent */
+html[data-palette="eggplant-lime"] {
+  color-scheme: dark;
+  --paper: #140b1e;
+  --surface: #1e112c;
+  --parchment: #2a183d;
+  --ink: #fbf7ff;
+  --muted: #bfaecb;
+  --line: #3b2254;
+  --accent: #d4ff3f;       /* Acid Chartreuse Lime */
+  --accent-soft: #232a10;
+  --warm: #ff6b6b;
+  --sun-1: #d4ff3f;       /* Lime Chartreuse */
+  --sun-2: #facc15;       /* Sun Gold */
+  --sun-3: #ff6b6b;       /* Hot Coral */
+  --sun-4: #a855f7;       /* Royal Purple */
+}
+html[data-palette="eggplant-lime"] .site-footer span:first-child { color: var(--ink); }
+html[data-palette="eggplant-lime"] .period { color: var(--accent); }
+
+/* 3. Solar Yellow on Midnight Ink */
+html[data-palette="solar"] {
+  color-scheme: dark;
+  --paper: #0b0d12;
+  --surface: #141720;
+  --parchment: #1d222e;
+  --ink: #f7f8fb;
+  --muted: #9ba3b5;
+  --line: #272d3b;
+  --accent: #ffe600;       /* High-Voltage Solar Yellow */
+  --accent-soft: #24220b;
+  --warm: #f97316;
+  --sun-1: #ffe600;       /* Solar Yellow */
+  --sun-2: #f97316;       /* Tangerine */
+  --sun-3: #ef4444;       /* Crimson */
+  --sun-4: #06b6d4;       /* Deep Cyan */
+}
+html[data-palette="solar"] .site-footer span:first-child { color: var(--ink); }
+html[data-palette="solar"] .period { color: var(--accent); }
+
+/* 4. Crisp White Studio with Vivid Yellow & Chartreuse (Eliminating Beige) */
+html[data-palette="crisp-bright"] {
+  color-scheme: light;
+  --paper: #ffffff;
+  --surface: #f8fafc;
+  --parchment: #f1f5f9;
+  --ink: #0f172a;
+  --muted: #475569;
+  --line: #e2e8f0;
+  --accent: #0f172a;
+  --accent-soft: #fef08a;
+  --warm: #eab308;        /* Bold Amber Yellow */
+  --sun-1: #a3e635;       /* Chartreuse Lime */
+  --sun-2: #eab308;       /* Bold Sunflower Yellow */
+  --sun-3: #f97316;       /* Energetic Orange */
+  --sun-4: #0284c7;       /* Cobalt Blue */
+}
+html[data-palette="crisp-bright"] .pillar-card { background: #ffffff; }
+html[data-palette="crisp-bright"] .period { color: var(--warm); }
+
+/* --- Tactile Mouse-Over Hover Interactions & Pastel Pink Accents --- */
+
+/* Nav Hover Shifts */
+nav a {
+  transition: color 0.22s ease, text-shadow 0.22s ease, transform 0.2s ease;
+  display: inline-block;
+}
+nav a:hover {
+  color: var(--pastel-pink, #f7a8d0) !important;
+  text-shadow: 0 0 10px rgba(247, 168, 208, 0.45);
+  transform: translateY(-1px);
+}
+.contact-nav:hover {
+  color: var(--accent) !important;
+  text-shadow: 0 0 10px rgba(253, 224, 71, 0.45);
+}
+
+/* Wordmark Box Hover */
+.wordmark-box {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.wordmark:hover .wordmark-box {
+  background: var(--accent);
+  color: var(--paper) !important;
+  border-color: var(--accent);
+  transform: scale(1.08);
+  box-shadow: 0 0 14px rgba(253, 224, 71, 0.4);
+}
+.wordmark:hover span:last-child {
+  color: var(--pastel-pink, #f7a8d0);
+  transition: color 0.2s ease;
+}
+
+/* Eyebrow & Pillar Tags in Pastel Pink */
+.pillar-tag {
+  color: var(--pastel-pink, #f7a8d0);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+/* Pillar Card Interactive Hover State */
+.pillar-card {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.25s ease,
+              box-shadow 0.25s ease,
+              background 0.25s ease;
+}
+.pillar-card:hover {
+  transform: translateY(-4px) scale(1.01);
+  border-color: var(--pastel-pink, #f7a8d0);
+  box-shadow: 0 10px 28px -4px rgba(247, 168, 208, 0.15),
+              0 0 0 1px rgba(247, 168, 208, 0.2);
+}
+.pillar-card:hover h3 {
+  color: var(--accent);
+  transition: color 0.2s ease;
+}
+.pillar-card:hover .pillar-num {
+  transform: scale(1.1);
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+/* Button Hovers */
+.btn-primary:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 6px 22px rgba(253, 224, 71, 0.45);
+  background: #ffea55 !important;
+}
+
+.btn-secondary:hover {
+  border-color: var(--pastel-pink, #f7a8d0) !important;
+  color: var(--pastel-pink, #f7a8d0) !important;
+  background: rgba(247, 168, 208, 0.08) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 18px rgba(247, 168, 208, 0.2);
+}
+
+/* Link Hovers */
+.text-link:hover, .email-link:hover, .out-link:hover {
+  color: var(--pastel-pink, #f7a8d0) !important;
+  transition: color 0.2s ease;
+}
+
+/* Experience Row Hover */
+.experience-row {
+  transition: background-color 0.2s ease, padding 0.2s ease;
+  border-radius: 4px;
+}
+.experience-row:hover {
+  background: rgba(247, 168, 208, 0.03);
+}
+.experience-row:hover h3 {
+  color: var(--pastel-pink, #f7a8d0);
+  transition: color 0.2s ease;
+}
+
+/* Unified Hero Buttons: Canary Yellow resting -> Eggplant Purple with Pink Backglow on Hover */
+.hero-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--accent);                 /* Luminous Canary Yellow */
+  border: 1px solid var(--accent) !important;
+  color: #12091a !important;                 /* Deep Eggplant text */
+  font-weight: 700;
+  text-decoration: none;
+  padding: 9px 18px;
+  border-radius: 6px;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+.hero-btn:hover {
+  background: #251338 !important;            /* Deep velvet eggplant purple on hover */
+  border-color: var(--pastel-pink, #f7a8d0) !important;
+  color: var(--pastel-pink, #f7a8d0) !important;
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 22px rgba(247, 168, 208, 0.35),
+              0 0 14px rgba(247, 168, 208, 0.25) !important; /* Radiant pink backglow */
+}
+
+.hero-btn span {
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.hero-btn:hover span {
+  transform: translate(2px, -1px);
+  color: var(--pastel-pink, #f7a8d0);
+}
+
+/* --- Font Flexibility: Scale, Weight & Tracking --- */
+
+/* 1. Optical Normalization & Scale Architecture */
+:root {
+  --scale-factor: 1;
+  --opt-h1-scale: 1;
+  --opt-h2-scale: 1;
+  --opt-h3-scale: 1;
+}
+
+/* User Headline Scale Multipliers */
+html[data-size="compact"] { --scale-factor: 0.85; }
+html[data-size="default"] { --scale-factor: 1.0; }
+html[data-size="large"] { --scale-factor: 1.18; }
+html[data-size="massive"] { --scale-factor: 1.38; }
+
+/* Optical Parity Adjustments per Font Family (Normalizes tall/condensed vs wide fonts) */
+html[data-font="alumni"] {
+  --opt-h1-scale: 1.48;
+  --opt-h2-scale: 1.35;
+  --opt-h3-scale: 1.25;
+}
+html[data-font="anton"] {
+  --opt-h1-scale: 1.28;
+  --opt-h2-scale: 1.2;
+  --opt-h3-scale: 1.15;
+}
+html[data-font="newsreader"] {
+  --opt-h1-scale: 1.18;
+  --opt-h2-scale: 1.12;
+  --opt-h3-scale: 1.08;
+}
+html[data-font="georgia"] {
+  --opt-h1-scale: 1.1;
+  --opt-h2-scale: 1.06;
+  --opt-h3-scale: 1.02;
+}
+html[data-font="playfair"] {
+  --opt-h1-scale: 1.15;
+  --opt-h2-scale: 1.1;
+  --opt-h3-scale: 1.05;
+}
+html[data-font="fraunces"] {
+  --opt-h1-scale: 1.12;
+  --opt-h2-scale: 1.08;
+  --opt-h3-scale: 1.04;
+}
+html[data-font="franklin"] {
+  --opt-h1-scale: 1.02;
+  --opt-h2-scale: 1.0;
+  --opt-h3-scale: 1.0;
+}
+html[data-font="inter"] {
+  --opt-h1-scale: 1.0;
+  --opt-h2-scale: 1.0;
+  --opt-h3-scale: 1.0;
+}
+html[data-font="syne"] {
+  --opt-h1-scale: 0.98;
+  --opt-h2-scale: 1.0;
+  --opt-h3-scale: 1.0;
+}
+html[data-font="mono"] {
+  --opt-h1-scale: 0.94;
+  --opt-h2-scale: 0.94;
+  --opt-h3-scale: 0.96;
+}
+
+/* Master Heading Formula: Balanced Optical Parity Across All 10 Typefaces */
+h1 {
+  font-size: calc(clamp(46px, 6.5vw, 76px) * var(--scale-factor, 1) * var(--opt-h1-scale, 1)) !important;
+  line-height: 0.96;
+}
+
+.section-head h2 {
+  font-size: calc(clamp(24px, 3.5vw, 32px) * var(--scale-factor, 1) * var(--opt-h2-scale, 1)) !important;
+}
+
+.pillar-card h3 {
+  font-size: calc(18px * var(--scale-factor, 1) * var(--opt-h3-scale, 1)) !important;
+}
+
+/* 2. Weight */
+html[data-weight="400"] h1, html[data-weight="400"] h2, html[data-weight="400"] h3 { font-weight: 400 !important; }
+html[data-weight="600"] h1, html[data-weight="600"] h2, html[data-weight="600"] h3 { font-weight: 600 !important; }
+html[data-weight="700"] h1, html[data-weight="700"] h2, html[data-weight="700"] h3 { font-weight: 700 !important; }
+html[data-weight="850"] h1, html[data-weight="850"] h2, html[data-weight="850"] h3 { font-weight: 850 !important; }
+html[data-weight="900"] h1, html[data-weight="900"] h2, html[data-weight="900"] h3 { font-weight: 900 !important; }
+
+/* 3. Tracking */
+html[data-tracking="tight"] h1, html[data-tracking="tight"] h2 { letter-spacing: -0.05em !important; }
+html[data-tracking="normal"] h1, html[data-tracking="normal"] h2 { letter-spacing: -0.01em !important; }
+html[data-tracking="wide"] h1, html[data-tracking="wide"] h2 { letter-spacing: 0.05em !important; }
+html[data-tracking="spaced"] h1, html[data-tracking="spaced"] h2 { letter-spacing: 0.14em !important; text-transform: uppercase; }
+
+/* In-Place Contenteditable Cues */
+[contenteditable="true"]:hover {
+  outline: 1px dashed rgba(247, 168, 208, 0.45);
+  cursor: text;
+}
+[contenteditable="true"]:focus {
+  outline: 2px solid var(--accent, #fde047);
+  background: rgba(253, 224, 71, 0.05);
+  border-radius: 2px;
+}
+
+/* Character Builders: Restored to original section architecture, tuned one point smaller */
+#adventures {
+  padding: 40px 0 44px;
+}
+#adventures .section-head {
+  margin-bottom: 20px;
+}
+#adventures .section-head h2 {
+  font-size: calc(clamp(22px, 3.2vw, 29px) * var(--scale-factor, 1) * var(--opt-h2-scale, 1)) !important;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin: 5px 0 0;
+}
+.adventures-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-top: 2px solid var(--pastel-pink, #f7a8d0);
+  border-radius: 6px;
+  padding: 20px 24px;
+  margin-top: 4px;
+  transition: all 0.25s ease;
+}
+.adventures-card:hover {
+  border-color: var(--pastel-pink, #f7a8d0);
+  box-shadow: 0 6px 20px -4px rgba(247, 168, 208, 0.15);
+}
+.adventures-card p {
+  color: #d1c8db;
+  font-size: 14px; /* Restored to comfortable, clear readable text */
+  line-height: 1.6;
+  margin: 0;
+  font-style: italic;
+}
+html[data-align="center"] .adventures-card {
+  text-align: center;
+}
+html[data-align="center"] .adventures-card p {
+  max-width: 620px;
+  margin: 0 auto;
+}
