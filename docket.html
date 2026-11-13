@@ -1828,12 +1828,37 @@ function LeadCard({ lead, onPatch, onClose, onPin }) {
   );
 }
 
+const COMPANY_STYLES = {
+  google: { border: '#4285F4', text: '#8AB4F8', bg: 'rgba(66, 133, 244, 0.15)' },
+  apple: { border: '#A2AAAD', text: '#E5E5EA', bg: 'rgba(162, 170, 173, 0.15)' },
+  nintendo: { border: '#E60012', text: '#FF6B6B', bg: 'rgba(230, 0, 18, 0.18)' },
+  ibm: { border: '#0F62FE', text: '#78A9FF', bg: 'rgba(15, 98, 254, 0.15)' },
+  amazon: { border: '#FF9900', text: '#FFB84D', bg: 'rgba(255, 153, 0, 0.15)' },
+  procore: { border: '#F15A24', text: '#FF8A65', bg: 'rgba(241, 90, 36, 0.15)' },
+  oracle: { border: '#C74634', text: '#FF8F7A', bg: 'rgba(199, 70, 52, 0.15)' },
+  dell: { border: '#007DB8', text: '#64B5F6', bg: 'rgba(0, 125, 184, 0.15)' },
+  'applied materials': { border: '#00A3E0', text: '#4FC3F7', bg: 'rgba(0, 163, 224, 0.15)' },
+  'electronic arts': { border: '#FF4757', text: '#FF6B81', bg: 'rgba(255, 71, 87, 0.15)' },
+  ea: { border: '#FF4757', text: '#FF6B81', bg: 'rgba(255, 71, 87, 0.15)' },
+};
+
+function companyStyle(name) {
+  const k = companyKey(name);
+  return COMPANY_STYLES[k] || { border: '#5C7A5E', text: '#A8C5A0', bg: 'rgba(92, 122, 94, 0.15)' };
+}
+
 function RadarPane({ leads, setLeads, career, onPin, onExit }) {
   const [feed, setFeed] = useState(null);
   const [feedError, setFeedError] = useState(false);
   const [passed, setPassed] = useState(() => {
     try { return JSON.parse(localStorage.getItem('docket-radar-passed')) || {}; } catch (e) { return {}; }
   });
+  const [flagged, setFlagged] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('docket-radar-flagged')) || []; } catch (e) { return []; }
+  });
+  const [filter, setFilter] = useState('all');
+  const [copied, setCopied] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const [showClosed, setShowClosed] = useState(false);
 
   useEffect(() => {
@@ -1847,6 +1872,10 @@ function RadarPane({ leads, setLeads, career, onPin, onExit }) {
     try { localStorage.setItem('docket-radar-passed', JSON.stringify(passed)); } catch (e) {}
   }, [passed]);
 
+  useEffect(() => {
+    try { localStorage.setItem('docket-radar-flagged', JSON.stringify(flagged)); } catch (e) {}
+  }, [flagged]);
+
   const patch = (id, p) => setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, ...p } : l)));
   const open = leads.filter((l) => !l.closed);
   const closedCount = leads.length - open.length;
@@ -1859,8 +1888,55 @@ function RadarPane({ leads, setLeads, career, onPin, onExit }) {
 
   const addLead = (extra) => setLeads((prev) => [normalizeLead({ fresh: true, ...extra }, prev.length), ...prev]);
 
-  const jobs = feed && Array.isArray(feed.jobs) ? feed.jobs.filter((j) => !passed[j.url]) : [];
-  const shown = jobs.slice(0, 40);
+  const toggleFlag = (url) => {
+    setFlagged((prev) => (prev.includes(url) ? prev.filter((u) => u !== url) : [url, ...prev]));
+  };
+
+  const moveRank = (url, direction) => {
+    setFlagged((prev) => {
+      const idx = prev.indexOf(url);
+      if (idx === -1) return prev;
+      const target = idx + direction;
+      if (target < 0 || target >= prev.length) return prev;
+      const next = [...prev];
+      const temp = next[idx];
+      next[idx] = next[target];
+      next[target] = temp;
+      return next;
+    });
+  };
+
+  const allJobs = feed && Array.isArray(feed.jobs) ? feed.jobs.filter((j) => !passed[j.url]) : [];
+  const flaggedSet = new Set(flagged);
+
+  const companyCounts = {};
+  allJobs.forEach((j) => {
+    const c = j.company || 'Other';
+    companyCounts[c] = (companyCounts[c] || 0) + 1;
+  });
+  const sortedCompanies = Object.keys(companyCounts).sort((a, b) => companyCounts[b] - companyCounts[a]);
+
+  let displayJobs = allJobs;
+  if (filter === 'flagged') {
+    const jobMap = new Map(allJobs.map((j) => [j.url, j]));
+    displayJobs = flagged.map((u) => jobMap.get(u)).filter(Boolean);
+  } else if (filter !== 'all') {
+    displayJobs = allJobs.filter((j) => companyKey(j.company) === companyKey(filter));
+  }
+
+  const shown = showAll || filter !== 'all' ? displayJobs : displayJobs.slice(0, 40);
+
+  const copyReviewList = () => {
+    const jobMap = new Map(allJobs.map((j) => [j.url, j]));
+    const items = flagged.map((u) => jobMap.get(u)).filter(Boolean);
+    const text = [
+      `# Docket Role Radar — Shortlist for Review (${items.length} roles)`,
+      ...items.map((j, i) => `${i + 1}. [${j.company}] ${j.title}\n   Link: ${j.url}`),
+    ].join('\n\n');
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div style={{ fontFamily: RADAR_SANS, textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 28, maxWidth: 1240, margin: '0 auto 48px' }}>
@@ -1890,33 +1966,115 @@ function RadarPane({ leads, setLeads, career, onPin, onExit }) {
           <h2 style={{ margin: 0, fontFamily: RADAR_DISPLAY, fontWeight: 700, fontSize: 36, color: COLORS.paper }}>Role Radar</h2>
           {feed ? <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#8FB291' }}>{radarStamp(Date.parse(feed.scannedAt))} · {feed.jobs.length}</span> : null}
         </div>
+
+        {/* Filter Bar */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'center', padding: '12px 18px', borderBottom: `1px solid ${COLORS.inkPanelBorder}`, background: '#171B1E' }}>
+          <button type="button" onClick={() => setFilter('all')}
+            style={{ padding: '6px 14px', borderRadius: 999, border: `1px solid ${filter === 'all' ? COLORS.amber : COLORS.inkPanelBorder}`, background: filter === 'all' ? 'rgba(217, 142, 63, 0.15)' : 'transparent', color: filter === 'all' ? COLORS.amber : COLORS.textMuted, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+            All ({allJobs.length})
+          </button>
+          
+          <button type="button" onClick={() => setFilter('flagged')}
+            style={{ padding: '6px 14px', borderRadius: 999, border: `1px solid ${filter === 'flagged' ? COLORS.amber : flagged.length ? '#A0612A' : COLORS.inkPanelBorder}`, background: filter === 'flagged' ? COLORS.amber : flagged.length ? 'rgba(217, 142, 63, 0.12)' : 'transparent', color: filter === 'flagged' ? COLORS.ink : flagged.length ? COLORS.amber : COLORS.textMuted, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>★</span> For Review ({flagged.length})
+          </button>
+
+          <span style={{ color: COLORS.inkPanelBorder, margin: '0 4px' }}>|</span>
+
+          {sortedCompanies.map((c) => {
+            const active = filter === c;
+            const cs = companyStyle(c);
+            return (
+              <button key={c} type="button" onClick={() => setFilter(active ? 'all' : c)}
+                style={{ padding: '4px 11px', borderRadius: 999, border: `1px solid ${active ? cs.border : COLORS.inkPanelBorder}`, background: active ? cs.bg : 'transparent', color: active ? cs.text : COLORS.textMuted, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                {c} ({companyCounts[c]})
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Shortlist actions banner */}
+        {filter === 'flagged' ? (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', background: 'rgba(217, 142, 63, 0.08)', borderBottom: `1px solid ${COLORS.inkPanelBorder}` }}>
+            <span style={{ fontSize: 13, color: COLORS.amber, fontWeight: 600 }}>
+              ★ Ranked Review List ({displayJobs.length}) · Reorder with ▲ / ▼ below
+            </span>
+            <button type="button" onClick={copyReviewList}
+              style={{ minHeight: 32, padding: '0 14px', borderRadius: 8, border: `1px solid ${COLORS.amber}`, background: copied ? COLORS.moss : 'transparent', color: copied ? COLORS.paper : COLORS.amber, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+              {copied ? '✓ Copied to Clipboard!' : '📋 Copy Review List'}
+            </button>
+          </div>
+        ) : null}
+
         {feedError ? <div style={{ padding: '14px 20px', fontSize: 14, color: COLORS.textMuted }}>No scan yet.</div> : null}
-        {shown.map((j) => {
+        
+        {shown.length === 0 && !feedError ? (
+          <div style={{ padding: '28px 20px', fontSize: 14, color: COLORS.textMuted }}>
+            {filter === 'flagged' ? 'No jobs marked for review yet. Click "☆ Review" on any listing below to add it to your shortlist.' : 'No listings in this view.'}
+          </div>
+        ) : null}
+
+        {shown.map((j, idx) => {
           const who = known[companyKey(j.company)];
           const done = promoted.has(j.url);
-          const hot = !!who && !done;
+          const isFlagged = flaggedSet.has(j.url);
+          const hot = !done && (!!who || isFlagged);
+          const cs = companyStyle(j.company);
+          const rank = filter === 'flagged' ? idx + 1 : null;
+
           return (
-            <div key={j.url} style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 16px', alignItems: 'center', justifyContent: 'center', padding: '14px 20px', borderBottom: `1px solid ${COLORS.inkPanelBorder}` }}>
-              <div style={{ flex: '1 1 420px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div key={j.url} style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 16px', alignItems: 'center', justifyContent: 'center', padding: '14px 20px', borderBottom: `1px solid ${COLORS.inkPanelBorder}`, borderLeft: isFlagged ? `4px solid ${COLORS.amber}` : `4px solid ${cs.border}`, background: isFlagged ? 'rgba(217, 142, 63, 0.04)' : 'transparent' }}>
+              
+              {rank !== null ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, marginRight: 4, minWidth: 28 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: COLORS.amber }}>#{rank}</span>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <button type="button" aria-label="Rank up" disabled={idx === 0} onClick={() => moveRank(j.url, -1)}
+                      style={{ border: 0, background: 'none', color: idx === 0 ? '#384044' : COLORS.textMuted, cursor: idx === 0 ? 'default' : 'pointer', fontSize: 10, padding: 0 }}>▲</button>
+                    <button type="button" aria-label="Rank down" disabled={idx === displayJobs.length - 1} onClick={() => moveRank(j.url, 1)}
+                      style={{ border: 0, background: 'none', color: idx === displayJobs.length - 1 ? '#384044' : COLORS.textMuted, cursor: idx === displayJobs.length - 1 ? 'default' : 'pointer', fontSize: 10, padding: 0 }}>▼</button>
+                  </div>
+                </div>
+              ) : null}
+
+              <div style={{ flex: '1 1 420px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 5 }}>
                 <a href={j.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 16, fontWeight: 500, color: COLORS.textOnDark, textDecoration: 'none' }}>{j.title}</a>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: 12, letterSpacing: '0.04em', color: COLORS.textMuted }}>{[j.company, j.posted].filter(Boolean).join(' · ')}</span>
-                  {who ? <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '3px 8px', borderRadius: 999, background: COLORS.moss, color: COLORS.paper }}>{who}</span> : null}
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '2px 7px', borderRadius: 4, background: cs.bg, color: cs.text, border: `1px solid ${cs.border}` }}>
+                    {j.company}
+                  </span>
+                  {j.posted ? <span style={{ fontSize: 12, letterSpacing: '0.04em', color: COLORS.textMuted }}>{j.posted}</span> : null}
+                  {who ? <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '2px 8px', borderRadius: 999, background: COLORS.moss, color: COLORS.paper }}>{who}</span> : null}
                 </div>
               </div>
-              <button type="button" aria-label="Move up" disabled={done}
-                onClick={() => addLead({ title: j.title, company: companyKey(j.company) ? j.company.split('·')[0].trim() : '', url: j.url, contact: who || '', next: who ? `Ask ${who} about this opening` : '' })}
-                style={{ minHeight: 40, minWidth: 44, padding: '0 14px', borderRadius: 10, fontWeight: 600, fontSize: 15, cursor: done ? 'default' : 'pointer', border: done ? `1px solid ${COLORS.inkPanelBorder}` : hot ? 0 : `1px solid ${COLORS.amber}`, background: hot ? COLORS.amber : 'transparent', color: done ? '#8FB291' : hot ? COLORS.ink : COLORS.amber }}>
-                {done ? '✓' : '↑'}
-              </button>
-              <button type="button" aria-label={`Pass on ${j.title}`} onClick={() => setPassed((p) => ({ ...p, [j.url]: true }))}
-                style={{ minHeight: 40, padding: '0 12px', borderRadius: 10, border: `1px solid ${COLORS.inkPanelBorder}`, background: 'transparent', color: COLORS.textMuted, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>Pass</button>
+
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <button type="button" aria-label={isFlagged ? 'Remove from review' : 'Mark for review'} onClick={() => toggleFlag(j.url)}
+                  style={{ minHeight: 40, padding: '0 12px', borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: 'pointer', border: isFlagged ? `1px solid ${COLORS.amber}` : `1px solid ${COLORS.inkPanelBorder}`, background: isFlagged ? 'rgba(217, 142, 63, 0.18)' : 'transparent', color: isFlagged ? COLORS.amber : COLORS.textMuted, fontFamily: 'inherit' }}>
+                  {isFlagged ? '★ Reviewing' : '☆ Review'}
+                </button>
+
+                <button type="button" aria-label="Move up to leads" disabled={done}
+                  onClick={() => addLead({ title: j.title, company: companyKey(j.company) ? j.company.split('·')[0].trim() : '', url: j.url, contact: who || '', next: who ? `Ask ${who} about this opening` : '' })}
+                  style={{ minHeight: 40, minWidth: 44, padding: '0 14px', borderRadius: 10, fontWeight: 600, fontSize: 14, cursor: done ? 'default' : 'pointer', border: done ? `1px solid ${COLORS.inkPanelBorder}` : hot ? 0 : `1px solid ${COLORS.amber}`, background: hot ? COLORS.amber : 'transparent', color: done ? '#8FB291' : hot ? COLORS.ink : COLORS.amber, fontFamily: 'inherit' }}>
+                  {done ? '✓ Lead' : '↑ Lead'}
+                </button>
+
+                <button type="button" aria-label={`Pass on ${j.title}`} onClick={() => setPassed((p) => ({ ...p, [j.url]: true }))}
+                  style={{ minHeight: 40, padding: '0 10px', borderRadius: 10, border: `1px solid ${COLORS.inkPanelBorder}`, background: 'transparent', color: COLORS.textMuted, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>Pass</button>
+              </div>
+
             </div>
           );
         })}
         {feed ? (
-          <div style={{ padding: '14px 20px', display: 'flex', flexWrap: 'wrap', gap: '8px 20px', justifyContent: 'center', fontSize: 13, color: COLORS.textMuted }}>
-            {jobs.length > shown.length ? <span>+{jobs.length - shown.length} more</span> : null}
+          <div style={{ padding: '14px 20px', display: 'flex', flexWrap: 'wrap', gap: '8px 20px', justifyContent: 'center', alignItems: 'center', fontSize: 13, color: COLORS.textMuted }}>
+            {displayJobs.length > 40 && filter === 'all' && !showAll ? (
+              <button type="button" onClick={() => setShowAll(true)}
+                style={{ border: `1px solid ${COLORS.inkPanelBorder}`, background: 'transparent', color: COLORS.amber, borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }}>
+                Show all {displayJobs.length} listings
+              </button>
+            ) : null}
             {feed.byHand && feed.byHand.length ? <span>By hand: {feed.byHand.join(', ')}</span> : null}
           </div>
         ) : null}
