@@ -1,5 +1,5 @@
 {
- "scannedAt": "2026-11-12T14:36:34+00:00",
+ "scannedAt": "2026-11-13T04:45:42+00:00",
  "byHand": [
   "Meta",
   "Tesla"
@@ -32,6 +32,34 @@
    "url": "https://careers.ibm.com/careers/JobDetail?jobId=138170",
    "posted": "2026-10-22",
    "firstSeen": "2026-11-10T00:48:31+00:00"
+  },
+  {
+   "title": "Producer - Audio & Localization (Retro Studios)",
+   "company": "Nintendo",
+   "url": "https://careers.nintendo.com/jobs/4396630009/",
+   "posted": "2026-09-04",
+   "firstSeen": "2026-11-13T04:45:42+00:00"
+  },
+  {
+   "title": "Technical Program Manager, Data Center Security Systems",
+   "company": "Google",
+   "url": "https://www.google.com/about/careers/applications/jobs/results/110735572305093318",
+   "posted": "2026-11-12",
+   "firstSeen": "2026-11-13T04:44:26+00:00"
+  },
+  {
+   "title": "Web Content Producer",
+   "company": "Apple",
+   "url": "https://jobs.apple.com/en-us/details/200689586/web-content-producer",
+   "posted": "2026-10-27",
+   "firstSeen": "2026-11-13T04:43:16+00:00"
+  },
+  {
+   "title": "Technical Program Manager , Tech Deployment Systems Integration",
+   "company": "Amazon",
+   "url": "https://www.amazon.jobs/en/jobs/10588615/technical-program-manager-tech-deployment-systems-integration",
+   "posted": "October 26, 2026",
+   "firstSeen": "2026-11-13T04:42:00+00:00"
   },
   {
    "title": "Senior Cybersecurity Solution Consultant",
@@ -293,10 +321,115 @@
    "firstSeen": "2026-11-09T02:07:15+00:00"
   },
   {
+   "title": "Analog/Mixed Signal IP Engineering Program Manager",
+   "company": "Apple",
+   "url": "https://jobs.apple.com/en-us/details/200690189/analog-mixed-signal-ip-engineering-program-manager",
+   "posted": "2026-11-03",
+   "firstSeen": "2026-11-09T02:06:45+00:00"
+  },
+  {
+   "title": "CAD Engineering Program Manager",
+   "company": "Apple",
+   "url": "https://jobs.apple.com/en-us/details/200692720/cad-engineering-program-manager",
+   "posted": "2026-11-02",
+   "firstSeen": "2026-11-09T02:06:45+00:00"
+  },
+  {
+   "title": "Analog/Mixed-Signal IP Engineering Program Manager",
+   "company": "Apple",
+   "url": "https://jobs.apple.com/en-us/details/200684858/analog-mixed-signal-ip-engineering-program-manager",
+   "posted": "2026-10-29",
+   "firstSeen": "2026-11-09T02:06:45+00:00"
+  },
+  {
+   "title": "AMP Engineering Program Manager - Strategic Data Solutions",
+   "company": "Apple",
+   "url": "https://jobs.apple.com/en-us/details/200664206/amp-engineering-program-manager-strategic-data-solutions",
+   "posted": "2026-10-20",
+   "firstSeen": "2026-11-09T02:06:45+00:00"
+  },
+  {
+   "title": "SDS Privacy Engineering Program Manager",
+   "company": "Apple",
+   "url": "https://jobs.apple.com/en-us/details/200688162/sds-privacy-engineering-program-manager",
+   "posted": "2026-10-16",
+   "firstSeen": "2026-11-09T02:06:45+00:00"
+  },
+  {
+   "title": "SoC Pre-Silicon Engineering Program Manager",
+   "company": "Apple",
+   "url": "https://jobs.apple.com/en-us/details/200678199/soc-pre-silicon-engineering-program-manager",
+   "posted": "2026-10-14",
+   "firstSeen": "2026-11-09T02:06:45+00:00"
+  },
+  {
+   "title": "SWE Engineering Program Manager - Strategic Data Solutions",
+   "company": "Apple",
+   "url": "https://jobs.apple.com/en-us/details/200683840/swe-engineering-program-manager-strategic-data-solutions",
+   "posted": "2026-09-24",
+   "firstSeen": "2026-11-09T02:06:45+00:00"
+  },
+  {
+   "title": "Engineering Program Manager, Security Compliance, Apple Services Engineering",
+   "company": "Apple",
+   "url": "https://jobs.apple.com/en-us/details/200679046/engineering-program-manager-security-compliance-apple-services-engineering",
+   "posted": "2026-09-01",
+   "firstSeen": "2026-11-09T02:06:45+00:00"
+  },
+  {
+   "title": "Sr. Engineering Program Manager - Customer Systems",
+   "company": "Apple",
+   "url": "https://jobs.apple.com/en-us/details/200679583/sr-engineering-program-manager-customer-systems",
+   "posted": "2026-08-30",
+   "firstSeen": "2026-11-09T02:06:45+00:00"
+  },
+  {
+   "title": "3rd Party IP Engineering Program Manager",
+   "company": "Apple",
+   "url": "https://jobs.apple.com/en-us/details/200678520/3rd-party-ip-engineering-program-manager",
+   "posted": "2026-08-17",
+   "firstSeen": "2026-11-09T02:06:45+00:00"
+  },
+  {
+   "title": "3rd Party IP Engineering Program Manager",
+   "company": "Apple",
+   "url": "https://jobs.apple.com/en-us/details/200635213/3rd-party-ip-engineering-program-manager",
+   "posted": "2026-07-17",
+   "firstSeen": "2026-11-09T02:06:45+00:00"
+  },
+  {
+   "title": "Engineering Program Manager- Customer Systems",
+   "company": "Apple",
+   "url": "https://jobs.apple.com/en-us/details/200671980/engineering-program-manager-customer-systems",
+   "posted": "2026-07-14",
+   "firstSeen": "2026-11-09T02:06:45+00:00"
+  },
+  {
    "title": "Manufacturing Design Program Manager (MDPM)",
    "company": "Apple",
    "url": "https://jobs.apple.com/en-us/details/200665730/manufacturing-design-program-manager-mdpm",
    "posted": "2026-05-28",
+   "firstSeen": "2026-11-09T02:06:45+00:00"
+  },
+  {
+   "title": "Engineering Program Manager, Quality Assurance - Customer Systems",
+   "company": "Apple",
+   "url": "https://jobs.apple.com/en-us/details/200663756/engineering-program-manager-quality-assurance-customer-systems",
+   "posted": "2026-05-26",
+   "firstSeen": "2026-11-09T02:06:45+00:00"
+  },
+  {
+   "title": "CPU Pre-Silicon Engineering Program Manager",
+   "company": "Apple",
+   "url": "https://jobs.apple.com/en-us/details/200629717/cpu-pre-silicon-engineering-program-manager",
+   "posted": "2026-04-29",
+   "firstSeen": "2026-11-09T02:06:45+00:00"
+  },
+  {
+   "title": "CPU Pre-Silicon Engineering Program Manager",
+   "company": "Apple",
+   "url": "https://jobs.apple.com/en-us/details/200621993/cpu-pre-silicon-engineering-program-manager",
+   "posted": "2025-09-23",
    "firstSeen": "2026-11-09T02:06:45+00:00"
   },
   {
