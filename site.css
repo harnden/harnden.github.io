@@ -34,7 +34,8 @@ nav a:hover, .email-link:hover, .text-link:hover, .out-link:hover { color: var(-
 .eyebrow { margin: 0; color: var(--muted); text-transform: uppercase; letter-spacing: .15em; font-size: 9px; line-height: 1.5; font-weight: 700; }
 .intro { min-height: 338px; display: grid; grid-template-columns: minmax(0, 1fr) 176px; gap: 54px; align-items: center; padding: 48px 0 42px; border-bottom: 1px solid var(--line); }
 .intro-copy { max-width: 680px; }
-.intro .eyebrow { display: flex; align-items: center; gap: 9px; }
+.intro .eyebrow,
+.section-head .eyebrow { display: flex; align-items: center; gap: 9px; }
 .sunset-rule {
   display: flex;
   width: 52px;
@@ -430,8 +431,16 @@ html[data-align="center"] .intro-copy {
   align-items: center;
 }
 
-html[data-align="center"] .intro .eyebrow {
+html[data-align="center"] .intro .eyebrow,
+html[data-align="center"] .section-head .eyebrow {
   justify-content: center;
+}
+
+html[data-align="center"] .section-head > div {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 html[data-align="center"] .lede {
