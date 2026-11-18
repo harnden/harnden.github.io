@@ -1887,7 +1887,12 @@ function RadarPane({ leads, setLeads, career, onPin, onExit }) {
   open.forEach((l) => { const k = companyKey(l.company); if (k && l.contact && !known[k]) known[k] = l.contact; });
   const promoted = new Set(leads.map((l) => l.url).filter(Boolean));
 
-  const addLead = (extra) => setLeads((prev) => [normalizeLead({ fresh: true, ...extra }, prev.length), ...prev]);
+  const addLead = (extra) => {
+    if (extra.url) {
+      setFlagged((prev) => prev.filter((u) => u !== extra.url));
+    }
+    setLeads((prev) => [normalizeLead({ fresh: true, ...extra }, prev.length), ...prev]);
+  };
 
   const toggleFlag = (url) => {
     setFlagged((prev) => (prev.includes(url) ? prev.filter((u) => u !== url) : [url, ...prev]));
@@ -1907,7 +1912,9 @@ function RadarPane({ leads, setLeads, career, onPin, onExit }) {
     });
   };
 
-  const allJobs = feed && Array.isArray(feed.jobs) ? feed.jobs.filter((j) => !passed[j.url]) : [];
+  const allJobs = feed && Array.isArray(feed.jobs)
+    ? feed.jobs.filter((j) => !passed[j.url] && !promoted.has(j.url))
+    : [];
   const flaggedSet = new Set(flagged);
 
   const companyCounts = {};
@@ -2017,9 +2024,8 @@ function RadarPane({ leads, setLeads, career, onPin, onExit }) {
 
         {shown.map((j, idx) => {
           const who = known[companyKey(j.company)];
-          const done = promoted.has(j.url);
           const isFlagged = flaggedSet.has(j.url);
-          const hot = !done && (!!who || isFlagged);
+          const hot = !!who || isFlagged;
           const cs = companyStyle(j.company);
           const rank = filter === 'flagged' ? idx + 1 : null;
 
@@ -2055,10 +2061,10 @@ function RadarPane({ leads, setLeads, career, onPin, onExit }) {
                   {isFlagged ? '★ Reviewing' : '☆ Review'}
                 </button>
 
-                <button type="button" aria-label="Move up to leads" disabled={done}
+                <button type="button" aria-label="Move up to leads"
                   onClick={() => addLead({ title: j.title, company: companyKey(j.company) ? j.company.split('·')[0].trim() : '', url: j.url, contact: who || '', next: who ? `Ask ${who} about this opening` : '' })}
-                  style={{ minHeight: 40, minWidth: 44, padding: '0 14px', borderRadius: 10, fontWeight: 600, fontSize: 14, cursor: done ? 'default' : 'pointer', border: done ? `1px solid ${COLORS.inkPanelBorder}` : hot ? 0 : `1px solid ${COLORS.amber}`, background: hot ? COLORS.amber : 'transparent', color: done ? '#8FB291' : hot ? COLORS.ink : COLORS.amber, fontFamily: 'inherit' }}>
-                  {done ? '✓ Lead' : '↑ Lead'}
+                  style={{ minHeight: 40, minWidth: 44, padding: '0 14px', borderRadius: 10, fontWeight: 600, fontSize: 14, cursor: 'pointer', border: hot ? 0 : `1px solid ${COLORS.amber}`, background: hot ? COLORS.amber : 'transparent', color: hot ? COLORS.ink : COLORS.amber, fontFamily: 'inherit' }}>
+                  ↑ Lead
                 </button>
 
                 <button type="button" aria-label={`Pass on ${j.title}`} onClick={() => setPassed((p) => ({ ...p, [j.url]: true }))}
